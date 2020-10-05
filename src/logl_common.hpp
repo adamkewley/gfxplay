@@ -31,6 +31,7 @@
 #include <sstream>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 using std::literals::string_literals::operator""s;
 using std::literals::chrono_literals::operator""ms;
@@ -258,4 +259,15 @@ namespace util {
             last = util::now();
         }
     };
+
+    std::string slurp_file(const char* path) {
+        std::ifstream f;
+        f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        f.open(path, std::ios::binary | std::ios::in);
+
+        std::stringstream ss;
+        ss << f.rdbuf();
+
+        return ss.str();
+    }
 }

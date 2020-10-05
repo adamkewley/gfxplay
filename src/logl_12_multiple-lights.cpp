@@ -33,93 +33,11 @@ namespace {
         }
     };
 
-    static const char vertex_shader_src[] = OSC_GLSL_VERSION R"(
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoords;
-
-out vec3 Normal;
-out vec3 FragPos;
-out vec2 TexCoords;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform mat3 normalMatrix;
-
-void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    Normal = normalMatrix * aNormal;
-    FragPos = vec3(model * vec4(aPos, 1.0));
-    TexCoords = aTexCoords;
-}
-)";
-
     struct Gl_State final {
         gl::Program color_prog = []() {
             auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
-struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-    sampler2D emission;
-    float shininess;
-};
-struct Light {
-    vec3 position;
-    vec3 direction;
-    float cutOff;
-    float outerCutOff;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-
-    // attenuation
-    float constant;
-    float linear;
-    float quadratic;
-};
-
-uniform Material material;
-uniform Light light;
-uniform vec3 viewPos;
-
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 FragPos;
-
-out vec4 FragColor;
-
-void main() {
-    vec3 lightDir = normalize(light.position - FragPos);
-    float theta     = dot(lightDir, normalize(-light.direction));
-    float epsilon   = light.cutOff - light.outerCutOff;
-    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
-
-    // do lighting calculations
-    float distance = length(light.position - FragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-
-    // diffuse
-    vec3 norm = normalize(Normal);
-    float diff = max(dot(norm, lightDir), 0.0);
-
-    // specular
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
-    vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
-    vec3 emission = vec3(texture(material.emission, TexCoords));
-
-    vec3 result = attenuation * (ambient + intensity*(diffuse + specular)) + 0.2f*emission;
-    FragColor = vec4(result, 1.0);
-}
-)");
+            auto vs = gl::Vertex_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12_light.vert").c_str());
+            auto fs = gl::Fragment_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12.frag").c_str());
             gl::AttachShader(p, vs);
             gl::AttachShader(p, fs);
             gl::LinkProgram(p);
@@ -128,7 +46,7 @@ void main() {
 
         gl::Program light_prog = []() {
             auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
+            auto vs = gl::Vertex_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12_light.vert").c_str());
             auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 out vec4 FragColor;
 
