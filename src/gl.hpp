@@ -211,6 +211,12 @@ namespace gl {
         glUniformMatrix4fv(u, 1, false, value);
     }
 
+    struct UniformMatrix3fv final : public Uniform {
+        UniformMatrix3fv(Program& p, char const* name) :
+            Uniform{p, name} {
+        }
+    };
+
     struct UniformVec4f final : public Uniform {
         UniformVec4f(Program& p, char const* name) :
             Uniform{p, name} {
@@ -231,6 +237,9 @@ namespace gl {
             if (handle == -1) {
                 throw std::runtime_error{"glGetAttribLocation() failed: cannot get "s + name};
             }
+        }
+
+        constexpr Attribute(GLint location) : handle{location} {
         }
 
         operator GLint () noexcept {

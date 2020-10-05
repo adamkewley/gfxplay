@@ -1,0 +1,3 @@
+#pragma once
+
+#define RESOURCES_DIR "@RESOURCES_DIR@"

@@ -1,3 +1,7 @@
+#pragma once
+
+#include "gfxplay_config.hpp"
+
 #ifdef _MSC_VER
 #pragma warning(disable: 26439) // "This kind of function may not throw. Declare it 'noexcept'
 #pragma warning(disable: 4455) // "This kind of function may not throw. Declare it 'noexcept'
@@ -7,8 +11,10 @@
 #include "sdl.hpp"
 #include "gl.hpp"
 #include "stbi.hpp"
-#include "glglm.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -44,7 +50,7 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 #define OSC_GL_CTX_MAJOR_VERSION 3
 #define OSC_GL_CTX_MINOR_VERSION 2
 #else
-#define OSC_GLSL_VERSION "#version 150"
+#define OSC_GLSL_VERSION "#version 330 core"
 #define OSC_GL_CTX_FLAGS 0
 #define OSC_GL_CTX_MAJOR_VERSION 3
 #define OSC_GL_CTX_MINOR_VERSION 0
@@ -129,7 +135,7 @@ namespace ig {
     };
 }
 
-namespace {
+namespace ui {
     struct Window_state final {
         sdl::Context context = sdl::Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
         sdl::Window window = [&]() {
@@ -184,119 +190,72 @@ namespace {
             gl::assert_no_errors("ui::State::constructor::onExit");
         }
     };
-
-    struct Gl_State final {
-        gl::Program prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(OSC_GLSL_VERSION R"(
-in vec3 aPos;
-
-void main() {
-gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
-)");
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
-out vec4 FragColor;
 
-void main() {
-FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
-}
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+namespace util {
+    void TexImage2D(gl::Texture_2d& t, GLint mipmap_lvl, stbi::Image const& image) {
+        stbi_set_flip_vertically_on_load(true);
+        gl::BindTexture(t);
+        glTexImage2D(GL_TEXTURE_2D,
+                     mipmap_lvl,
+                     GL_RGB,
+                     image.width,
+                     image.height,
+                     0,
+                     image.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                     GL_UNSIGNED_BYTE,
+                     image.data);
+    }
 
-        gl::Attribute aPos = gl::Attribute{prog, "aPos"};
-        gl::Array_buffer ab = {};
-        gl::Element_array_buffer ebo = {};
-        gl::Vertex_array vao = {};
+    gl::Texture_2d mipmapped_texture(char const* path) {
+        auto t = gl::Texture_2d{};
+        auto img = stbi::Image{path};
+        TexImage2D(t, 0, img);
+        gl::GenerateMipMap(t);
+        return t;
+    }
 
-        Gl_State() {
-            float vertices[] = {
-                 0.5f,  0.5f, 0.0f,  // top right
-                 0.5f, -0.5f, 0.0f,  // bottom right
-                -0.5f, -0.5f, 0.0f,  // bottom left
-                -0.5f,  0.5f, 0.0f   // top left
-            };
-            unsigned int indices[] = {  // note that we start from 0!
-                0, 1, 3,   // first triangle
-                1, 2, 3    // second triangle
-            };
+    void Uniform(gl::UniformMatrix4fv& u, glm::mat4 const& mat) {
+        gl::Uniform(u, glm::value_ptr(mat));
+    }
 
-            gl::BindVertexArray(vao);
-            gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
-            gl::BindBuffer(ebo);
-            gl::BufferData(ebo, sizeof(indices), indices, GL_STATIC_DRAW);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
-            gl::EnableVertexAttribArray(aPos);
-            gl::BindVertexArray();
+    void Uniform(gl::UniformVec4f& u, glm::vec4 const& v) {
+        glUniform4f(u, v.x, v.y, v.z, v.w);
+    }
+
+    void Uniform(gl::UniformVec3f& u, glm::vec3 const& v) {
+        glUniform3f(u, v.x, v.y, v.z);
+    }
+
+    void Uniform(gl::UniformMatrix3fv& u, glm::mat3 const& mat) {
+        glUniformMatrix3fv(u, 1, false, glm::value_ptr(mat));
+    }
+
+    std::chrono::milliseconds now() {
+        // milliseconds is grabbed from SDL to ensure the clocks used by the UI
+        // (e.g. SDL_Delay, etc.) match
+        return std::chrono::milliseconds{SDL_GetTicks()};
+    }
+
+    struct Software_throttle final {
+        std::chrono::milliseconds last = util::now();
+        std::chrono::milliseconds min_wait;
+
+        Software_throttle(std::chrono::milliseconds _min_wait) :
+            min_wait{_min_wait} {
+        }
+
+        void wait() {
+            // software-throttle the framerate: no need to render at an insane
+            // (e.g. 2000 FPS, on my machine) FPS, but do not use VSYNC because
+            // it makes the entire application feel *very* laggy.
+            auto now = util::now();
+            auto dt = now - last;
+            if (dt < min_wait) {
+                auto rem = min_wait - dt;
+                SDL_Delay(static_cast<Uint32>(rem.count()));
+            }
+            last = util::now();
         }
     };
-}
-
-int main(int, char**) {
-    auto s = Window_state{};
-    auto gls = Gl_State{};
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-    // ImGUI
-    auto imgui_ctx = ig::Context{};
-    auto imgui_sdl2_ctx = ig::SDL2_Context{s.window, s.gl};
-    auto imgui_ogl3_ctx = ig::OpenGL3_Context{OSC_GLSL_VERSION};
-    ImGui::StyleColorsLight();
-    ImGuiIO& io = ImGui::GetIO();
-
-    auto last_render_timepoint = std::chrono::high_resolution_clock::now();
-    auto min_delay_between_frames = 8ms;
-
-    SDL_Event e;
-    while (true) {
-        while (SDL_PollEvent(&e)) {
-            ImGui_ImplSDL2_ProcessEvent(&e);
-            if (e.type == SDL_QUIT) {
-                return 0;
-            }
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        gl::UseProgram(gls.prog);
-        gl::BindVertexArray(gls.vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-        gl::BindVertexArray();
-        gl::UseProgram();
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame(s.window);
-
-        ImGui::NewFrame();
-        bool b;
-        ImGui::Begin("Scene", &b, ImGuiWindowFlags_MenuBar);
-        {
-            std::stringstream fps;
-            fps << "Fps: " << io.Framerate;
-            ImGui::Text(fps.str().c_str());
-        }
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // software-throttle the framerate: no need to render at an insane
-        // (e.g. 2000 FPS, on my machine) FPS, but do not use VSYNC because
-        // it makes the entire application feel *very* laggy.
-        auto now = std::chrono::high_resolution_clock::now();
-        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_render_timepoint);
-        if (dt < min_delay_between_frames) {
-            SDL_Delay(static_cast<Uint32>((min_delay_between_frames - dt).count()));
-        }
-
-        // draw
-        SDL_GL_SwapWindow(s.window);
-        last_render_timepoint = std::chrono::high_resolution_clock::now();
-    }
 }

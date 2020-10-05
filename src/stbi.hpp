@@ -1,5 +1,7 @@
 #pragma once
 
+#include "logl_common.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <stdexcept>
@@ -28,19 +30,4 @@ namespace stbi {
             stbi_image_free(data);
         }
     };
-}
-
-namespace stbigl {
-    void TexImage2D(gl::Texture_2d const&, GLint level, stbi::Image const& image) {
-        stbi_set_flip_vertically_on_load(true);
-        glTexImage2D(GL_TEXTURE_2D,
-                     level,
-                     GL_RGB,
-                     image.width,
-                     image.height,
-                     0,
-                     image.nrChannels == 3 ? GL_RGB : GL_RGBA,
-                     GL_UNSIGNED_BYTE,
-                     image.data);
-    }
 }

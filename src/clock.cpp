@@ -4,7 +4,7 @@
 #include "sdl.hpp"
 
 using std::string_literals::operator""s;
-struct State {
+struct Window_state {
     sdl::Surface s;
     cairo::surface_t cs;
 };

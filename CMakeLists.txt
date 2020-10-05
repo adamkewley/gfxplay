@@ -13,6 +13,9 @@ add_subdirectory(third_party/SDL2-2.0.12 EXCLUDE_FROM_ALL)
 find_package(OpenGL REQUIRED)
 find_package(Cairo REQUIRED)
 
+set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources/)
+configure_file(src/gfxplay_config.hpp.in gfxplay_config.hpp)
+
 add_library(common STATIC
     third_party/imgui-1.78/imgui.cpp
     third_party/imgui-1.78/imgui_draw.cpp
@@ -22,12 +25,11 @@ add_library(common STATIC
 
     src/sdl.hpp
     src/gl.hpp
-    src/glglm.hpp
     src/stbi.hpp
     src/cairo.hpp
+    src/logl_common.hpp
 )
 target_include_directories(common PUBLIC
-    # ${OPENGL_INCLUDE_DIR}  // GLEW handles forwarding the OpenGL API
     third_party/SDL2-2.0.12/include
     third_party/glm-0.9.9.8/
     third_party/glew-2.1.0/include
@@ -54,8 +56,54 @@ set_target_properties(common PROPERTIES
 )
 
 
-add_executable(learnopengl src/gfxplay.cpp)
-target_link_libraries(learnopengl common)
+# https://learnopengl.com/Getting-started/Hello-Triangle
+add_executable(logl_1_hellotriangle src/logl_1_hellotriangle.cpp)
+target_link_libraries(logl_1_hellotriangle common)
+
+# https://learnopengl.com/Getting-started/Shaders
+add_executable(logl_2_shaders src/logl_2_shaders.cpp)
+target_link_libraries(logl_2_shaders common)
+
+# https://learnopengl.com/Getting-started/Textures
+add_executable(logl_3_textures src/logl_3_textures.cpp)
+target_link_libraries(logl_3_textures common)
+
+# https://learnopengl.com/Getting-started/Transformations
+add_executable(logl_4_transformations src/logl_4_transformations.cpp)
+target_link_libraries(logl_4_transformations common)
+
+# https://learnopengl.com/Getting-started/Coordinate-Systems
+add_executable(logl_5_coordinate-systems src/logl_5_coordinate-systems.cpp)
+target_link_libraries(logl_5_coordinate-systems common)
+
+# https://learnopengl.com/Getting-started/Camera
+add_executable(logl_6_camera src/logl_6_camera.cpp)
+target_link_libraries(logl_6_camera common)
+
+# https://learnopengl.com/Lighting/Colors
+add_executable(logl_7_colors src/logl_7_colors.cpp)
+target_link_libraries(logl_7_colors common)
+
+# https://learnopengl.com/Lighting/Basic-Lighting
+add_executable(logl_8_basic-lighting src/logl_8_basic-lighting.cpp)
+target_link_libraries(logl_8_basic-lighting common)
+
+# https://learnopengl.com/Lighting/Materials
+add_executable(logl_9_materials src/logl_9_materials.cpp)
+target_link_libraries(logl_9_materials common)
+
+# https://learnopengl.com/Lighting/Lighting-maps
+add_executable(logl_10_lighting-maps src/logl_10_lighting-maps.cpp)
+target_link_libraries(logl_10_lighting-maps common)
+
+# https://learnopengl.com/Lighting/Light-casters
+add_executable(logl_11_light-casters src/logl_11_light-casters.cpp)
+target_link_libraries(logl_11_light-casters common)
+
+# https://learnopengl.com/Lighting/Multiple-lights
+add_executable(logl_12_multiple-lights src/logl_12_multiple-lights.cpp)
+target_link_libraries(logl_12_multiple-lights common)
+
 add_executable(clock src/clock.cpp)
 target_link_libraries(clock common)
 source_group(TREE third_party/)
