@@ -10,6 +10,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_subdirectory(third_party/glew-2.1.0/build/cmake/ EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/glm-0.9.9.8 EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/SDL2-2.0.12 EXCLUDE_FROM_ALL)
+add_subdirectory(third_party/assimp-5.0.1 EXCLUDE_FROM_ALL)
 find_package(OpenGL REQUIRED)
 find_package(Cairo REQUIRED)
 
@@ -103,6 +104,10 @@ target_link_libraries(logl_11_light-casters common)
 # https://learnopengl.com/Lighting/Multiple-lights
 add_executable(logl_12_multiple-lights src/logl_12_multiple-lights.cpp)
 target_link_libraries(logl_12_multiple-lights common)
+
+# https://learnopengl.com/Model-Loading/Assimp
+add_executable(logl_13_model-loading src/logl_13_model-loading.cpp)
+target_link_libraries(logl_13_model-loading common assimp)
 
 add_executable(clock src/clock.cpp)
 target_link_libraries(clock common)
