@@ -37,7 +37,24 @@ namespace {
         gl::Program color_prog = []() {
             auto p = gl::Program();
             auto vs = gl::Vertex_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12_light.vert").c_str());
-            auto fs = gl::Fragment_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12.frag").c_str());
+            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+out vec4 FragColor;
+
+float near = 0.1;
+float far  = 100.0;
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // back to NDC
+    return (2.0 * near * far) / (far + near - z * (far - near));
+}
+
+void main()
+{
+    float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
+    FragColor = vec4(vec3(depth), 1.0);
+}
+)");
             gl::AttachShader(p, vs);
             gl::AttachShader(p, fs);
             gl::LinkProgram(p);
@@ -71,18 +88,6 @@ void main()
         gl::UniformMatrix4fv uModel = {color_prog, "model"};
         gl::UniformMatrix4fv uView = {color_prog, "view"};
         gl::UniformMatrix4fv uProjection = {color_prog, "projection"};
-        gl::UniformMatrix3fv uNormalMatrix = {color_prog, "normalMatrix"};
-
-        gl::UniformVec3f uViewPos = {color_prog, "viewPos"};
-        gl::UniformVec3f uDirLightDirection = {color_prog, "dirLight.direction"};
-        gl::UniformVec3f uDirLightAmbient = {color_prog, "dirLight.ambient"};
-        gl::UniformVec3f uDirLightDiffuse = {color_prog, "dirLight.diffuse"};
-        // TODO: pointlights...
-        gl::UniformVec3f uDirLightSpecular = {color_prog, "dirLight.specular"};
-
-        gl::Uniform1i uMaterialDiffuse = {color_prog, "material.diffuse"};
-        gl::Uniform1i uMaterialSpecular = {color_prog, "material.specular"};
-        gl::Uniform1f uMaterialShininess = {color_prog, "material.shininess"};
 
         gl::UniformMatrix4fv uModelLightProg = {light_prog, "model"};
         gl::UniformMatrix4fv uViewLightProg = {light_prog, "view"};
@@ -162,6 +167,8 @@ void main()
         }
 
         void draw(App_State const& as) {
+            glDepthFunc(GL_ALWAYS);
+
             auto ticks = util::now().count() / 200.0f;
 
             gl::UseProgram(color_prog);
@@ -174,9 +181,9 @@ void main()
 
             util::Uniform(uView, as.view_mtx());
             util::Uniform(uProjection, projection);
-            util::Uniform(uViewPos, as.pos);
+            //util::Uniform(uViewPos, as.pos);
 
-            // texture mapping
+            /* texture mapping
             {
                 gl::Uniform(uMaterialDiffuse, 0);
                 glActiveTexture(GL_TEXTURE0);
@@ -193,7 +200,7 @@ void main()
             util::Uniform(uDirLightDirection, {-0.2f, -1.0f, -0.3f});
             util::Uniform(uDirLightAmbient, {0.05f, 0.05f, 0.05f});
             util::Uniform(uDirLightDiffuse, {0.4f, 0.4f, 0.4f});
-            util::Uniform(uDirLightSpecular, {0.5f, 0.5f, 0.5f});
+            util::Uniform(uDirLightSpecular, {0.5f, 0.5f, 0.5f}); */
 
             static const glm::vec3 pointLightPositions[] = {
                 glm::vec3( 0.7f,  0.2f,  2.0f),
@@ -202,6 +209,7 @@ void main()
                 glm::vec3( 0.0f,  0.0f, -3.0f)
             };
 
+            /*
             {
                 auto setVec3 = [&](const char* name, float x, float y, float z) {
                     auto u = gl::UniformVec3f{color_prog, name};
@@ -265,6 +273,7 @@ void main()
                 //setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
                 //setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
             }
+            */
 
 
             gl::BindVertexArray(color_cube_vao);
@@ -287,7 +296,7 @@ void main()
                     float angle = 20.0f * i++;
                     model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
                     util::Uniform(uModel, model);
-                    util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
+                    //util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }

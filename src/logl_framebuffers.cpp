@@ -91,8 +91,33 @@ void main()
         gl::Vertex_array color_cube_vao = {};
         gl::Vertex_array light_vao = {};
 
+        gl::Program quad_prog = []() {
+            auto p = gl::Program();
+            auto vs = gl::Vertex_shader::Compile(OSC_GLSL_VERSION R"(
+layout (location = 0) in vec2 aPosition;
+layout (location = 1) in vec2 aTextureCoords;
+
+out vec2 TexCoords;
+
+void main() {
+    gl_Position = vec4(aPosition.x, aPosition.y, 0.0f, 1.0f);
+    TexCoords = aTextureCoords;
+}
+)");
+            auto fs = gl::Fragment_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_framebuffers.frag").c_str());
+            gl::AttachShader(p, vs);
+            gl::AttachShader(p, fs);
+            gl::LinkProgram(p);
+            return p;
+        }();
+
+        gl::Attribute quadProg_aPos = {0};
+        gl::Attribute quadProg_texCoords = {1};
+        gl::Array_buffer quadProg_ab = {};
+        gl::Vertex_array quadProg_vao = {};
+
         Gl_State() {
-            float vertices[] = {
+            static const float vertices[] = {
                 // positions          // normals           // texture coords
                 -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
                  0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
@@ -159,9 +184,84 @@ void main()
                 gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
+
+            static const float quadVertices[] = {
+                // positions   // texCoords
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                -1.0f, -1.0f,  0.0f, 0.0f,
+                 1.0f, -1.0f,  1.0f, 0.0f,
+
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                 1.0f, -1.0f,  1.0f, 0.0f,
+                 1.0f,  1.0f,  1.0f, 1.0f
+            };
+            gl::BindBuffer(quadProg_ab);
+            gl::BufferData(quadProg_ab, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+            gl::BindVertexArray(quadProg_vao);
+            {
+                gl::BindBuffer(quadProg_ab);
+                gl::VertexAttributePointer(quadProg_aPos, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), nullptr);
+                gl::EnableVertexAttribArray(quadProg_aPos);
+                gl::VertexAttributePointer(quadProg_texCoords, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+                gl::EnableVertexAttribArray(quadProg_texCoords);
+            }
         }
 
+        gl::Texture_2d fbotex;
+        gl::Render_buffer depthbuf = gl::GenRenderBuffer();
+
+        gl::Frame_buffer fbo2 = [&]() {
+            gl::Frame_buffer fbo = gl::GenFrameBuffer();
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
+
+            // generate texture
+            gl::BindTexture(fbotex);
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_RGB,
+                         1024, // TODO: a robust solution would lookup screen size
+                         768,
+                         0,
+                         GL_RGB,
+                         GL_UNSIGNED_BYTE,
+                         NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            gl::BindTexture();
+
+            // attach color fbo to the texture
+            glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                   GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D,
+                                   fbotex,
+                                   0);
+
+            // generate depth + stencil rbo, so the pipeline still has a storage
+            // area it can use to do those tests
+            gl::BindRenderBuffer(depthbuf);
+            glRenderbufferStorage(GL_RENDERBUFFER,
+                                  GL_DEPTH24_STENCIL8,
+                                  1024,  // TODO
+                                  768);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                      GL_DEPTH_STENCIL_ATTACHMENT,
+                                      GL_RENDERBUFFER,
+                                      depthbuf);
+            gl::BindRenderBuffer();
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+            gl::BindFrameBuffer();
+
+            return fbo;
+        }();
+
         void draw(App_State const& as) {
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo2);
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
             auto ticks = util::now().count() / 200.0f;
 
             gl::UseProgram(color_prog);
@@ -301,6 +401,23 @@ void main()
                 model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
                 util::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+
+
+            // !!! render complete !!!
+            // so now switch back to the default fbo (the screen) and sample
+            // the now-rendered backend fbo to a quad via texture sampling
+            gl::BindFrameBuffer();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            gl::UseProgram(quad_prog);
+            glDisable(GL_DEPTH_TEST);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, fbotex);
+            gl::BindVertexArray(quadProg_vao);
+            {
+                glDrawArrays(GL_TRIANGLES, 0, 6);
             }
         }
 

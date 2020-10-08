@@ -282,6 +282,8 @@ void main()
                     glm::vec3(-1.3f,  1.0f, -1.5f)
                 };
                 int i = 0;
+
+                glClear(GL_STENCIL_BUFFER_BIT);
                 for (auto const& pos : cubePositions) {
                     glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), pos);
                     float angle = 20.0f * i++;
@@ -290,6 +292,26 @@ void main()
                     util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
+
+                glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+                glStencilMask(0x00);
+                glDisable(GL_DEPTH_TEST);
+                gl::UseProgram(light_prog);
+                util::Uniform(uViewLightProg, as.view_mtx());
+                util::Uniform(uProjectionLightProg, projection);
+                i = 0;
+                for (auto const& pos : cubePositions) {
+                    glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), pos);
+                    float angle = 20.0f * i++;
+                    model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+                    model = glm::scale(model, {1.1, 1.1, 1.1});
+                    util::Uniform(uModelLightProg, model);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+                gl::UseProgram();
+                glEnable(GL_DEPTH_TEST);
+                glStencilMask(0xff);
+                glStencilFunc(GL_ALWAYS, 1, 0xff);
             }
 
             gl::UseProgram(light_prog);
@@ -320,6 +342,10 @@ int main(int, char**) {
     auto gls = Gl_State{};
     auto as = App_State{};
 
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 1, 0xff);
+    glStencilMask(0xff);
     glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
@@ -396,7 +422,7 @@ int main(int, char**) {
             as.pos -= camera_speed * as.up();
         }
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         gls.draw(as);
 

@@ -388,4 +388,72 @@ namespace gl {
     void GenerateMipMap(Texture_2d&) {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
+
+    class Frame_buffer final {
+    GLuint handle;
+    Frame_buffer(GLuint _handle) : handle{_handle} {
+    }
+    friend Frame_buffer GenFrameBuffer();
+    friend void BindFrameBuffer(GLenum target, Frame_buffer const& fb);
+    public:
+        Frame_buffer(Frame_buffer const&) = delete;
+        Frame_buffer(Frame_buffer&& tmp) : handle{tmp.handle} {
+            tmp.handle = static_cast<GLuint>(-1);
+        }
+        Frame_buffer& operator=(Frame_buffer const&) = delete;
+        Frame_buffer& operator=(Frame_buffer&&) = delete;
+        ~Frame_buffer() noexcept {
+            if (handle != static_cast<GLuint>(-1)) {
+                glDeleteFramebuffers(1, &handle);
+            }
+        }
+    };
+
+    Frame_buffer GenFrameBuffer() {
+        GLuint handle;
+        glGenFramebuffers(1, &handle);
+        return Frame_buffer{handle};
+    }
+
+    void BindFrameBuffer(GLenum target, Frame_buffer const& fb) {
+        glBindFramebuffer(target, fb.handle);
+    }
+
+    void BindFrameBuffer() {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);  // reset to default (monitor) FB
+    }
+
+    class Render_buffer final {
+        GLuint handle;
+        Render_buffer(GLuint _handle) : handle{_handle} {
+        }
+        friend Render_buffer GenRenderBuffer();
+        friend void BindRenderBuffer(Render_buffer&);
+    public:
+        Render_buffer(Render_buffer const&) = delete;
+        Render_buffer(Render_buffer&&) = delete;
+        Render_buffer& operator=(Render_buffer const&) = delete;
+        Render_buffer& operator=(Render_buffer&&) = delete;
+        ~Render_buffer() noexcept {
+            glDeleteRenderbuffers(1, &handle);
+        }
+
+        operator GLuint () const noexcept {
+            return handle;
+        }
+    };
+
+    Render_buffer GenRenderBuffer() {
+        GLuint handle;
+        glGenRenderbuffers(1, &handle);
+        return Render_buffer{handle};
+    }
+
+    void BindRenderBuffer(Render_buffer& rb) {
+        glBindRenderbuffer(GL_RENDERBUFFER, rb.handle);
+    }
+
+    void BindRenderBuffer() {
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
 }

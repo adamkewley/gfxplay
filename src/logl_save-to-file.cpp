@@ -162,6 +162,18 @@ void main()
         }
 
         void draw(App_State const& as) {
+            gl::Frame_buffer fb = gl::GenFrameBuffer();
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fb);
+            auto tex = gl::Texture_2d{};
+            gl::BindTexture(tex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+            auto depthtex = gl::Texture_2d{};
+            gl::BindTexture(depthtex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 768, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthtex, 0);
+            gl::assert_no_errors("glFrameBufferTexture2D");
+
             auto ticks = util::now().count() / 200.0f;
 
             gl::UseProgram(color_prog);
@@ -302,6 +314,21 @@ void main()
                 util::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+
+            // write the render out
+            {
+                GLbyte bytes[3*1024*768];
+                glReadPixels(0, 0, 1024, 768, GL_RGB, GL_UNSIGNED_BYTE, bytes);
+                gl::assert_no_errors("glReadPixels");
+                std::ofstream of{"/tmp/img.ppm", std::ios::binary | std::ios::trunc};
+                of << "P6" << std::endl << 1024 << " " << 768 << std::endl << "255" << std::endl;
+                for (GLbyte byte : bytes) {
+                    of << byte;
+                }
+                throw std::runtime_error{"dumped"};
+            }
+
+            gl::BindFrameBuffer();
         }
 
     public:

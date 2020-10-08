@@ -7,12 +7,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+option(GFXPLAY_USE_ASSIMP "build assimp-related demos" NO)
+option(GFXPLAY_USE_CAIRO "build cairo-based demos" NO)
+
 add_subdirectory(third_party/glew-2.1.0/build/cmake/ EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/glm-0.9.9.8 EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/SDL2-2.0.12 EXCLUDE_FROM_ALL)
-add_subdirectory(third_party/assimp-5.0.1 EXCLUDE_FROM_ALL)
 find_package(OpenGL REQUIRED)
-find_package(Cairo REQUIRED)
 
 set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources/)
 configure_file(src/gfxplay_config.hpp.in gfxplay_config.hpp)
@@ -27,7 +28,6 @@ add_library(common STATIC
     src/sdl.hpp
     src/gl.hpp
     src/stbi.hpp
-    src/cairo.hpp
     src/logl_common.hpp
 )
 target_include_directories(common PUBLIC
@@ -42,7 +42,6 @@ target_link_libraries(common
     ${OPENGL_LIBRARIES}
     SDL2
     glew
-    ${Cairo_LIBRARY}
 )
 target_compile_options(common PUBLIC
     # disable MSVC permissiveness. Forces MSVC to obey C++ standard
@@ -105,10 +104,35 @@ target_link_libraries(logl_11_light-casters common)
 add_executable(logl_12_multiple-lights src/logl_12_multiple-lights.cpp)
 target_link_libraries(logl_12_multiple-lights common)
 
-# https://learnopengl.com/Model-Loading/Assimp
-add_executable(logl_13_model-loading src/logl_13_model-loading.cpp)
-target_link_libraries(logl_13_model-loading common assimp)
+# https://learnopengl.com/Advanced-OpenGL/Depth-testing
+add_executable(logl_depth-testing src/logl_depth-testing.cpp)
+target_link_libraries(logl_depth-testing common)
 
-add_executable(clock src/clock.cpp)
-target_link_libraries(clock common)
+# https://learnopengl.com/Advanced-OpenGL/Stencil-testing
+add_executable(logl_stencil-testing src/logl_stencil-testing.cpp)
+target_link_libraries(logl_stencil-testing common)
+
+# https://learnopengl.com/Advanced-OpenGL/Framebuffers
+add_executable(logl_framebuffers src/logl_framebuffers.cpp)
+target_link_libraries(logl_framebuffers common)
+
+add_executable(logl_save-to-file src/logl_save-to-file.cpp)
+target_link_libraries(logl_save-to-file common)
+
+if (GFXPLAY_USE_ASSIMP)
+    add_subdirectory(third_party/assimp-5.0.1 EXCLUDE_FROM_ALL)
+
+    # https://learnopengl.com/Model-Loading/Assimp
+    add_executable(logl_13_model-loading src/logl_13_model-loading.cpp)
+    target_link_libraries(logl_13_model-loading common assimp)
+endif()
+
+if (GFXPLAY_USE_CAIRO)
+    find_package(Cairo REQUIRED)
+
+    add_executable(clock src/clock.cpp)
+    target_link_libraries(clock common ${Cairo_LIBRARY})
+    target_include_directories(clock PUBLIC src/cairo.hpp)
+endif()
+
 source_group(TREE third_party/)
