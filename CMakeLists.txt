@@ -51,6 +51,11 @@ target_compile_options(common PUBLIC
 target_compile_features(common PUBLIC
     cxx_std_20
 )
+target_link_options(common PUBLIC
+    # disable opening a console window when booting normally
+    $<$<CXX_COMPILER_ID:MSVC>:/SUBSYSTEM:windows>
+    $<$<CXX_COMPILER_ID:MSVC>:/ENTRY:mainCRTStartup>
+)
 set_target_properties(common PROPERTIES
     CXX_EXTENSIONS OFF
 )
