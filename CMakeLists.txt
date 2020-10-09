@@ -41,7 +41,7 @@ target_include_directories(common PUBLIC
 target_link_libraries(common
     ${OPENGL_LIBRARIES}
     SDL2
-    glew
+    glew_s
 )
 target_compile_options(common PUBLIC
     # disable MSVC permissiveness. Forces MSVC to obey C++ standard
