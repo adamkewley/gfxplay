@@ -46,7 +46,7 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 // platform-specific bs
 #ifdef __APPLE__
-#define OSC_GLSL_VERSION "#version 150"
+#define OSC_GLSL_VERSION "#version 330 core"
 #define OSC_GL_CTX_FLAGS SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
 #define OSC_GL_CTX_MAJOR_VERSION 3
 #define OSC_GL_CTX_MINOR_VERSION 2
