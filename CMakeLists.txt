@@ -121,6 +121,18 @@ target_link_libraries(logl_stencil-testing common)
 add_executable(logl_framebuffers src/logl_framebuffers.cpp)
 target_link_libraries(logl_framebuffers common)
 
+# https://learnopengl.com/Advanced-OpenGL/Blending
+add_executable(logl_blending src/logl_blending.cpp)
+target_link_libraries(logl_blending common)
+
+# https://learnopengl.com/Advanced-OpenGL/Face-culling
+add_executable(logl_face-culling src/logl_face-culling.cpp)
+target_link_libraries(logl_face-culling common)
+
+# https://learnopengl.com/Advanced-OpenGL/Geometry-Shader
+add_executable(logl_geom-shader-normals src/logl_geom-shader-normals.cpp)
+target_link_libraries(logl_geom-shader-normals common)
+
 add_executable(logl_save-to-file src/logl_save-to-file.cpp)
 target_link_libraries(logl_save-to-file common)
 

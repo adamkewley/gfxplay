@@ -199,7 +199,7 @@ namespace util {
         gl::BindTexture(t);
         glTexImage2D(GL_TEXTURE_2D,
                      mipmap_lvl,
-                     GL_RGB,
+                     image.nrChannels == 3 ? GL_RGB : GL_RGBA,
                      image.width,
                      image.height,
                      0,
@@ -269,5 +269,40 @@ namespace util {
         ss << f.rdbuf();
 
         return ss.str();
+    }
+
+    gl::Program program_from_files(const char* vert_path,
+                                   const char* frag_path) {
+        auto p = gl::Program();
+        {
+            auto vs = gl::Vertex_shader::Compile(slurp_file(vert_path).c_str());
+            gl::AttachShader(p, vs);
+        }
+        {
+            auto fs = gl::Fragment_shader::Compile(slurp_file(frag_path).c_str());
+            gl::AttachShader(p, fs);
+        }
+        gl::LinkProgram(p);
+        return p;
+    }
+
+    gl::Program program_from_files(const char* vert_path,
+                                   const char* geom_path,
+                                   const char* frag_path) {
+        auto p = gl::Program();
+        {
+            auto vs = gl::Vertex_shader::Compile(slurp_file(vert_path).c_str());
+            gl::AttachShader(p, vs);
+        }
+        {
+            auto gs = gl::Geometry_shader::Compile(slurp_file(geom_path).c_str());
+            gl::AttachShader(p, gs);
+        }
+        {
+            auto fs = gl::Fragment_shader::Compile(slurp_file(frag_path).c_str());
+            gl::AttachShader(p, fs);
+        }
+        gl::LinkProgram(p);
+        return p;
     }
 }

@@ -145,6 +145,12 @@ namespace gl {
         }
     };
 
+    struct Geometry_shader final : public Shader {
+        static Geometry_shader Compile(char const* src) {
+            return Geometry_shader{Shader::Compile(GL_GEOMETRY_SHADER, src)};
+        }
+    };
+
     void LinkProgram(gl::Program& prog) {
         glLinkProgram(prog);
 
@@ -228,6 +234,11 @@ namespace gl {
             Uniform{p, name} {
         }
     };
+
+    template<class T>
+    T GetUniformLocation(Program& p, char const* name) {
+        return T{p, name};
+    }
 
     class Attribute final {
         GLint handle;
