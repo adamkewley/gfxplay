@@ -33,7 +33,10 @@ namespace {
         }
     };
 
-    static const char vertex_shader_src[] = OSC_GLSL_VERSION R"(
+    struct Gl_State final {
+        gl::Vertex_shader vert_shader = gl::CompileVertexShader(R"(
+#version 330 core
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 
@@ -45,19 +48,16 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
 
-void main()
-{
+void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
     Normal = normalMatrix * aNormal;
     FragPos = vec3(model * vec4(aPos, 1.0));
-}
-)";
+})");
+        gl::Program color_prog = gl::CreateProgramFrom(
+            vert_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-    struct Gl_State final {
-        gl::Program color_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 in vec3 Normal;
 in vec3 FragPos;
 out vec4 FragColor;
@@ -67,8 +67,7 @@ uniform vec3 lightColor;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
-void main()
-{
+void main() {
     float ambientStrength = 0.01;
     vec3 ambient = ambientStrength * lightColor;
 
@@ -88,46 +87,35 @@ void main()
     vec3 result = (ambient + diffuse + specular) * objectColor;
     FragColor = vec4(result, 1.0);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Program light_prog = gl::CreateProgramFrom(
+            vert_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-        gl::Program light_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 out vec4 FragColor;
 
-void main()
-{
+void main() {
     FragColor = vec4(1.0); // set all 4 vector values to 1.0
-}
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
-
+})"
+        ));
         gl::Attribute aPos = {0};
         gl::Attribute aNormal = {1};
-        gl::UniformMatrix4fv uModelColorProg = {color_prog, "model"};
-        gl::UniformMatrix4fv uViewColorProg = {color_prog, "view"};
-        gl::UniformMatrix4fv uProjectionColorProg = {color_prog, "projection"};
-        gl::UniformVec3f uLightPosColorProg = {color_prog, "lightPos"};
-        gl::UniformVec3f uViewPosColorProg = {color_prog, "viewPos"};
-        gl::UniformMatrix3fv uNormalMatrix = {color_prog, "normalMatrix"};
-        gl::UniformVec3f uObjectColor = {color_prog, "objectColor"};
-        gl::UniformVec3f uLightColor = {color_prog, "lightColor"};
-        gl::UniformMatrix4fv uModelLightProg = {light_prog, "model"};
-        gl::UniformMatrix4fv uViewLightProg = {light_prog, "view"};
-        gl::UniformMatrix4fv uProjectionLightProg = {light_prog, "projection"};
+        gl::UniformMatrix4fv uModelColorProg = gl::GetUniformLocation(color_prog, "model");
+        gl::UniformMatrix4fv uViewColorProg = gl::GetUniformLocation(color_prog, "view");
+        gl::UniformMatrix4fv uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
+        gl::UniformVec3f uLightPosColorProg = gl::GetUniformLocation(color_prog, "lightPos");
+        gl::UniformVec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
+        gl::UniformMatrix3fv uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        gl::UniformVec3f uObjectColor = gl::GetUniformLocation(color_prog, "objectColor");
+        gl::UniformVec3f uLightColor = gl::GetUniformLocation(color_prog, "lightColor");
+        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
         gl::Array_buffer ab = {};
-        gl::Vertex_array color_cube_vao = {};
-        gl::Vertex_array light_vao = {};
+        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
+        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -180,18 +168,18 @@ void main()
             gl::BindVertexArray(color_cube_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
 
             gl::BindVertexArray(light_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
         }
@@ -204,29 +192,29 @@ void main()
 
             gl::UseProgram(color_prog);
 
-            util::Uniform(uViewColorProg, as.view_mtx());
-            util::Uniform(uProjectionColorProg, projection);
-            util::Uniform(uObjectColor, glm::vec3{1.0f, 0.5f, 0.31f});
-            util::Uniform(uLightColor, glm::vec3{1.0f, 1.0f, 1.0f});
-            util::Uniform(uLightPosColorProg, lightPos);
-            util::Uniform(uViewPosColorProg, as.pos);
+            gl::Uniform(uViewColorProg, as.view_mtx());
+            gl::Uniform(uProjectionColorProg, projection);
+            gl::Uniform(uObjectColor, glm::vec3{1.0f, 0.5f, 0.31f});
+            gl::Uniform(uLightColor, glm::vec3{1.0f, 1.0f, 1.0f});
+            gl::Uniform(uLightPosColorProg, lightPos);
+            gl::Uniform(uViewPosColorProg, as.pos);
 
             gl::BindVertexArray(color_cube_vao);
             {
                 glm::mat4 model = glm::mat4{1.0f};
-                util::Uniform(uModelColorProg, model);
-                util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
+                gl::Uniform(uModelColorProg, model);
+                gl::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
 
             gl::UseProgram(light_prog);
-            util::Uniform(uViewLightProg, as.view_mtx());
-            util::Uniform(uProjectionLightProg, projection);
+            gl::Uniform(uViewLightProg, as.view_mtx());
+            gl::Uniform(uProjectionLightProg, projection);
             {
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, lightPos);
                 model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-                util::Uniform(uModelLightProg, model);
+                gl::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

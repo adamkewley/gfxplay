@@ -27,6 +27,7 @@ add_library(common STATIC
 
     src/sdl.hpp
     src/gl.hpp
+    src/gl_extensions.hpp
     src/stbi.hpp
     src/logl_common.hpp
 )

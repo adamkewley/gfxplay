@@ -2,32 +2,30 @@
 
 namespace {
     struct Gl_State final {
-        gl::Program prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(OSC_GLSL_VERSION R"(
+        gl::Program prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(R"(
+#version 330 core
+
 in vec3 aPos;
 
 void main() {
-gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
-)");
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+)"),
+            gl::CompileFragmentShader(R"(
+#version 330 core
+
 out vec4 FragColor;
 
 void main() {
-FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
+    FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
-
-        gl::Attribute aPos = gl::Attribute{prog, "aPos"};
+)"
+        ));
+        gl::Attribute aPos = gl::GetAttribLocation(prog, "aPos");
         gl::Array_buffer ab = {};
         gl::Element_array_buffer ebo = {};
-        gl::Vertex_array vao = {};
+        gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -46,7 +44,7 @@ FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
             gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
             gl::BindBuffer(ebo);
             gl::BufferData(ebo, sizeof(indices), indices, GL_STATIC_DRAW);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::BindVertexArray();
         }

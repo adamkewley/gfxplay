@@ -40,20 +40,20 @@ namespace {
     };
 
     struct Gl_State final {
-        gl::Program prog = util::program_from_files(
-            RESOURCES_DIR "logl_blending.vert",
-            RESOURCES_DIR "logl_blending.frag");
-        gl::Attribute aPos = {0};
-        gl::Attribute aTexCoords = {1};
-        gl::UniformMatrix4fv uModel = {prog, "model"};
-        gl::UniformMatrix4fv uView = {prog, "view"};
-        gl::UniformMatrix4fv uProjection = {prog, "projection"};
+        gl::Program prog = gl::CreateProgramFrom(
+            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_blending.vert"),
+            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
+        gl::Attribute aPos = 0;
+        gl::Attribute aTexCoords = 1;
+        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(prog, "model");
+        gl::UniformMatrix4fv uView = gl::GetUniformLocation(prog, "view");
+        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
-                util::mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =
-                util::mipmapped_texture(RESOURCES_DIR "textures/metal.png");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/metal.png");
         gl::Texture_2d tex_grass =
-                util::mipmapped_texture(RESOURCES_DIR "textures/window.png");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/window.png");
         gl::Array_buffer cube_vbo = []() {
             static const float cubeVertices[] = {
                 // positions          // texture Coords
@@ -106,12 +106,12 @@ namespace {
         }();
 
         gl::Vertex_array cube_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            auto vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
             gl::BindBuffer(cube_vbo);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -135,12 +135,12 @@ namespace {
         }();
 
         gl::Vertex_array plane_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            auto vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
             gl::BindBuffer(plane_vbo);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -164,11 +164,11 @@ namespace {
         }();
 
         gl::Vertex_array transparent_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            auto vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -184,8 +184,8 @@ namespace {
 
         void draw(App_State const& as) {
             gl::UseProgram(prog);
-            util::Uniform(uView, as.view_mtx());
-            util::Uniform(uProjection, as.persp_mtx());
+            gl::Uniform(uView, as.view_mtx());
+            gl::Uniform(uProjection, as.persp_mtx());
 
             glActiveTexture(GL_TEXTURE0);
 
@@ -195,20 +195,20 @@ namespace {
             {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
             {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
 
             // floor
             gl::BindVertexArray(plane_vao);
             gl::BindTexture(tex_floor);
-            util::Uniform(uModel, glm::mat4(1.0f));
+            gl::Uniform(uModel, glm::mat4(1.0f));
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
             // transparent
@@ -228,7 +228,7 @@ namespace {
             for (auto const& loc : vegetation) {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, loc);
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
 

@@ -43,9 +43,10 @@ namespace {
     };
 
     struct Gl_State final {
-        gl::Program prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(OSC_GLSL_VERSION R"(
+        gl::Program prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(R"(
+#version 330 core
+
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
@@ -61,8 +62,10 @@ void main()
     gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
     TexCoord = aTexCoord;
 }
-)");
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+)"),
+        gl::CompileFragmentShader(R"(
+#version 330 core
+
 uniform sampler2D uSampler0;
 uniform sampler2D uSampler1;
 
@@ -73,25 +76,19 @@ void main()
 {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
-
-        gl::Texture_2d wall = util::mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = util::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::UniformMatrix4fv uModel = {prog, "uModel"};
-        gl::UniformMatrix4fv uView = {prog, "uView"};
-        gl::UniformMatrix4fv uProjection = {prog, "uProjection"};
-        gl::Attribute aPos = {0};
-        gl::Attribute aTexCoord = {1};
-        gl::Uniform1i uSampler0 = {prog, "uSampler0"};
-        gl::Uniform1i uSampler1 = {prog, "uSampler1"};
+)"));
+        gl::Texture_2d wall = gl::mipmapped_texture(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face = gl::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(prog, "uModel");
+        gl::UniformMatrix4fv uView = gl::GetUniformLocation(prog, "uView");
+        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(prog, "uProjection");
+        gl::Attribute aPos = 0;
+        gl::Attribute aTexCoord = 1;
+        gl::Uniform1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = {};
         gl::Element_array_buffer ebo = {};
-        gl::Vertex_array vao = {};
+        gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -143,10 +140,10 @@ void main()
             gl::BindBuffer(ab);
             gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), nullptr);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
 
-            gl::VertexAttributePointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(3* sizeof(float)));
+            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(3* sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoord);
 
             gl::BindVertexArray();
@@ -167,9 +164,9 @@ void main()
 
             gl::UseProgram(prog);
 
-            util::Uniform(uModel, model);
-            util::Uniform(uView, view);
-            util::Uniform(uProjection, projection);
+            gl::Uniform(uModel, model);
+            gl::Uniform(uView, view);
+            gl::Uniform(uProjection, projection);
 
             glActiveTexture(GL_TEXTURE0);
             gl::BindTexture(wall);
@@ -185,7 +182,7 @@ void main()
                 model = glm::translate(model, cubePositions[i]);
                 float angle = 20.0f * i;
                 model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

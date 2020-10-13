@@ -2,9 +2,10 @@
 
 namespace {
     struct Gl_State final {
-        gl::Program prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(OSC_GLSL_VERSION R"(
+        gl::Program prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(R"(
+#version 330 core
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColor;
 layout (location = 2) in vec2 aTexCoord;
@@ -12,14 +13,14 @@ layout (location = 2) in vec2 aTexCoord;
 out vec3 ourColor;
 out vec2 TexCoord;
 
-void main()
-{
+void main() {
     gl_Position = vec4(aPos, 1.0);
     ourColor = aColor;
     TexCoord = aTexCoord;
-}
-)");
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+})"),
+            gl::CompileFragmentShader(R"(
+#version 330 core
+
 out vec4 FragColor;
 
 in vec3 ourColor;
@@ -28,27 +29,19 @@ in vec2 TexCoord;
 uniform sampler2D uSampler0;
 uniform sampler2D uSampler1;
 
-void main()
-{
+void main() {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
-}
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
-
-        gl::Texture_2d wall = util::mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = util::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::Attribute aPos = {0};
-        gl::Attribute aColor = {1};
-        gl::Attribute aTexCoord = {2};
-        gl::Uniform1i uSampler0 = {prog, "uSampler0"};
-        gl::Uniform1i uSampler1 = {prog, "uSampler1"};
+})"));
+        gl::Texture_2d wall = gl::mipmapped_texture(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face = gl::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+        gl::Attribute aPos = 0;
+        gl::Attribute aColor = 1;
+        gl::Attribute aTexCoord = 2;
+        gl::Uniform1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = {};
         gl::Element_array_buffer ebo = {};
-        gl::Vertex_array vao = {};
+        gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -69,13 +62,13 @@ void main()
             gl::BindBuffer(ab);
             gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
 
-            gl::VertexAttributePointer(aColor, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3* sizeof(float)));
+            gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3* sizeof(float)));
             gl::EnableVertexAttribArray(aColor);
 
-            gl::VertexAttributePointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6* sizeof(float)));
+            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6* sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoord);
 
             gl::BindBuffer(ebo);

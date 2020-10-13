@@ -33,7 +33,10 @@ namespace {
         }
     };
 
-    static const char vertex_shader_src[] = OSC_GLSL_VERSION R"(
+    struct Gl_State final {
+        gl::Vertex_shader vertex_shader = gl::CompileVertexShader(R"(
+#version 330 core
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
@@ -53,13 +56,12 @@ void main() {
     FragPos = vec3(model * vec4(aPos, 1.0));
     TexCoords = aTexCoords;
 }
-)";
+)");
+        gl::Program color_prog = gl::CreateProgramFrom(
+            vertex_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-    struct Gl_State final {
-        gl::Program color_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
@@ -119,65 +121,55 @@ void main() {
     vec3 result = attenuation * (ambient + intensity*(diffuse + specular)) + 0.2f*emission;
     FragColor = vec4(result, 1.0);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Program light_prog = gl::CreateProgramFrom(
+            vertex_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-        gl::Program light_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 out vec4 FragColor;
 
-void main()
-{
+void main() {
     FragColor = vec4(1.0); // set all 4 vector values to 1.0
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Texture_2d container2_tex = gl::mipmapped_texture(RESOURCES_DIR "container2.png");
+        gl::Texture_2d container2_spec = gl::mipmapped_texture(RESOURCES_DIR "container2_specular.png");
+        gl::Texture_2d container2_emission = gl::mipmapped_texture(RESOURCES_DIR "matrix.jpg");
 
-        gl::Texture_2d container2_tex = util::mipmapped_texture(RESOURCES_DIR "container2.png");
-        gl::Texture_2d container2_spec = util::mipmapped_texture(RESOURCES_DIR "container2_specular.png");
-        gl::Texture_2d container2_emission = util::mipmapped_texture(RESOURCES_DIR "matrix.jpg");
+        static constexpr gl::Attribute aPos = 0;
+        static constexpr gl::Attribute aNormal = 1;
+        static constexpr gl::Attribute aTexCoords = 2;
+        gl::UniformMatrix4fv uModelColorProg = gl::GetUniformLocation(color_prog, "model");
+        gl::UniformMatrix4fv uViewColorProg = gl::GetUniformLocation(color_prog, "view");
+        gl::UniformMatrix4fv uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
+        gl::UniformVec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
+        gl::UniformMatrix3fv uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
 
-        gl::Attribute aPos = {0};
-        gl::Attribute aNormal = {1};
-        gl::Attribute aTexCoords = {2};
-        gl::UniformMatrix4fv uModelColorProg = {color_prog, "model"};
-        gl::UniformMatrix4fv uViewColorProg = {color_prog, "view"};
-        gl::UniformMatrix4fv uProjectionColorProg = {color_prog, "projection"};
-        gl::UniformVec3f uViewPosColorProg = {color_prog, "viewPos"};
-        gl::UniformMatrix3fv uNormalMatrix = {color_prog, "normalMatrix"};
+        gl::Uniform1i uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
+        gl::Uniform1i uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
+        gl::Uniform1i uMaterialEmission = gl::GetUniformLocation(color_prog, "material.emission");
+        gl::Uniform1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
 
-        gl::Uniform1i uMaterialDiffuse = {color_prog, "material.diffuse"};
-        gl::Uniform1i uMaterialSpecular = {color_prog, "material.specular"};
-        gl::Uniform1i uMaterialEmission = {color_prog, "material.emission"};
-        gl::Uniform1f uMaterialShininess = {color_prog, "material.shininess"};        
+        gl::UniformVec3f uLightPosition = gl::GetUniformLocation(color_prog, "light.position");
+        gl::UniformVec3f uLightDirection = gl::GetUniformLocation(color_prog, "light.direction");
+        gl::Uniform1f uLightCutOff = gl::GetUniformLocation(color_prog, "light.cutOff");
+        gl::Uniform1f uLightOuterCutOff = gl::GetUniformLocation(color_prog, "light.outerCutOff");
+        gl::UniformVec3f uLightAmbient = gl::GetUniformLocation(color_prog, "light.ambient");
+        gl::UniformVec3f uLightDiffuse = gl::GetUniformLocation(color_prog, "light.diffuse");
+        gl::UniformVec3f uLightSpecular = gl::GetUniformLocation(color_prog, "light.specular");
+        gl::Uniform1f uLightConstant = gl::GetUniformLocation(color_prog, "light.constant");
+        gl::Uniform1f uLightLinear = gl::GetUniformLocation(color_prog, "light.linear");
+        gl::Uniform1f uLightQuadratic = gl::GetUniformLocation(color_prog, "light.quadratic");
 
-        gl::UniformVec3f uLightPosition = {color_prog, "light.position"};
-        gl::UniformVec3f uLightDirection = {color_prog, "light.direction"};
-        gl::Uniform1f uLightCutOff = {color_prog, "light.cutOff"};
-        gl::Uniform1f uLightOuterCutOff = {color_prog, "light.outerCutOff"};
-        gl::UniformVec3f uLightAmbient = {color_prog, "light.ambient"};
-        gl::UniformVec3f uLightDiffuse = {color_prog, "light.diffuse"};
-        gl::UniformVec3f uLightSpecular = {color_prog, "light.specular"};
-        gl::Uniform1f uLightConstant = {color_prog, "light.constant"};
-        gl::Uniform1f uLightLinear = {color_prog, "light.linear"};
-        gl::Uniform1f uLightQuadratic = {color_prog, "light.quadratic"};
-
-        gl::UniformMatrix4fv uModelLightProg = {light_prog, "model"};
-        gl::UniformMatrix4fv uViewLightProg = {light_prog, "view"};
-        gl::UniformMatrix4fv uProjectionLightProg = {light_prog, "projection"};
+        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
         gl::Array_buffer ab = {};
-        gl::Vertex_array color_cube_vao = {};
-        gl::Vertex_array light_vao = {};
+        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
+        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -231,20 +223,20 @@ void main()
             gl::BindVertexArray(color_cube_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
-                gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aTexCoords);
             }
 
             gl::BindVertexArray(light_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
         }
@@ -257,9 +249,9 @@ void main()
 
             gl::UseProgram(color_prog);
 
-            util::Uniform(uViewColorProg, as.view_mtx());
-            util::Uniform(uProjectionColorProg, projection);
-            util::Uniform(uViewPosColorProg, as.pos);
+            gl::Uniform(uViewColorProg, as.view_mtx());
+            gl::Uniform(uProjectionColorProg, projection);
+            gl::Uniform(uViewPosColorProg, as.pos);
 
             {
                 gl::Uniform(uMaterialDiffuse, 0);
@@ -280,15 +272,15 @@ void main()
             }
             gl::Uniform(uMaterialShininess, 32.0f);
 
-            util::Uniform(uLightPosition, as.pos);
-            util::Uniform(uLightDirection, as.front());
+            gl::Uniform(uLightPosition, as.pos);
+            gl::Uniform(uLightDirection, as.front());
             gl::Uniform(uLightCutOff, glm::cos(glm::radians(12.5f)));
             gl::Uniform(uLightOuterCutOff, glm::cos(glm::radians(13.5f)));
 
             auto lightColor = glm::vec3{1.0f, 1.0f, 1.0f};
-            util::Uniform(uLightAmbient, 0.2f * lightColor);
-            util::Uniform(uLightDiffuse, 0.4f * lightColor);
-            util::Uniform(uLightSpecular, glm::vec3{1.0f, 1.0f, 1.0f});
+            gl::Uniform(uLightAmbient, 0.2f * lightColor);
+            gl::Uniform(uLightDiffuse, 0.4f * lightColor);
+            gl::Uniform(uLightSpecular, glm::vec3{1.0f, 1.0f, 1.0f});
             gl::Uniform(uLightConstant, 1.0f);
             gl::Uniform(uLightLinear, 0.09f);
             gl::Uniform(uLightQuadratic, 0.032f);
@@ -312,20 +304,20 @@ void main()
                     glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), pos);
                     float angle = 20.0f * i++;
                     model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                    util::Uniform(uModelColorProg, model);
-                    util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
+                    gl::Uniform(uModelColorProg, model);
+                    gl::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }
 /*
             gl::UseProgram(light_prog);
-            util::Uniform(uViewLightProg, as.view_mtx());
-            util::Uniform(uProjectionLightProg, projection);
+            gl::Uniform(uViewLightProg, as.view_mtx());
+            gl::Uniform(uProjectionLightProg, projection);
             {
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, lightPos);
                 model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-                util::Uniform(uModelLightProg, model);
+                gl::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
             */

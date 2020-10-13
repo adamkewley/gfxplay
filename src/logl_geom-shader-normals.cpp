@@ -40,20 +40,20 @@ namespace {
     };
 
     struct Gl_State final {
-        gl::Program prog = util::program_from_files(
-            RESOURCES_DIR "logl_blending.vert",
-            RESOURCES_DIR "logl_blending.frag");
-        gl::Attribute aPos = {0};
-        gl::Attribute aTexCoords = {1};
-        gl::UniformMatrix4fv uModel = {prog, "model"};
-        gl::UniformMatrix4fv uView = {prog, "view"};
-        gl::UniformMatrix4fv uProjection = {prog, "projection"};
+        gl::Program prog = gl::CreateProgramFrom(
+            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_blending.vert"),
+            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
+        gl::Attribute aPos = 0;
+        gl::Attribute aTexCoords = 1;
+        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(prog, "model");
+        gl::UniformMatrix4fv uView = gl::GetUniformLocation(prog, "view");
+        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
-                util::mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =
-                util::mipmapped_texture(RESOURCES_DIR "textures/metal.png");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/metal.png");
         gl::Texture_2d tex_grass =
-                util::mipmapped_texture(RESOURCES_DIR "textures/window.png");
+                gl::mipmapped_texture(RESOURCES_DIR "textures/window.png");
         gl::Array_buffer cube_vbo = []() {
             static const float cubeVertices[] = {
                 // back face
@@ -106,12 +106,12 @@ namespace {
         }();
 
         gl::Vertex_array cube_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            gl::Vertex_array vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
             gl::BindBuffer(cube_vbo);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -135,12 +135,12 @@ namespace {
         }();
 
         gl::Vertex_array plane_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            gl::Vertex_array vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
             gl::BindBuffer(plane_vbo);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -164,11 +164,11 @@ namespace {
         }();
 
         gl::Vertex_array transparent_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            gl::Vertex_array vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
-            gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(aTexCoords);
             gl::BindVertexArray();
             return vao;
@@ -182,15 +182,15 @@ namespace {
             glm::vec3(0.5f, 0.0f, -0.6f),
         };
 
-        gl::Program normals_prog = util::program_from_files(
-            RESOURCES_DIR "logl_geom_normals.vert",
-            RESOURCES_DIR "logl_geom_normals.geom",
-            RESOURCES_DIR "logl_geom_normals.frag");
-        gl::Attribute normals_aPos = {0};
-        gl::Attribute normals_aNormal = {1};
-        gl::UniformMatrix4fv normals_uModel = {normals_prog, "model"};
-        gl::UniformMatrix4fv normals_uView = {normals_prog, "view"};
-        gl::UniformMatrix4fv normals_uProjection = {normals_prog, "projection"};
+        gl::Program normals_prog = gl::CreateProgramFrom(
+            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_geom_normals.vert"),
+            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_geom_normals.frag"),
+            gl::CompileGeometryShaderFile(RESOURCES_DIR "logl_geom_normals.geom"));
+        gl::Attribute normals_aPos = 0;
+        gl::Attribute normals_aNormal = 1;
+        gl::UniformMatrix4fv normals_uModel = gl::GetUniformLocation(normals_prog, "model");
+        gl::UniformMatrix4fv normals_uView = gl::GetUniformLocation(normals_prog, "view");
+        gl::UniformMatrix4fv normals_uProjection = gl::GetUniformLocation(normals_prog, "projection");
         gl::Array_buffer normals_vbo = []() {
             static const float vertices[] = {
                 -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -241,12 +241,12 @@ namespace {
             return vbo;
         }();
         gl::Vertex_array normals_vao = [&]() {
-            auto vao = gl::Vertex_array{};
+            gl::Vertex_array vao = gl::GenVertexArrays();
             gl::BindVertexArray(vao);
             gl::BindBuffer(normals_vbo);
-            gl::VertexAttributePointer(normals_aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
+            gl::VertexAttribPointer(normals_aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
             gl::EnableVertexAttribArray(normals_aPos);
-            gl::VertexAttributePointer(normals_aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(normals_aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
             gl::EnableVertexAttribArray(normals_aNormal);
             gl::BindVertexArray();
             return vao;
@@ -254,8 +254,8 @@ namespace {
 
         void draw(App_State const& as) {
             gl::UseProgram(prog);
-            util::Uniform(uView, as.view_mtx());
-            util::Uniform(uProjection, as.persp_mtx());
+            gl::Uniform(uView, as.view_mtx());
+            gl::Uniform(uProjection, as.persp_mtx());
 
             glActiveTexture(GL_TEXTURE0);
 
@@ -268,20 +268,20 @@ namespace {
             {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
             {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
 
             // floor
             gl::BindVertexArray(plane_vao);
             gl::BindTexture(tex_floor);
-            util::Uniform(uModel, glm::mat4(1.0f));
+            gl::Uniform(uModel, glm::mat4(1.0f));
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
             // transparent
@@ -302,7 +302,7 @@ namespace {
             for (auto const& loc : vegetation) {
                 auto model = glm::mat4(1.0f);
                 model = glm::translate(model, loc);
-                util::Uniform(uModel, model);
+                gl::Uniform(uModel, model);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
 
@@ -315,9 +315,9 @@ namespace {
                 gl::UseProgram(normals_prog);
                 auto model = glm::identity<glm::mat4>();
                 gl::assert_no_errors("b");
-                util::Uniform(normals_uModel, model);
-                util::Uniform(normals_uView, as.view_mtx());
-                util::Uniform(normals_uProjection, as.persp_mtx());
+                gl::Uniform(normals_uModel, model);
+                gl::Uniform(normals_uView, as.view_mtx());
+                gl::Uniform(normals_uProjection, as.persp_mtx());
                 gl::assert_no_errors("uniform");
                 gl::BindVertexArray(normals_vao);
                 gl::assert_no_errors("vao");

@@ -34,67 +34,59 @@ namespace {
     };
 
     struct Gl_State final {
-        gl::Program color_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12_light.vert").c_str());
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+        gl::Vertex_shader vertex_shader =
+                gl::CompileVertexShaderFile(RESOURCES_DIR "logl_12_light.vert");
+        gl::Program color_prog = gl::CreateProgramFrom(
+            vertex_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
+
 out vec4 FragColor;
 
 float near = 0.1;
 float far  = 100.0;
 
-float LinearizeDepth(float depth)
-{
+float LinearizeDepth(float depth) {
     float z = depth * 2.0 - 1.0; // back to NDC
     return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
-void main()
-{
+void main() {
     float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     FragColor = vec4(vec3(depth), 1.0);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Program light_prog = gl::CreateProgramFrom(
+            vertex_shader,
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-        gl::Program light_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(util::slurp_file(RESOURCES_DIR "logl_12_light.vert").c_str());
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 out vec4 FragColor;
 
 void main()
 {
     FragColor = vec4(1.0); // set all 4 vector values to 1.0
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Texture_2d container2_tex = gl::mipmapped_texture(RESOURCES_DIR "container2.png");
+        gl::Texture_2d container2_spec = gl::mipmapped_texture(RESOURCES_DIR "container2_specular.png");
+        gl::Texture_2d container2_emission = gl::mipmapped_texture(RESOURCES_DIR "matrix.jpg");
 
-        gl::Texture_2d container2_tex = util::mipmapped_texture(RESOURCES_DIR "container2.png");
-        gl::Texture_2d container2_spec = util::mipmapped_texture(RESOURCES_DIR "container2_specular.png");
-        gl::Texture_2d container2_emission = util::mipmapped_texture(RESOURCES_DIR "matrix.jpg");
+        gl::Attribute aPos = 0;
+        gl::Attribute aNormal = 1;
+        gl::Attribute aTexCoords = 2;
+        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(color_prog, "model");
+        gl::UniformMatrix4fv uView = gl::GetUniformLocation(color_prog, "view");
+        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(color_prog, "projection");
 
-        gl::Attribute aPos = {0};
-        gl::Attribute aNormal = {1};
-        gl::Attribute aTexCoords = {2};
-        gl::UniformMatrix4fv uModel = {color_prog, "model"};
-        gl::UniformMatrix4fv uView = {color_prog, "view"};
-        gl::UniformMatrix4fv uProjection = {color_prog, "projection"};
-
-        gl::UniformMatrix4fv uModelLightProg = {light_prog, "model"};
-        gl::UniformMatrix4fv uViewLightProg = {light_prog, "view"};
-        gl::UniformMatrix4fv uProjectionLightProg = {light_prog, "projection"};
+        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
         gl::Array_buffer ab = {};
-        gl::Vertex_array color_cube_vao = {};
-        gl::Vertex_array light_vao = {};
+        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
+        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -148,20 +140,20 @@ void main()
             gl::BindVertexArray(color_cube_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
-                gl::VertexAttributePointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aTexCoords);
             }
 
             gl::BindVertexArray(light_vao);
             {
                 gl::BindBuffer(ab);
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttributePointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
         }
@@ -179,9 +171,9 @@ void main()
                         0.1f,
                         100.0f);
 
-            util::Uniform(uView, as.view_mtx());
-            util::Uniform(uProjection, projection);
-            //util::Uniform(uViewPos, as.pos);
+            gl::Uniform(uView, as.view_mtx());
+            gl::Uniform(uProjection, projection);
+            //gl::Uniform(uViewPos, as.pos);
 
             /* texture mapping
             {
@@ -197,10 +189,10 @@ void main()
             }
             gl::Uniform(uMaterialShininess, 32.0f);
 
-            util::Uniform(uDirLightDirection, {-0.2f, -1.0f, -0.3f});
-            util::Uniform(uDirLightAmbient, {0.05f, 0.05f, 0.05f});
-            util::Uniform(uDirLightDiffuse, {0.4f, 0.4f, 0.4f});
-            util::Uniform(uDirLightSpecular, {0.5f, 0.5f, 0.5f}); */
+            gl::Uniform(uDirLightDirection, {-0.2f, -1.0f, -0.3f});
+            gl::Uniform(uDirLightAmbient, {0.05f, 0.05f, 0.05f});
+            gl::Uniform(uDirLightDiffuse, {0.4f, 0.4f, 0.4f});
+            gl::Uniform(uDirLightSpecular, {0.5f, 0.5f, 0.5f}); */
 
             static const glm::vec3 pointLightPositions[] = {
                 glm::vec3( 0.7f,  0.2f,  2.0f),
@@ -213,11 +205,11 @@ void main()
             {
                 auto setVec3 = [&](const char* name, float x, float y, float z) {
                     auto u = gl::UniformVec3f{color_prog, name};
-                    util::Uniform(u, {x, y, z});
+                    gl::Uniform(u, {x, y, z});
                 };
                 auto setVec3v = [&](const char* name, glm::vec3 const& v) {
                     auto u = gl::UniformVec3f{color_prog, name};
-                    util::Uniform(u, v);
+                    gl::Uniform(u, v);
                 };
                 auto setFloat = [&](const char* name, float v) {
                     auto u = gl::Uniform1f{color_prog, name};
@@ -295,20 +287,20 @@ void main()
                     glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), pos);
                     float angle = 20.0f * i++;
                     model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                    util::Uniform(uModel, model);
-                    //util::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
+                    gl::Uniform(uModel, model);
+                    //gl::Uniform(uNormalMatrix, glm::transpose(glm::inverse(model)));
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }
 
             gl::UseProgram(light_prog);
-            util::Uniform(uViewLightProg, as.view_mtx());
-            util::Uniform(uProjectionLightProg, projection);
+            gl::Uniform(uViewLightProg, as.view_mtx());
+            gl::Uniform(uProjectionLightProg, projection);
             for (auto const& lightPos : pointLightPositions) {
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, lightPos);
                 model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-                util::Uniform(uModelLightProg, model);
+                gl::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

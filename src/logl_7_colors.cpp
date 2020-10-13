@@ -46,7 +46,9 @@ namespace {
         }
     };
 
-    static const char vertex_shader_src[] = OSC_GLSL_VERSION R"(
+    static const char vertex_shader_src[] = R"(
+#version 330 core
+
 layout (location = 0) in vec3 aPos;
 
 uniform mat4 model;
@@ -60,10 +62,11 @@ void main()
 )";
 
     struct Gl_State final {
-        gl::Program color_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
+        gl::Program color_prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(vertex_shader_src),
+            gl::CompileFragmentShader(R"(
+#version 330 core
+
 out vec4 FragColor;
 
 uniform vec3 objectColor;
@@ -73,42 +76,33 @@ void main()
 {
     FragColor = vec4(lightColor * objectColor, 1.0);
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
+)"
+        ));
+        gl::Program light_prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(vertex_shader_src),
+            gl::CompileFragmentShader(R"(
+#version 330 core
 
-        gl::Program light_prog = []() {
-            auto p = gl::Program();
-            auto vs = gl::Vertex_shader::Compile(vertex_shader_src);
-            auto fs = gl::Fragment_shader::Compile(OSC_GLSL_VERSION R"(
 out vec4 FragColor;
 
 void main()
 {
     FragColor = vec4(1.0); // set all 4 vector values to 1.0
 }
-)");
-            gl::AttachShader(p, vs);
-            gl::AttachShader(p, fs);
-            gl::LinkProgram(p);
-            return p;
-        }();
-
-        gl::Attribute aPos = {0};
-        gl::UniformMatrix4fv uModelColorProg = {color_prog, "model"};
-        gl::UniformMatrix4fv uViewColorProg = {color_prog, "view"};
-        gl::UniformMatrix4fv uProjectionColorProg = {color_prog, "projection"};
-        gl::UniformVec3f uObjectColor = {color_prog, "objectColor"};
-        gl::UniformVec3f uLightColor = {color_prog, "lightColor"};
-        gl::UniformMatrix4fv uModelLightProg = {light_prog, "model"};
-        gl::UniformMatrix4fv uViewLightProg = {light_prog, "view"};
-        gl::UniformMatrix4fv uProjectionLightProg = {light_prog, "projection"};
+)"
+        ));
+        gl::Attribute aPos = 0;
+        gl::UniformMatrix4fv uModelColorProg = gl::GetUniformLocation(color_prog, "model");
+        gl::UniformMatrix4fv uViewColorProg = gl::GetUniformLocation(color_prog, "view");
+        gl::UniformMatrix4fv uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
+        gl::UniformVec3f uObjectColor = gl::GetUniformLocation(color_prog, "objectColor");
+        gl::UniformVec3f uLightColor = gl::GetUniformLocation(color_prog, "lightColor");
+        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
         gl::Array_buffer ab = {};
-        gl::Vertex_array color_cube_vao = {};
-        gl::Vertex_array light_vao = {};
+        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
+        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
         Gl_State() {
             float vertices[] = {
@@ -161,7 +155,7 @@ void main()
                 gl::BindBuffer(ab);
                 gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
             }
 
@@ -169,7 +163,7 @@ void main()
             {
                 gl::BindBuffer(ab);
 
-                gl::VertexAttributePointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
+                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
                 gl::EnableVertexAttribArray(aPos);
             }
         }
@@ -180,27 +174,27 @@ void main()
 
             gl::UseProgram(color_prog);
 
-            util::Uniform(uViewColorProg, as.view_mtx());
-            util::Uniform(uProjectionColorProg, projection);
-            util::Uniform(uObjectColor, glm::vec3{1.0f, 0.5f, 0.31f});
-            util::Uniform(uLightColor, glm::vec3{1.0f, 1.0f, 1.0f});
+            gl::Uniform(uViewColorProg, as.view_mtx());
+            gl::Uniform(uProjectionColorProg, projection);
+            gl::Uniform(uObjectColor, glm::vec3{1.0f, 0.5f, 0.31f});
+            gl::Uniform(uLightColor, glm::vec3{1.0f, 1.0f, 1.0f});
 
             gl::BindVertexArray(color_cube_vao);
             {
                 glm::mat4 model = glm::mat4{1.0f};
-                util::Uniform(uModelColorProg, model);
+                gl::Uniform(uModelColorProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
 
             gl::UseProgram(light_prog);
-            util::Uniform(uViewLightProg, as.view_mtx());
-            util::Uniform(uProjectionLightProg, projection);
+            gl::Uniform(uViewLightProg, as.view_mtx());
+            gl::Uniform(uProjectionLightProg, projection);
             {
                 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, lightPos);
                 model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-                util::Uniform(uModelLightProg, model);
+                gl::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

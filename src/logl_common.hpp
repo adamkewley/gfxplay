@@ -10,14 +10,7 @@
 // wrappers
 #include "sdl.hpp"
 #include "gl.hpp"
-#include "stbi.hpp"
-
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "gl_extensions.hpp"
 
 // imgui
 #include "imgui.h"
@@ -44,19 +37,6 @@ template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 // explicit deduction guide (not needed as of C++20)
 template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-// platform-specific bs
-#ifdef __APPLE__
-#define OSC_GLSL_VERSION "#version 330 core"
-#define OSC_GL_CTX_FLAGS SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
-#define OSC_GL_CTX_MAJOR_VERSION 3
-#define OSC_GL_CTX_MINOR_VERSION 2
-#else
-#define OSC_GLSL_VERSION "#version 330 core"
-#define OSC_GL_CTX_FLAGS 0
-#define OSC_GL_CTX_MAJOR_VERSION 3
-#define OSC_GL_CTX_MINOR_VERSION 0
-#endif
-
 // macros for quality-of-life checks
 #define OSC_SDL_GL_SetAttribute_CHECK(attr, value) { \
         int rv = SDL_GL_SetAttribute((attr), (value)); \
@@ -68,11 +48,6 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
         func(__VA_ARGS__); \
         gl::assert_no_errors(#func); \
     }
-#ifdef NDEBUG
-#define DEBUG_PRINT(fmt, ...)
-#else
-#define DEBUG_PRINT(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-#endif
 
 namespace glm {
     std::ostream& operator<<(std::ostream& o, vec3 const& v) {
@@ -140,11 +115,10 @@ namespace ui {
     struct Window_state final {
         sdl::Context context = sdl::Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
         sdl::Window window = [&]() {
-            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_FLAGS, OSC_GL_CTX_FLAGS);
-            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_FLAGS, OSC_GL_CTX_FLAGS);
+            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
             OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_MAJOR_VERSION, OSC_GL_CTX_MAJOR_VERSION);
-            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_MINOR_VERSION, OSC_GL_CTX_MINOR_VERSION);
+            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+            OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_CONTEXT_MINOR_VERSION, 2);
             OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_DEPTH_SIZE, 24);
             OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_STENCIL_SIZE, 8);
             OSC_SDL_GL_SetAttribute_CHECK(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -177,11 +151,14 @@ namespace ui {
                 throw std::runtime_error{ss.str()};
             }
 
-            DEBUG_PRINT("OpenGL info: %s: %s (%s) /w GLSL: %s\n",
-                        glGetString(GL_VENDOR),
-                        glGetString(GL_RENDERER),
-                        glGetString(GL_VERSION),
-                        glGetString(GL_SHADING_LANGUAGE_VERSION));
+#ifndef NDEBUG
+            fprintf(stderr,
+                    "OpenGL info: %s: %s (%s) /w GLSL: %s\n",
+                    glGetString(GL_VENDOR),
+                    glGetString(GL_RENDERER),
+                    glGetString(GL_VERSION),
+                    glGetString(GL_SHADING_LANGUAGE_VERSION));
+#endif
 
             OSC_GL_CALL_CHECK(glEnable, GL_DEPTH_TEST);
             OSC_GL_CALL_CHECK(glEnable, GL_BLEND);
@@ -194,43 +171,6 @@ namespace ui {
 }
 
 namespace util {
-    void TexImage2D(gl::Texture_2d& t, GLint mipmap_lvl, stbi::Image const& image) {
-        stbi_set_flip_vertically_on_load(true);
-        gl::BindTexture(t);
-        glTexImage2D(GL_TEXTURE_2D,
-                     mipmap_lvl,
-                     image.nrChannels == 3 ? GL_RGB : GL_RGBA,
-                     image.width,
-                     image.height,
-                     0,
-                     image.nrChannels == 3 ? GL_RGB : GL_RGBA,
-                     GL_UNSIGNED_BYTE,
-                     image.data);
-    }
-
-    gl::Texture_2d mipmapped_texture(char const* path) {
-        auto t = gl::Texture_2d{};
-        auto img = stbi::Image{path};
-        TexImage2D(t, 0, img);
-        gl::GenerateMipMap(t);
-        return t;
-    }
-
-    void Uniform(gl::UniformMatrix4fv& u, glm::mat4 const& mat) {
-        gl::Uniform(u, glm::value_ptr(mat));
-    }
-
-    void Uniform(gl::UniformVec4f& u, glm::vec4 const& v) {
-        glUniform4f(u, v.x, v.y, v.z, v.w);
-    }
-
-    void Uniform(gl::UniformVec3f& u, glm::vec3 const& v) {
-        glUniform3f(u, v.x, v.y, v.z);
-    }
-
-    void Uniform(gl::UniformMatrix3fv& u, glm::mat3 const& mat) {
-        glUniformMatrix3fv(u, 1, false, glm::value_ptr(mat));
-    }
 
     std::chrono::milliseconds now() {
         // milliseconds is grabbed from SDL to ensure the clocks used by the UI
@@ -259,50 +199,4 @@ namespace util {
             last = util::now();
         }
     };
-
-    std::string slurp_file(const char* path) {
-        std::ifstream f;
-        f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        f.open(path, std::ios::binary | std::ios::in);
-
-        std::stringstream ss;
-        ss << f.rdbuf();
-
-        return ss.str();
-    }
-
-    gl::Program program_from_files(const char* vert_path,
-                                   const char* frag_path) {
-        auto p = gl::Program();
-        {
-            auto vs = gl::Vertex_shader::Compile(slurp_file(vert_path).c_str());
-            gl::AttachShader(p, vs);
-        }
-        {
-            auto fs = gl::Fragment_shader::Compile(slurp_file(frag_path).c_str());
-            gl::AttachShader(p, fs);
-        }
-        gl::LinkProgram(p);
-        return p;
-    }
-
-    gl::Program program_from_files(const char* vert_path,
-                                   const char* geom_path,
-                                   const char* frag_path) {
-        auto p = gl::Program();
-        {
-            auto vs = gl::Vertex_shader::Compile(slurp_file(vert_path).c_str());
-            gl::AttachShader(p, vs);
-        }
-        {
-            auto gs = gl::Geometry_shader::Compile(slurp_file(geom_path).c_str());
-            gl::AttachShader(p, gs);
-        }
-        {
-            auto fs = gl::Fragment_shader::Compile(slurp_file(frag_path).c_str());
-            gl::AttachShader(p, fs);
-        }
-        gl::LinkProgram(p);
-        return p;
-    }
 }

@@ -4,49 +4,90 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include <optional>
+
+using std::literals::operator""s;
 
 namespace gl {
-    std::string to_string(GLubyte const* err_string) {
-        return std::string{reinterpret_cast<char const*>(err_string)};
+    // gl: extremely thin wrappers around OpenGL.
+    //
+    // Code in here should:
+    //
+    //   - Roughly map 1:1 with OpenGL
+    //   - Add RAII to types that have destruction methods (e.g. `glDeleteShader`)
+    //   - Use exceptions to enforce basic invariants (e.g. compiling a shader
+    //     should work, or throw)
+    //
+    // Emphasis is on simplicity, not "abstraction correctness". It is preferred
+    // to have an API that is simple, rather than robustly encapsulated etc.
+
+    // RAII wrapper for glDeleteShader
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteShader.xhtml
+    struct Shader_handle final {
+        GLuint handle;
+
+        Shader_handle(GLuint _handle) : handle{_handle} {
+        }
+        Shader_handle(Shader_handle const&) = delete;
+        Shader_handle(Shader_handle&& tmp) : handle{tmp.handle} {
+            tmp.handle = 0;
+        }
+        Shader_handle& operator=(Shader_handle const&) = delete;
+        Shader_handle& operator=(Shader_handle&&) = delete;
+        ~Shader_handle() noexcept {
+            if (handle != 0) {
+                glDeleteShader(handle);
+            }
+        }
+    };
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateShader.xhtml
+    Shader_handle CreateShader(GLenum shaderType) {
+        GLuint handle = glCreateShader(shaderType);
+        if (handle == 0) {
+            throw std::runtime_error{"glCreateShader() failed"};
+        }
+        return Shader_handle{handle};
     }
 
-    void assert_no_errors(char const* func) {
-        std::vector<GLenum> errors;
-        for (GLenum error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
-            errors.push_back(error);
-        }
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glShaderSource.xhtml
+    void ShaderSource(Shader_handle& sh, char const* src) {
+        glShaderSource(sh.handle, 1, &src, nullptr);
+    }
 
-        if (errors.empty()) {
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCompileShader.xhtml
+    void CompileShader(Shader_handle& sh) {
+        glCompileShader(sh.handle);
+
+        // check for compile errors
+        GLint params = GL_FALSE;
+        glGetShaderiv(sh.handle, GL_COMPILE_STATUS, &params);
+
+        if (params == GL_TRUE) {
             return;
         }
 
-        std::stringstream msg;
-        msg << func << " failed";
-        if (errors.size() == 1) {
-            msg << ": ";
-        } else {
-            msg << " with " << errors.size() << " errors: ";
-        }
-        for (auto it = errors.begin(); it != errors.end()-1; ++it) {
-            msg << to_string(gluErrorString(*it)) << ", ";
-        }
-        msg << to_string(gluErrorString(errors.back()));
+        // else: there were compile errors
 
-        throw std::runtime_error{msg.str()};
+        GLint log_len = 0;
+        glGetShaderiv(sh.handle, GL_INFO_LOG_LENGTH, &log_len);
+
+        std::vector<GLchar> errmsg(log_len);
+        glGetShaderInfoLog(sh.handle, log_len, &log_len, errmsg.data());
+
+        std::stringstream ss;
+        ss << errmsg.data();
+        throw std::runtime_error{"gl::CompileShader failed: "s + ss.str()};
     }
 
-    class Program final {
-        GLuint handle = glCreateProgram();
-    public:
-        Program() {
-            if (handle == 0) {
-                throw std::runtime_error{"glCreateProgram() failed"};
-            }
+    // RAII for glDeleteProgram
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteProgram.xhtml
+    struct Program final {
+        GLuint handle;
+
+        Program(GLuint _handle) : handle{_handle} {
         }
         Program(Program const&) = delete;
-        Program(Program&& tmp) :
-            handle{tmp.handle} {
+        Program(Program&& tmp) : handle{tmp.handle} {
             tmp.handle = 0;
         }
         Program& operator=(Program const&) = delete;
@@ -56,287 +97,243 @@ namespace gl {
                 glDeleteProgram(handle);
             }
         }
-
-        operator GLuint () noexcept {
-            return handle;
-        }
     };
 
-    void UseProgram(Program& p) {
-        glUseProgram(p);
-        assert_no_errors("glUseProgram");
+    // RAIIed version of glCreateProgram
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateProgram.xhtml
+    Program CreateProgram() {
+        GLuint handle = glCreateProgram();
+        if (handle == 0) {
+            throw std::runtime_error{"gl::CreateProgram(): failed"};
+        }
+        return Program{handle};
     }
 
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUseProgram.xhtml
+    void UseProgram(Program& p) {
+        glUseProgram(p.handle);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUseProgram.xhtml
     void UseProgram() {
         glUseProgram(static_cast<GLuint>(0));
     }
 
-    static std::optional<std::string> get_shader_compile_errors(GLuint shader) {
-        GLint params = GL_FALSE;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &params);
-        if (params == GL_FALSE) {
-            GLint log_len = 0;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_len);
-
-            std::vector<GLchar> errmsg(log_len);
-            glGetShaderInfoLog(shader, log_len, &log_len, errmsg.data());
-
-            std::stringstream ss;
-            ss << "glCompileShader() failed: ";
-            ss << errmsg.data();
-            return std::optional<std::string>{ss.str()};
-        }
-        return std::nullopt;
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glAttachShader.xhtml
+    void AttachShader(Program& p, Shader_handle const& sh) {
+        glAttachShader(p.handle, sh.handle);
     }
 
-    struct Shader {
-        static Shader Compile(GLenum shaderType, char const* src) {
-            Shader shader{shaderType};
-            glShaderSource(shader, 1, &src, nullptr);
-            glCompileShader(shader);
-
-            if (auto compile_errors = get_shader_compile_errors(shader); compile_errors) {
-                throw std::runtime_error{"error compiling vertex shader: "s + compile_errors.value()};
-            }
-
-            return shader;
-        }
-    private:
-        GLuint handle;
-    public:
-        Shader(GLenum shaderType) :
-            handle{glCreateShader(shaderType)} {
-
-            if (handle == 0) {
-                throw std::runtime_error{"glCreateShader() failed"};
-            }
-        }
-        Shader(Shader const&) = delete;
-        Shader(Shader&& tmp) : handle{tmp.handle} {
-            tmp.handle = 0;
-        }
-        Shader& operator=(Shader const&) = delete;
-        Shader& operator=(Shader&&) = delete;
-        ~Shader() noexcept {
-            if (handle != 0) {
-                glDeleteShader(handle);
-            }
-        }
-
-        operator GLuint () noexcept {
-            return handle;
-        }
-    };
-
-    void AttachShader(Program& p, Shader& s) {
-        glAttachShader(p, s);
-        assert_no_errors("glAttachShader");
-    }
-
-    struct Vertex_shader final : public Shader {
-        static Vertex_shader Compile(char const* src) {
-            return Vertex_shader{Shader::Compile(GL_VERTEX_SHADER, src)};
-        }
-    };
-
-    struct Fragment_shader final : public Shader {
-        static Fragment_shader Compile(char const* src) {
-            return Fragment_shader{Shader::Compile(GL_FRAGMENT_SHADER, src)};
-        }
-    };
-
-    struct Geometry_shader final : public Shader {
-        static Geometry_shader Compile(char const* src) {
-            return Geometry_shader{Shader::Compile(GL_GEOMETRY_SHADER, src)};
-        }
-    };
-
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glLinkProgram.xhtml
     void LinkProgram(gl::Program& prog) {
-        glLinkProgram(prog);
+        glLinkProgram(prog.handle);
 
+        // check for link errors
         GLint link_status = GL_FALSE;
-        glGetProgramiv(prog, GL_LINK_STATUS, &link_status);
-        if (link_status == GL_FALSE) {
-            GLint log_len = 0;
-            glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &log_len);
+        glGetProgramiv(prog.handle, GL_LINK_STATUS, &link_status);
 
-            std::vector<GLchar> errmsg(log_len);
-            glGetProgramInfoLog(prog, static_cast<GLsizei>(errmsg.size()), nullptr, errmsg.data());
-
-            std::stringstream ss;
-            ss << "OpenGL: glLinkProgram() failed: ";
-            ss << errmsg.data();
-            throw std::runtime_error{ss.str()};
+        if (link_status == GL_TRUE) {
+            return;
         }
+
+        // else: there were link errors
+        GLint log_len = 0;
+        glGetProgramiv(prog.handle, GL_INFO_LOG_LENGTH, &log_len);
+
+        std::vector<GLchar> errmsg(log_len);
+        glGetProgramInfoLog(prog.handle, static_cast<GLsizei>(errmsg.size()), nullptr, errmsg.data());
+
+        std::stringstream ss;
+        ss << "OpenGL: glLinkProgram() failed: ";
+        ss << errmsg.data();
+        throw std::runtime_error{ss.str()};
     }
 
-    class Uniform {
-    protected:
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetUniformLocation.xhtml
+    GLint GetUniformLocation(Program& p, GLchar const* name) {
+        GLint handle = glGetUniformLocation(p.handle, name);
+        if (handle == -1) {
+            throw std::runtime_error{"glGetUniformLocation() failed: cannot get "s + name};
+        }
+        return handle;
+    }
+
+    // type-safe wrapper for glUniform1f
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct Uniform1f final {
         GLint handle;
-    public:
-        Uniform(Program& p, char const* name) :
-            handle{glGetUniformLocation(p, name)} {
-
-            if (handle == -1) {
-                throw std::runtime_error{"glGetUniformLocation() failed: cannot get "s + name};
-            }
-        }
-
-        operator GLint () noexcept {
-            return handle;
-        }
+        Uniform1f(GLint _handle) : handle{_handle} {}
     };
 
-    struct Uniform1f final : public Uniform {
-        Uniform1f(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
     void Uniform(Uniform1f& u, GLfloat value) {
-        glUniform1f(u, value);
+        glUniform1f(u.handle, value);
     }
 
-    struct Uniform1i final : public Uniform {
-        Uniform1i(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
-    void Uniform(Uniform1i& u, GLint value) {
-        glUniform1i(u, value);
-    }
-
-    struct UniformMatrix4fv final : public Uniform {
-        UniformMatrix4fv(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
-    void Uniform(UniformMatrix4fv& u, GLfloat const* value) {
-        glUniformMatrix4fv(u, 1, false, value);
-    }
-
-    struct UniformMatrix3fv final : public Uniform {
-        UniformMatrix3fv(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
-    struct UniformVec4f final : public Uniform {
-        UniformVec4f(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
-    struct UniformVec3f final : public Uniform {
-        UniformVec3f(Program& p, char const* name) :
-            Uniform{p, name} {
-        }
-    };
-
-    template<class T>
-    T GetUniformLocation(Program& p, char const* name) {
-        return T{p, name};
-    }
-
-    class Attribute final {
+    // type-safe wrapper for glUniform1i
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct Uniform1i final {
         GLint handle;
-    public:
-        Attribute(Program& p, char const* name) :
-            handle{glGetAttribLocation(p, name)} {
-            if (handle == -1) {
-                throw std::runtime_error{"glGetAttribLocation() failed: cannot get "s + name};
-            }
-        }
-
-        constexpr Attribute(GLint location) : handle{location} {
-        }
-
-        operator GLint () noexcept {
-            return handle;
-        }
+        Uniform1i(GLint _handle) : handle{_handle} {}
     };
 
-    void VertexAttributePointer(Attribute& a,
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    void Uniform(Uniform1i& u, GLint value) {
+        glUniform1i(u.handle, value);
+    }
+
+    // type-safe wrapper for glUniformMatrix4fv
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct UniformMatrix4fv final {
+        GLint handle;
+        UniformMatrix4fv(GLint _handle) : handle{_handle} {}
+    };
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    void Uniform(UniformMatrix4fv& u, GLfloat const* value) {
+        glUniformMatrix4fv(u.handle, 1, false, value);
+    }
+
+    // type-safe wrapper for glUniformMatrix3fv
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct UniformMatrix3fv final {
+        GLint handle;
+        UniformMatrix3fv(GLint _handle) : handle{_handle} {}
+    };
+
+    // type-safe wrapper for UniformVec4f
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct UniformVec4f final {
+        GLint handle;
+        UniformVec4f(GLint _handle) : handle{_handle} {}
+    };
+
+    // type-safe wrapper for UniformVec3f
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+    struct UniformVec3f final {
+        GLint handle;
+        UniformVec3f(GLint _handle) : handle{_handle} {}
+    };
+
+    // type-safe wrapper for an GLSL attribute index
+    //     (just prevents accidently handing a GLint to the wrong API)
+    struct Attribute final {
+        GLint handle;
+        constexpr Attribute(GLint _handle) : handle{_handle} {}
+    };
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetAttribLocation.xhtml
+    Attribute GetAttribLocation(Program& p, char const* name) {
+        GLint handle = glGetAttribLocation(p.handle, name);
+        if (handle == -1) {
+            throw std::runtime_error{"glGetAttribLocation() failed: cannot get "s + name};
+        }
+        return Attribute{handle};
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml
+    void VertexAttribPointer(Attribute const& a,
                                 GLint size,
                                 GLenum type,
                                 GLboolean normalized,
                                 GLsizei stride,
                                 const void * pointer) {
-        glVertexAttribPointer(a, size, type, normalized, stride, pointer);
+        glVertexAttribPointer(a.handle,
+                              size,
+                              type,
+                              normalized,
+                              stride,
+                              pointer);
     }
 
-    void EnableVertexAttribArray(Attribute& a) {
-        glEnableVertexAttribArray(a);
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glEnableVertexAttribArray.xhtml
+    void EnableVertexAttribArray(Attribute const& a) {
+        glEnableVertexAttribArray(a.handle);
     }
 
-    class Buffer {
+    // RAII wrapper for glDeleteBuffers
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteBuffers.xhtml
+    struct Buffer_handle final {
         GLuint handle = static_cast<GLuint>(-1);
-    public:
-        Buffer(GLenum target) {
-            glGenBuffers(1, &handle);
+        Buffer_handle(GLuint _handle) : handle{_handle} {
         }
-        Buffer(Buffer const&) = delete;
-        Buffer(Buffer&& tmp) : handle{tmp.handle} {
+        Buffer_handle(Buffer_handle const&) = delete;
+        Buffer_handle(Buffer_handle&& tmp) : handle{tmp.handle} {
             tmp.handle = static_cast<GLuint>(-1);
         }
-        Buffer& operator=(Buffer const&) = delete;
-        Buffer& operator=(Buffer&&) = delete;
-        ~Buffer() noexcept {
+        Buffer_handle& operator=(Buffer_handle const&) = delete;
+        Buffer_handle& operator=(Buffer_handle&&) = delete;
+        ~Buffer_handle() noexcept {
             if (handle != static_cast<GLuint>(-1)) {
                 glDeleteBuffers(1, &handle);
             }
         }
-
-        operator GLuint () noexcept {
-            return handle;
-        }
     };
 
-    void BindBuffer(GLenum target, Buffer& buffer) {
-        glBindBuffer(target, buffer);
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGenBuffers.xhtml
+    Buffer_handle GenBuffers() {
+        GLuint handle;
+        glGenBuffers(1, &handle);
+        return Buffer_handle{handle};
     }
 
-    void BufferData(GLenum target, size_t num_bytes, void const* data, GLenum usage) {
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindBuffer.xhtml
+    void BindBuffer(GLenum target, Buffer_handle& buffer) {
+        glBindBuffer(target, buffer.handle);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml
+    void BufferData(GLenum target,
+                    size_t num_bytes,
+                    void const* data,
+                    GLenum usage) {
         glBufferData(target, num_bytes, data, usage);
     }
 
-    struct Array_buffer final : public Buffer {
-        Array_buffer() : Buffer{GL_ARRAY_BUFFER} {
-        }
+    // type-safe wrapper for GL_ARRAY_BUFFER
+    struct Array_buffer final {
+        Buffer_handle handle = GenBuffers();
     };
 
+    // type-safe sugar over glBindBuffer
     void BindBuffer(Array_buffer& buffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        BindBuffer(GL_ARRAY_BUFFER, buffer.handle);
     }
 
+    // type-safe sugar over glBufferData
     void BufferData(Array_buffer&, size_t num_bytes, void const* data, GLenum usage) {
         glBufferData(GL_ARRAY_BUFFER, num_bytes, data, usage);
     }
 
-    struct Element_array_buffer final : public Buffer {
-        Element_array_buffer() : Buffer{GL_ELEMENT_ARRAY_BUFFER} {
-        }
+    // type-safe wrapper for GL_ELEMENT_ARRAY_BUFFER
+    struct Element_array_buffer final {
+        Buffer_handle handle = GenBuffers();
     };
 
+    // type-safe sugar over glBindBuffer
     void BindBuffer(Element_array_buffer& buffer) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+        BindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.handle);
     }
 
-    void BufferData(Element_array_buffer&, size_t num_bytes, void const* data, GLenum usage) {
+    // type-safe sugar over glBufferData
+    void BufferData(Element_array_buffer&,
+                    size_t num_bytes,
+                    void const* data,
+                    GLenum usage) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_bytes, data, usage);
     }
 
+    // RAII wrapper for glDeleteVertexArrays
+    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteVertexArrays.xhtml
     class Vertex_array final {
-        GLuint handle = static_cast<GLuint>(-1);
-    public:
-        Vertex_array() {
-            glGenVertexArrays(1, &handle);
+        friend Vertex_array GenVertexArrays();
+        Vertex_array(GLuint _handle) : handle{_handle} {
         }
+    public:
+        GLuint handle = static_cast<GLuint>(-1);
+
         Vertex_array(Vertex_array const&) = delete;
-        Vertex_array(Vertex_array&& tmp) :
-            handle{tmp.handle} {
+        Vertex_array(Vertex_array&& tmp) : handle{tmp.handle} {
             tmp.handle = static_cast<GLuint>(-1);
         }
         Vertex_array& operator=(Vertex_array const&) = delete;
@@ -346,16 +343,21 @@ namespace gl {
                 glDeleteVertexArrays(1, &handle);
             }
         }
-
-        operator GLuint () noexcept {
-            return handle;
-        }
     };
 
-    void BindVertexArray(Vertex_array& vao) {
-        glBindVertexArray(vao);
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGenVertexArrays.xhtml
+    Vertex_array GenVertexArrays() {
+        GLuint handle;
+        glGenVertexArrays(1, &handle);
+        return Vertex_array{handle};
     }
 
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexArray.xhtml
+    void BindVertexArray(Vertex_array& vao) {
+        glBindVertexArray(vao.handle);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexArray.xhtml
     void BindVertexArray() {
         glBindVertexArray(static_cast<GLuint>(0));
     }
@@ -400,13 +402,11 @@ namespace gl {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    class Frame_buffer final {
-    GLuint handle;
-    Frame_buffer(GLuint _handle) : handle{_handle} {
-    }
-    friend Frame_buffer GenFrameBuffer();
-    friend void BindFrameBuffer(GLenum target, Frame_buffer const& fb);
-    public:
+    struct Frame_buffer final {
+        GLuint handle;
+
+        Frame_buffer(GLuint _handle) : handle{_handle} {
+        }
         Frame_buffer(Frame_buffer const&) = delete;
         Frame_buffer(Frame_buffer&& tmp) : handle{tmp.handle} {
             tmp.handle = static_cast<GLuint>(-1);
@@ -431,26 +431,21 @@ namespace gl {
     }
 
     void BindFrameBuffer() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);  // reset to default (monitor) FB
+        // reset to default (monitor) FB
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    class Render_buffer final {
+    struct Render_buffer final {
         GLuint handle;
+
         Render_buffer(GLuint _handle) : handle{_handle} {
         }
-        friend Render_buffer GenRenderBuffer();
-        friend void BindRenderBuffer(Render_buffer&);
-    public:
         Render_buffer(Render_buffer const&) = delete;
         Render_buffer(Render_buffer&&) = delete;
         Render_buffer& operator=(Render_buffer const&) = delete;
         Render_buffer& operator=(Render_buffer&&) = delete;
         ~Render_buffer() noexcept {
             glDeleteRenderbuffers(1, &handle);
-        }
-
-        operator GLuint () const noexcept {
-            return handle;
         }
     };
 
