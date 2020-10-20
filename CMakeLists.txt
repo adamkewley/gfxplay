@@ -20,15 +20,20 @@ configure_file(src/gfxplay_config.hpp.in gfxplay_config.hpp)
 
 add_library(common STATIC
     third_party/imgui-1.78/imgui.cpp
+    third_party/imgui-1.78/imgui_demo.cpp
     third_party/imgui-1.78/imgui_draw.cpp
     third_party/imgui-1.78/imgui_widgets.cpp
     third_party/imgui-1.78/examples/imgui_impl_opengl3.cpp
     third_party/imgui-1.78/examples/imgui_impl_sdl.cpp
 
     src/sdl.hpp
+    src/sdl.cpp
     src/gl.hpp
+    src/gl.cpp
     src/gl_extensions.hpp
-    src/stbi.hpp
+    src/gl_extensions.cpp
+    src/imgui_extensions.hpp
+    src/imgui_extensions.cpp
     src/logl_common.hpp
 )
 target_include_directories(common PUBLIC
@@ -136,6 +141,9 @@ target_link_libraries(logl_geom-shader-normals common)
 
 add_executable(logl_save-to-file src/logl_save-to-file.cpp)
 target_link_libraries(logl_save-to-file common)
+
+add_executable(imgui_demo src/imgui_demo.cpp)
+target_link_libraries(imgui_demo common)
 
 if (GFXPLAY_USE_ASSIMP)
     add_subdirectory(third_party/assimp-5.0.1 EXCLUDE_FROM_ALL)

@@ -14,8 +14,10 @@
 
 // imgui
 #include "imgui.h"
-#include "examples/imgui_impl_sdl.h"
-#include "examples/imgui_impl_opengl3.h"
+
+// glm
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <exception>
@@ -48,68 +50,6 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
         func(__VA_ARGS__); \
         gl::assert_no_errors(#func); \
     }
-
-namespace glm {
-    std::ostream& operator<<(std::ostream& o, vec3 const& v) {
-        return o << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-    }
-
-    std::ostream& operator<<(std::ostream& o, vec4 const& v) {
-        return o << "[" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << "]";
-    }
-
-    std::ostream& operator<<(std::ostream& o, mat4 const& m) {
-        o << "[";
-        for (auto i = 0U; i < 3; ++i) {
-            o << m[i];
-            o << ", ";
-        }
-        o << m[3];
-        o << "]";
-        return o;
-    }
-}
-
-namespace ig {
-    struct Context final {
-        Context() {
-            ImGui::CreateContext();
-        }
-        Context(Context const&) = delete;
-        Context(Context&&) = delete;
-        Context& operator=(Context const&) = delete;
-        Context& operator=(Context&&) = delete;
-        ~Context() noexcept {
-            ImGui::DestroyContext();
-        }
-    };
-
-    struct SDL2_Context final {
-        SDL2_Context(SDL_Window* w, SDL_GLContext gl) {
-            ImGui_ImplSDL2_InitForOpenGL(w, gl);
-        }
-        SDL2_Context(SDL2_Context const&) = delete;
-        SDL2_Context(SDL2_Context&&) = delete;
-        SDL2_Context& operator=(SDL2_Context const&) = delete;
-        SDL2_Context& operator=(SDL2_Context&&) = delete;
-        ~SDL2_Context() noexcept {
-            ImGui_ImplSDL2_Shutdown();
-        }
-    };
-
-    struct OpenGL3_Context final {
-        OpenGL3_Context(char const* version) {
-            ImGui_ImplOpenGL3_Init(version);
-        }
-        OpenGL3_Context(OpenGL3_Context const&) = delete;
-        OpenGL3_Context(OpenGL3_Context&&) = delete;
-        OpenGL3_Context& operator=(OpenGL3_Context const&) = delete;
-        OpenGL3_Context& operator=(OpenGL3_Context&&) = delete;
-        ~OpenGL3_Context() noexcept {
-            ImGui_ImplOpenGL3_Shutdown();
-        }
-    };
-}
 
 namespace ui {
     struct Window_state final {
