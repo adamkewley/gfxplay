@@ -13,10 +13,6 @@ gl::Shader_handle gl::CreateShader(GLenum shaderType) {
     return Shader_handle{handle};
 }
 
-void gl::ShaderSource(Shader_handle& sh, char const* src) {
-    glShaderSource(sh.handle, 1, &src, nullptr);
-}
-
 void gl::CompileShader(Shader_handle& sh) {
     glCompileShader(sh.handle);
 
@@ -47,18 +43,6 @@ gl::Program gl::CreateProgram() {
         throw std::runtime_error{"gl::CreateProgram(): failed"};
     }
     return Program{handle};
-}
-
-void gl::UseProgram(Program& p) {
-    glUseProgram(p.handle);
-}
-
-void gl::UseProgram() {
-    glUseProgram(static_cast<GLuint>(0));
-}
-
-void gl::AttachShader(Program& p, Shader_handle const& sh) {
-    glAttachShader(p.handle, sh.handle);
 }
 
 void gl::LinkProgram(gl::Program& prog) {
@@ -93,18 +77,6 @@ GLint gl::GetUniformLocation(Program& p, GLchar const* name) {
     return handle;
 }
 
-void gl::Uniform(Uniform1i& u, GLint value) {
-    glUniform1i(u.handle, value);
-}
-
-void gl::Uniform(Uniform1f& u, GLfloat value) {
-    glUniform1f(u.handle, value);
-}
-
-void gl::Uniform(UniformMatrix4fv& u, GLfloat const* value) {
-    glUniformMatrix4fv(u.handle, 1, false, value);
-}
-
 gl::Attribute gl::GetAttribLocation(Program& p, char const* name) {
     GLint handle = glGetAttribLocation(p.handle, name);
     if (handle == -1) {
@@ -113,90 +85,16 @@ gl::Attribute gl::GetAttribLocation(Program& p, char const* name) {
     return Attribute{handle};
 }
 
-void gl::VertexAttribPointer(Attribute const& a,
-                             GLint size,
-                             GLenum type,
-                             GLboolean normalized,
-                             GLsizei stride,
-                             const void * pointer) {
-    glVertexAttribPointer(a.handle,
-                          size,
-                          type,
-                          normalized,
-                          stride,
-                          pointer);
-}
-
-void gl::EnableVertexAttribArray(Attribute const& a) {
-    glEnableVertexAttribArray(a.handle);
-}
-
-gl::Buffer_handle gl::GenBuffers() {
-    GLuint handle;
-    glGenBuffers(1, &handle);
-    return Buffer_handle{handle};
-}
-
-void gl::BindBuffer(GLenum target, Buffer_handle& buffer) {
-    glBindBuffer(target, buffer.handle);
-}
-
-void gl::BufferData(GLenum target,
-                    size_t num_bytes,
-                    void const* data,
-                    GLenum usage) {
-    glBufferData(target, num_bytes, data, usage);
-}
-
-void gl::BindBuffer(Array_buffer& buffer) {
-    BindBuffer(GL_ARRAY_BUFFER, buffer.handle);
-}
-
-void gl::BufferData(Array_buffer&, size_t num_bytes, void const* data, GLenum usage) {
-    glBufferData(GL_ARRAY_BUFFER, num_bytes, data, usage);
-}
-
-void gl::BindBuffer(Element_array_buffer& buffer) {
-    BindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.handle);
-}
-
-void gl::BufferData(Element_array_buffer&,
-                    size_t num_bytes,
-                    void const* data,
-                    GLenum usage) {
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_bytes, data, usage);
-}
-
 gl::Vertex_array gl::GenVertexArrays() {
     GLuint handle;
     glGenVertexArrays(1, &handle);
     return Vertex_array{handle};
 }
 
-void gl::BindVertexArray(Vertex_array& vao) {
-    glBindVertexArray(vao.handle);
-}
-
-void gl::BindVertexArray() {
-    glBindVertexArray(static_cast<GLuint>(0));
-}
-
 gl::Texture_handle gl::GenTextures() {
     GLuint handle;
     glGenTextures(1, &handle);
     return Texture_handle{handle};
-}
-
-void gl::BindTexture(GLenum target, Texture_handle& texture) {
-    glBindTexture(target, texture.handle);
-}
-
-void gl::BindTexture() {
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void gl::BindTexture(Texture_2d& texture) {
-    BindTexture(GL_TEXTURE_2D, texture.handle);
 }
 
 gl::Frame_buffer gl::GenFrameBuffer() {

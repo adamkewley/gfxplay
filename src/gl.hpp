@@ -14,6 +14,10 @@
 //
 // Emphasis is on simplicity, not "abstraction correctness". It is preferred
 // to have an API that is simple, rather than robustly encapsulated etc.
+//
+// `inline`ing here is alright, provided it just forwards the gl calls and
+//  doesn't do much else (e.g. throw exceptions, which this header doesn't
+//  expose to keep compilation units small)
 
 namespace gl {
     // RAII wrapper for glDeleteShader
@@ -40,12 +44,16 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateShader.xhtml
+    //     *throws on error
     Shader_handle CreateShader(GLenum shaderType);
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glShaderSource.xhtml
-    void ShaderSource(Shader_handle& sh, char const* src);
+    inline void ShaderSource(Shader_handle& sh, char const* src) {
+        glShaderSource(sh.handle, 1, &src, nullptr);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCompileShader.xhtml
+    //     *throws on error
     void CompileShader(Shader_handle& sh);
 
     // RAII for glDeleteProgram
@@ -71,23 +79,30 @@ namespace gl {
         }
     };
 
-    // RAIIed version of glCreateProgram
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateProgram.xhtml
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glCreateProgram.xhtml
+    //     *throws on error
     Program CreateProgram();
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUseProgram.xhtml
-    void UseProgram(Program& p);
+    inline void UseProgram(Program& p) {
+        glUseProgram(p.handle);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUseProgram.xhtml
-    void UseProgram();
+    inline void UseProgram() {
+        glUseProgram(static_cast<GLuint>(0));
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glAttachShader.xhtml
-    void AttachShader(Program& p, Shader_handle const& sh);
+    inline void AttachShader(Program& p, Shader_handle const& sh) {
+        glAttachShader(p.handle, sh.handle);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glLinkProgram.xhtml
     void LinkProgram(gl::Program& prog);
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetUniformLocation.xhtml
+    //     *throws on error
     GLint GetUniformLocation(Program& p, GLchar const* name);
 
     // type-safe wrapper for glUniform1f
@@ -98,7 +113,9 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    void Uniform(Uniform1f& u, GLfloat value);
+    inline void Uniform(Uniform1f& u, GLfloat value) {
+        glUniform1f(u.handle, value);
+    }
 
     // type-safe wrapper for glUniform1i
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
@@ -108,7 +125,9 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    void Uniform(Uniform1i& u, GLint value);
+    inline void Uniform(Uniform1i& u, GLint value) {
+        glUniform1i(u.handle, value);
+    }
 
     // type-safe wrapper for glUniformMatrix4fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
@@ -118,7 +137,9 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    void Uniform(UniformMatrix4fv& u, GLfloat const* value);
+    inline void Uniform(UniformMatrix4fv& u, GLfloat const* value) {
+        glUniformMatrix4fv(u.handle, 1, false, value);
+    }
 
     // type-safe wrapper for glUniformMatrix3fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
@@ -149,18 +170,28 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetAttribLocation.xhtml
+    //     *throws on error
     Attribute GetAttribLocation(Program& p, char const* name);
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glVertexAttribPointer.xhtml
-    void VertexAttribPointer(Attribute const& a,
-                             GLint size,
-                             GLenum type,
-                             GLboolean normalized,
-                             GLsizei stride,
-                             const void * pointer);
+    inline void VertexAttribPointer(Attribute const& a,
+                                    GLint size,
+                                    GLenum type,
+                                    GLboolean normalized,
+                                    GLsizei stride,
+                                    const void * pointer) {
+        glVertexAttribPointer(a.handle,
+                              size,
+                              type,
+                              normalized,
+                              stride,
+                              pointer);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glEnableVertexAttribArray.xhtml
-    void EnableVertexAttribArray(Attribute const& a);
+    inline void EnableVertexAttribArray(Attribute const& a) {
+        glEnableVertexAttribArray(a.handle);
+    }
 
     // RAII wrapper for glDeleteBuffers
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteBuffers.xhtml
@@ -186,13 +217,24 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGenBuffers.xhtml
-    Buffer_handle GenBuffers();
+    inline Buffer_handle GenBuffers() {
+        GLuint handle;
+        glGenBuffers(1, &handle);
+        return Buffer_handle{handle};
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindBuffer.xhtml
-    void BindBuffer(GLenum target, Buffer_handle& buffer);
+    inline void BindBuffer(GLenum target, Buffer_handle& buffer) {
+        glBindBuffer(target, buffer.handle);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBufferData.xhtml
-    void BufferData(GLenum target, size_t num_bytes, void const* data, GLenum usage);
+    inline void BufferData(GLenum target,
+                           size_t num_bytes,
+                           void const* data,
+                           GLenum usage) {
+        glBufferData(target, num_bytes, data, usage);
+    }
 
     // type-safe wrapper for GL_ARRAY_BUFFER
     struct Array_buffer final {
@@ -200,10 +242,17 @@ namespace gl {
     };
 
     // type-safe sugar over glBindBuffer
-    void BindBuffer(Array_buffer& buffer);
+    inline void BindBuffer(Array_buffer& buffer) {
+        BindBuffer(GL_ARRAY_BUFFER, buffer.handle);
+    }
 
     // type-safe sugar over glBufferData
-    void BufferData(Array_buffer&, size_t num_bytes, void const* data, GLenum usage);
+    inline void BufferData(Array_buffer&,
+                           size_t num_bytes,
+                           void const* data,
+                           GLenum usage) {
+        glBufferData(GL_ARRAY_BUFFER, num_bytes, data, usage);
+    }
 
     // type-safe wrapper for GL_ELEMENT_ARRAY_BUFFER
     struct Element_array_buffer final {
@@ -211,10 +260,17 @@ namespace gl {
     };
 
     // type-safe sugar over glBindBuffer
-    void BindBuffer(Element_array_buffer& buffer);
+    inline void BindBuffer(Element_array_buffer& buffer) {
+        BindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.handle);
+    }
 
     // type-safe sugar over glBufferData
-    void BufferData(Element_array_buffer&, size_t num_bytes, void const* data, GLenum usage);
+    inline void BufferData(Element_array_buffer&,
+                           size_t num_bytes,
+                           void const* data,
+                           GLenum usage) {
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_bytes, data, usage);
+    }
 
     // RAII wrapper for glDeleteVertexArrays
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteVertexArrays.xhtml
@@ -243,10 +299,14 @@ namespace gl {
     Vertex_array GenVertexArrays();
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexArray.xhtml
-    void BindVertexArray(Vertex_array& vao);
+    inline void BindVertexArray(Vertex_array& vao) {
+        glBindVertexArray(vao.handle);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindVertexArray.xhtml
-    void BindVertexArray();
+    inline void BindVertexArray() {
+        glBindVertexArray(static_cast<GLuint>(0));
+    }
 
     // RAII wrapper for glDeleteTextures
     //     https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glDeleteTextures.xml
@@ -275,10 +335,14 @@ namespace gl {
     Texture_handle GenTextures();
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
-    void BindTexture(GLenum target, Texture_handle& texture);
+    inline void BindTexture(GLenum target, Texture_handle& texture) {
+        glBindTexture(target, texture.handle);
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
-    void BindTexture();
+    inline void BindTexture() {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     // type-safe wrapper around GL_TEXTURE_2D
     struct Texture_2d final {
@@ -291,7 +355,9 @@ namespace gl {
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
-    void BindTexture(Texture_2d&);
+    inline void BindTexture(Texture_2d& t) {
+        BindTexture(GL_TEXTURE_2D, t.handle);
+    }
 
     // RAII wrapper for glDeleteFrameBuffers
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteFramebuffers.xhtml
