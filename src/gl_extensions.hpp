@@ -7,12 +7,13 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-// forward-declare std::ostream
-#include <iosfwd>
+#include <glm/gtc/type_ptr.hpp>
 
 
 // gl extensions: useful extension/helper methods over base OpenGL API
+//
+// these are helpful sugar methods over the base OpenGL API. Anything that is
+// OpenGL-ey, but not "pure" OpenGL, goes here.
 
 namespace gl {
     // type-safe wrapper over GL_VERTEX_SHADER
@@ -20,19 +21,28 @@ namespace gl {
         Shader_handle handle = CreateShader(GL_VERTEX_SHADER);
     };
 
-    void AttachShader(Program& p, Vertex_shader& vs);
+
+    inline void AttachShader(Program& p, Vertex_shader& vs) {
+        AttachShader(p, vs.handle);
+    }
 
     // type-safe wrapper over GL_FRAGMENT_SHADER
     struct Fragment_shader final {
         Shader_handle handle = CreateShader(GL_FRAGMENT_SHADER);
     };
 
-    void AttachShader(Program& p, Fragment_shader& fs);
+    inline void AttachShader(Program& p, Fragment_shader& fs) {
+        AttachShader(p, fs.handle);
+    }
 
     // type-safe wrapper over GL_GEOMETRY_SHADER
     struct Geometry_shader final {
         Shader_handle handle = CreateShader(GL_GEOMETRY_SHADER);
     };
+
+    inline void AttachShader(Program& p, Geometry_shader& gs) {
+        AttachShader(p, gs.handle);
+    }
 
     void AttachShader(Program& p, Geometry_shader& gs);
 
@@ -56,14 +66,19 @@ namespace gl {
     gl::Texture_2d mipmapped_texture(char const* path);
 
     // set uniforms directly from GLM types
-    void Uniform(gl::UniformMatrix3fv& u, glm::mat3 const& mat);
-    void Uniform(gl::UniformMatrix4fv& u, glm::mat4 const& mat);
-    void Uniform(gl::UniformVec3f& u, glm::vec3 const& v);
-    void Uniform(gl::UniformVec4f& u, glm::vec4 const& v);
-}
+    inline void Uniform(UniformMatrix3fv& u, glm::mat3 const& mat) {
+        glUniformMatrix3fv(u.handle, 1, false, glm::value_ptr(mat));
+    }
 
-namespace glm {
-    std::ostream& operator<<(std::ostream&, glm::vec3 const&);
-    std::ostream& operator<<(std::ostream&, glm::vec4 const&);
-    std::ostream& operator<<(std::ostream&, glm::mat4 const&);
+    inline void Uniform(UniformVec4f& u, glm::vec4 const& v) {
+        glUniform4fv(u.handle, 1, glm::value_ptr(v));
+    }
+
+    inline void Uniform(UniformVec3f& u, glm::vec3 const& v) {
+        glUniform3fv(u.handle, 1, glm::value_ptr(v));
+    }
+
+    inline void Uniform(UniformMatrix4fv& u, glm::mat4 const& mat) {
+        glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
+    }
 }

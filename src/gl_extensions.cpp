@@ -37,18 +37,6 @@ namespace stbi {
     };
 }
 
-void gl::AttachShader(Program& p, Vertex_shader& vs) {
-    AttachShader(p, vs.handle);
-}
-
-void gl::AttachShader(Program& p, Fragment_shader& fs) {
-    AttachShader(p, fs.handle);
-}
-
-void gl::AttachShader(Program& p, Geometry_shader& gs) {
-    AttachShader(p, gs.handle);
-}
-
 gl::Vertex_shader gl::CompileVertexShader(char const* src) {
     auto s = Vertex_shader{};
     ShaderSource(s.handle, src);
@@ -167,41 +155,4 @@ gl::Texture_2d gl::mipmapped_texture(char const* path) {
     gl::BindTexture(t);
     glGenerateMipmap(GL_TEXTURE_2D);
     return t;
-}
-
-void gl::Uniform(UniformMatrix3fv& u, glm::mat3 const& mat) {
-    glUniformMatrix3fv(u.handle, 1, false, glm::value_ptr(mat));
-}
-
-void gl::Uniform(UniformVec4f& u, glm::vec4 const& v) {
-    glUniform4f(u.handle, v.x, v.y, v.z, v.w);
-}
-
-void gl::Uniform(UniformVec3f& u, glm::vec3 const& v) {
-    glUniform3f(u.handle, v.x, v.y, v.z);
-}
-
-void gl::Uniform(UniformMatrix4fv& u, glm::mat4 const& mat) {
-    Uniform(u, glm::value_ptr(mat));
-}
-
-// glm pretty-printers
-
-std::ostream& glm::operator<<(std::ostream& o, vec3 const& v) {
-    return o << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-}
-
-std::ostream& glm::operator<<(std::ostream& o, vec4 const& v) {
-    return o << "[" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << "]";
-}
-
-std::ostream& glm::operator<<(std::ostream& o, mat4 const& m) {
-    o << "[";
-    for (auto i = 0U; i < 3; ++i) {
-        o << m[i];
-        o << ", ";
-    }
-    o << m[3];
-    o << "]";
-    return o;
 }
