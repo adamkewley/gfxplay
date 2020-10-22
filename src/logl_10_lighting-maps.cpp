@@ -126,26 +126,26 @@ void main()
         static constexpr gl::Attribute aPos = 0;
         static constexpr gl::Attribute aNormal = 1;
         static constexpr gl::Attribute aTexCoords = 2;
-        gl::UniformMatrix4fv uModelColorProg = gl::GetUniformLocation(color_prog, "model");
-        gl::UniformMatrix4fv uViewColorProg = gl::GetUniformLocation(color_prog, "view");
-        gl::UniformMatrix4fv uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
-        gl::UniformVec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
-        gl::UniformMatrix3fv uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        gl::Uniform_mat4f uModelColorProg = gl::GetUniformLocation(color_prog, "model");
+        gl::Uniform_mat4f uViewColorProg = gl::GetUniformLocation(color_prog, "view");
+        gl::Uniform_mat4f uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
+        gl::Uniform_vec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
+        gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
 
-        gl::Uniform1i uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
-        gl::Uniform1i uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform1i uMaterialEmission = gl::GetUniformLocation(color_prog, "material.emission");
-        gl::Uniform1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_1i uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
+        gl::Uniform_1i uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
+        gl::Uniform_1i uMaterialEmission = gl::GetUniformLocation(color_prog, "material.emission");
+        gl::Uniform_1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
 
-        gl::UniformVec3f uLightPos = gl::GetUniformLocation(color_prog, "light.pos");
-        gl::UniformVec3f uLightAmbient = gl::GetUniformLocation(color_prog, "light.ambient");
-        gl::UniformVec3f uLightDiffuse = gl::GetUniformLocation(color_prog, "light.diffuse");
-        gl::UniformVec3f uLightSpecular = gl::GetUniformLocation(color_prog, "light.specular");
+        gl::Uniform_vec3f uLightPos = gl::GetUniformLocation(color_prog, "light.pos");
+        gl::Uniform_vec3f uLightAmbient = gl::GetUniformLocation(color_prog, "light.ambient");
+        gl::Uniform_vec3f uLightDiffuse = gl::GetUniformLocation(color_prog, "light.diffuse");
+        gl::Uniform_vec3f uLightSpecular = gl::GetUniformLocation(color_prog, "light.specular");
 
-        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = {};
+        gl::Uniform_mat4f uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::Uniform_mat4f uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::Uniform_mat4f uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
         gl::Vertex_array light_vao = gl::GenVertexArrays();
 
@@ -196,7 +196,7 @@ void main()
             };
 
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
             gl::BindVertexArray(color_cube_vao);
             {

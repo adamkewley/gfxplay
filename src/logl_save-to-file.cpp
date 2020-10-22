@@ -58,25 +58,25 @@ void main() {
         gl::Attribute aPos = 0;
         gl::Attribute aNormal = 1;
         gl::Attribute aTexCoords = 2;
-        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(color_prog, "model");
-        gl::UniformMatrix4fv uView = gl::GetUniformLocation(color_prog, "view");
-        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(color_prog, "projection");
-        gl::UniformMatrix3fv uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        gl::Uniform_mat4f uModel = gl::GetUniformLocation(color_prog, "model");
+        gl::Uniform_mat4f uView = gl::GetUniformLocation(color_prog, "view");
+        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(color_prog, "projection");
+        gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
 
-        gl::UniformVec3f uViewPos = gl::GetUniformLocation(color_prog, "viewPos");
-        gl::UniformVec3f uDirLightDirection = gl::GetUniformLocation(color_prog, "dirLight.direction");
-        gl::UniformVec3f uDirLightAmbient = gl::GetUniformLocation(color_prog, "dirLight.ambient");
-        gl::UniformVec3f uDirLightDiffuse = gl::GetUniformLocation(color_prog, "dirLight.diffuse");
-        gl::UniformVec3f uDirLightSpecular = gl::GetUniformLocation(color_prog, "dirLight.specular");
+        gl::Uniform_vec3f uViewPos = gl::GetUniformLocation(color_prog, "viewPos");
+        gl::Uniform_vec3f uDirLightDirection = gl::GetUniformLocation(color_prog, "dirLight.direction");
+        gl::Uniform_vec3f uDirLightAmbient = gl::GetUniformLocation(color_prog, "dirLight.ambient");
+        gl::Uniform_vec3f uDirLightDiffuse = gl::GetUniformLocation(color_prog, "dirLight.diffuse");
+        gl::Uniform_vec3f uDirLightSpecular = gl::GetUniformLocation(color_prog, "dirLight.specular");
 
-        gl::Uniform1i uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
-        gl::Uniform1i uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_1i uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
+        gl::Uniform_1i uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
+        gl::Uniform_1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
 
-        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = {};
+        gl::Uniform_mat4f uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::Uniform_mat4f uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::Uniform_mat4f uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
         gl::Vertex_array light_vao = gl::GenVertexArrays();
 
@@ -127,7 +127,7 @@ void main() {
             };
 
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
             gl::BindVertexArray(color_cube_vao);
             {
@@ -153,12 +153,12 @@ void main() {
         void draw(App_State const& as) {
             gl::Frame_buffer fb = gl::GenFrameBuffer();
             gl::BindFrameBuffer(GL_FRAMEBUFFER, fb);
-            auto tex = gl::Texture_2d{};
-            gl::BindTexture(tex);
+            gl::Texture_2d tex = gl::GenTexture2d();
+            gl::BindTexture(tex.type, tex);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-            auto depthtex = gl::Texture_2d{};
-            gl::BindTexture(depthtex);
+            gl::Texture_2d depthtex = gl::GenTexture2d();
+            gl::BindTexture(depthtex.type, depthtex);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 768, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthtex, 0);
             gl::assert_no_errors("glFrameBufferTexture2D");
@@ -181,13 +181,13 @@ void main() {
             {
                 gl::Uniform(uMaterialDiffuse, 0);
                 glActiveTexture(GL_TEXTURE0);
-                gl::BindTexture(container2_tex);
+                gl::BindTexture(container2_tex.type, container2_tex);
             }
 
             {
                 gl::Uniform(uMaterialSpecular, 1);
                 glActiveTexture(GL_TEXTURE1);
-                gl::BindTexture(container2_spec);
+                gl::BindTexture(container2_spec.type, container2_spec);
             }
             gl::Uniform(uMaterialShininess, 32.0f);
 
@@ -205,15 +205,15 @@ void main() {
 
             {
                 auto setVec3 = [&](const char* name, float x, float y, float z) {
-                    gl::UniformVec3f u = gl::GetUniformLocation(color_prog, name);
+                    gl::Uniform_vec3f u = gl::GetUniformLocation(color_prog, name);
                     gl::Uniform(u, {x, y, z});
                 };
                 auto setVec3v = [&](const char* name, glm::vec3 const& v) {
-                    gl::UniformVec3f u = gl::GetUniformLocation(color_prog, name);
+                    gl::Uniform_vec3f u = gl::GetUniformLocation(color_prog, name);
                     gl::Uniform(u, v);
                 };
                 auto setFloat = [&](const char* name, float v) {
-                    gl::Uniform1f u = gl::GetUniformLocation(color_prog, name);
+                    gl::Uniform_1f u = gl::GetUniformLocation(color_prog, name);
                     gl::Uniform(u, v);
                 };
 
@@ -321,8 +321,8 @@ void main() {
         }
 
     public:
-        gl::UniformMatrix4fv getUProjectionColorProg() const;
-        void setUProjectionColorProg(const gl::UniformMatrix4fv &value);
+        gl::Uniform_mat4f getUProjectionColorProg() const;
+        void setUProjectionColorProg(const gl::Uniform_mat4f &value);
     };
 }
 

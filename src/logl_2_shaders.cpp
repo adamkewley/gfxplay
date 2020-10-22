@@ -31,7 +31,7 @@ void main()
         ));
         gl::Attribute aPos = 0;
         gl::Attribute aColor = 1;
-        gl::Array_buffer ab = {};
+        gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
@@ -44,7 +44,7 @@ void main()
 
             gl::BindVertexArray(vao);
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3* sizeof(float)));

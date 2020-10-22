@@ -38,23 +38,23 @@ namespace stbi {
 }
 
 gl::Vertex_shader gl::CompileVertexShader(char const* src) {
-    auto s = Vertex_shader{};
-    ShaderSource(s.handle, src);
-    CompileShader(s.handle);
+    auto s = gl::CreateVertexShader();
+    ShaderSource(s, src);
+    CompileShader(s);
     return s;
 }
 
 gl::Fragment_shader gl::CompileFragmentShader(char const* src) {
-    auto s = Fragment_shader{};
-    ShaderSource(s.handle, src);
-    CompileShader(s.handle);
+    auto s = gl::CreateFragmentShader();
+    ShaderSource(s, src);
+    CompileShader(s);
     return s;
 }
 
 gl::Geometry_shader gl::CompileGeometryShader(char const* src) {
-    auto s = Geometry_shader{};
-    ShaderSource(s.handle, src);
-    CompileShader(s.handle);
+    auto s = gl::CreateGeometryShader();
+    ShaderSource(s, src);
+    CompileShader(s);
     return s;
 }
 
@@ -62,8 +62,8 @@ gl::Geometry_shader gl::CompileGeometryShader(char const* src) {
 gl::Program gl::CreateProgramFrom(Vertex_shader const& vs,
                                   Fragment_shader const& fs) {
     auto p = CreateProgram();
-    AttachShader(p, vs.handle);
-    AttachShader(p, fs.handle);
+    AttachShader(p, vs);
+    AttachShader(p, fs);
     LinkProgram(p);
     return p;
 }
@@ -72,9 +72,9 @@ gl::Program gl::CreateProgramFrom(Vertex_shader const& vs,
                                   Fragment_shader const& fs,
                                   Geometry_shader const& gs) {
     auto p = CreateProgram();
-    AttachShader(p, vs.handle);
-    AttachShader(p, gs.handle);
-    AttachShader(p, fs.handle);
+    AttachShader(p, vs);
+    AttachShader(p, gs);
+    AttachShader(p, fs);
     LinkProgram(p);
     return p;
 }
@@ -134,25 +134,76 @@ gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
     return CompileGeometryShader(slurp_file(path).c_str());
 }
 
-static void TexImage2D(gl::Texture_2d& t, GLint mipmap_lvl, stbi::Image const& image) {
+gl::Texture_2d gl::mipmapped_texture(char const* path) {
+    auto t = gl::GenTexture2d();
+    auto img = stbi::Image{path};
+
     stbi_set_flip_vertically_on_load(true);
-    gl::BindTexture(t);
-    glTexImage2D(GL_TEXTURE_2D,
-                 mipmap_lvl,
-                 image.nrChannels == 3 ? GL_RGB : GL_RGBA,
-                 image.width,
-                 image.height,
+
+    gl::BindTexture(t.type, t);
+    glTexImage2D(t.type,
                  0,
-                 image.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 img.width,
+                 img.height,
+                 0,
+                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
                  GL_UNSIGNED_BYTE,
-                 image.data);
+                 img.data);
+    glGenerateMipmap(t.type);
+
+    return t;
 }
 
-gl::Texture_2d gl::mipmapped_texture(char const* path) {
-    auto t = gl::Texture_2d{};
+// helper method: load a file into an image and send it to OpenGL
+static void load_cubemap_surface(char const* path, GLenum target) {
     auto img = stbi::Image{path};
-    TexImage2D(t, 0, img);
-    gl::BindTexture(t);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    return t;
+    glTexImage2D(target,
+                 0,
+                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 img.width,
+                 img.height,
+                 0,
+                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 GL_UNSIGNED_BYTE,
+                 img.data);
+};
+
+gl::Texture_cubemap gl::read_cubemap(
+        char const* path_pos_x,
+        char const* path_neg_x,
+        char const* path_pos_y,
+        char const* path_neg_y,
+        char const* path_pos_z,
+        char const* path_neg_z) {
+    stbi_set_flip_vertically_on_load(false);
+
+    gl::Texture_cubemap rv = gl::GenTextureCubemap();
+    gl::BindTexture(rv);
+
+    load_cubemap_surface(path_pos_x, GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+    load_cubemap_surface(path_neg_x, GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+    load_cubemap_surface(path_pos_y, GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+    load_cubemap_surface(path_neg_y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+    load_cubemap_surface(path_pos_z, GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+    load_cubemap_surface(path_neg_z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+
+    /**
+     * From: https://learnopengl.com/Advanced-OpenGL/Cubemaps
+     *
+     * Don't be scared by the GL_TEXTURE_WRAP_R, this simply sets the wrapping
+     * method for the texture's R coordinate which corresponds to the texture's
+     * 3rd dimension (like z for positions). We set the wrapping method to
+     * GL_CLAMP_TO_EDGE since texture coordinates that are exactly between two
+     * faces may not hit an exact face (due to some hardware limitations) so
+     * by using GL_CLAMP_TO_EDGE OpenGL always returns their edge values
+     * whenever we sample between faces.
+     */
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return rv;
 }

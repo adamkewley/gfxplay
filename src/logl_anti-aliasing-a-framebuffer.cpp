@@ -1,44 +1,14 @@
 #include "logl_common.hpp"
 
 namespace {
-    struct App_State final {
-        glm::vec3 pos = {0.0f, 0.0f, 3.0f};
-        float pitch = 0.0f;
-        float yaw = -pi_f/2.0f;
-        bool moving_forward = false;
-        bool moving_backward = false;
-        bool moving_left = false;
-        bool moving_right = false;
-        bool moving_up = false;
-        bool moving_down = false;
-
-        glm::vec3 front() const {
-            return glm::normalize(glm::vec3{
-                cos(yaw) * cos(pitch),
-                sin(pitch),
-                sin(yaw) * cos(pitch),
-            });
-        }
-
-        glm::vec3 up() const {
-            return glm::vec3(0.0f, 1.0f, 0.0f);
-        }
-
-        glm::vec3 right() const {
-            return glm::normalize(glm::cross(front(), up()));
-        }
-
-        glm::mat4 view_mtx() const {
-            return glm::lookAt(pos, pos + front(), up());
-        }
-    };
-
     struct Gl_State final {
+        gl::Vertex_shader vertex_shader =
+                gl::CompileVertexShaderFile(RESOURCES_DIR "logl_12_light.vert");
         gl::Program color_prog = gl::CreateProgramFrom(
-            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_12_light.vert"),
+            vertex_shader,
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_12.frag"));
         gl::Program light_prog = gl::CreateProgramFrom(
-            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_12_light.vert"),
+            vertex_shader,
             gl::CompileFragmentShader(R"(
 #version 330 core
 
@@ -78,8 +48,29 @@ void main() {
         gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
         gl::Vertex_array light_vao = gl::GenVertexArrays();
 
+        gl::Program quad_prog = gl::CreateProgramFrom(
+            gl::CompileVertexShader(R"(
+#version 330 core
+
+layout (location = 0) in vec2 aPosition;
+layout (location = 1) in vec2 aTextureCoords;
+
+out vec2 TexCoords;
+
+void main() {
+    gl_Position = vec4(aPosition.x, aPosition.y, 0.0f, 1.0f);
+    TexCoords = aTextureCoords;
+}
+)"),
+            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_framebuffers.frag")
+        );
+        gl::Attribute quadProg_aPos = {0};
+        gl::Attribute quadProg_texCoords = {1};
+        gl::Array_buffer quadProg_ab = gl::GenArrayBuffer();
+        gl::Vertex_array quadProg_vao = gl::GenVertexArrays();
+
         Gl_State() {
-            float vertices[] = {
+            static const float vertices[] = {
                 // positions          // normals           // texture coords
                 -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
                  0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
@@ -146,9 +137,132 @@ void main() {
                 gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
                 gl::EnableVertexAttribArray(aNormal);
             }
+
+            static const float quadVertices[] = {
+                // positions   // texCoords
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                -1.0f, -1.0f,  0.0f, 0.0f,
+                 1.0f, -1.0f,  1.0f, 0.0f,
+
+                -1.0f,  1.0f,  0.0f, 1.0f,
+                 1.0f, -1.0f,  1.0f, 0.0f,
+                 1.0f,  1.0f,  1.0f, 1.0f
+            };
+            gl::BindBuffer(quadProg_ab);
+            gl::BufferData(quadProg_ab.type, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+            gl::BindVertexArray(quadProg_vao);
+            {
+                gl::BindBuffer(quadProg_ab);
+                gl::VertexAttribPointer(quadProg_aPos, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), nullptr);
+                gl::EnableVertexAttribArray(quadProg_aPos);
+                gl::VertexAttribPointer(quadProg_texCoords, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+                gl::EnableVertexAttribArray(quadProg_texCoords);
+            }
         }
 
-        void draw(App_State const& as) {
+        gl::Texture_2d_multisample fbotex = gl::GenTexture2dMultisample();
+        gl::Render_buffer depthbuf = gl::GenRenderBuffer();
+
+        gl::Frame_buffer fbo2 = [&]() {
+            gl::Frame_buffer fbo = gl::GenFrameBuffer();
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
+
+            // generate texture
+            gl::BindTexture(fbotex);
+            glTexImage2DMultisample(
+                    fbotex.type,
+                    16,
+                    GL_RGB,
+                    1024,
+                    768,
+                    GL_TRUE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            gl::BindTexture();
+
+            // attach color fbo to the texture
+            glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                   GL_COLOR_ATTACHMENT0,
+                                   fbotex.type,
+                                   fbotex,
+                                   0);
+
+            // generate depth + stencil rbo, so the pipeline still has a storage
+            // area it can use to do those tests
+            gl::BindRenderBuffer(depthbuf);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER,
+                                             16,
+                                             GL_DEPTH24_STENCIL8,
+                                             1024,
+                                             768);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                      GL_DEPTH_STENCIL_ATTACHMENT,
+                                      GL_RENDERBUFFER,
+                                      depthbuf.handle);
+            gl::BindRenderBuffer();
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+            gl::BindFrameBuffer();
+
+            return fbo;
+        }();
+
+        gl::Texture_2d fbotex_no_multisamp = gl::GenTexture2d();
+        gl::Render_buffer depthbuf_no_multisamp = gl::GenRenderBuffer();
+
+        gl::Frame_buffer fbo_no_multisamp = [&]() {
+            gl::Frame_buffer fbo = gl::GenFrameBuffer();
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
+
+            // generate texture
+            gl::BindTexture(fbotex_no_multisamp.type, fbotex_no_multisamp);
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_RGB,
+                         1024, // TODO: a robust solution would lookup screen size
+                         768,
+                         0,
+                         GL_RGB,
+                         GL_UNSIGNED_BYTE,
+                         NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            gl::BindTexture();
+
+            // attach color fbo to the texture
+            glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                   GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D,
+                                   fbotex_no_multisamp,
+                                   0);
+
+            // generate depth + stencil rbo, so the pipeline still has a storage
+            // area it can use to do those tests
+            gl::BindRenderBuffer(depthbuf_no_multisamp);
+            glRenderbufferStorage(GL_RENDERBUFFER,
+                                  GL_DEPTH24_STENCIL8,
+                                  1024,  // TODO
+                                  768);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                      GL_DEPTH_STENCIL_ATTACHMENT,
+                                      GL_RENDERBUFFER,
+                                      depthbuf_no_multisamp.handle);
+            gl::BindRenderBuffer();
+
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+            gl::BindFrameBuffer();
+            return fbo;
+        }();
+
+        void draw(ui::Game_state const& g) {
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo2);
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
             auto ticks = util::now().count() / 200.0f;
 
             gl::UseProgram(color_prog);
@@ -159,9 +273,9 @@ void main() {
                         0.1f,
                         100.0f);
 
-            gl::Uniform(uView, as.view_mtx());
+            gl::Uniform(uView, g.camera.view_mtx());
             gl::Uniform(uProjection, projection);
-            gl::Uniform(uViewPos, as.pos);
+            gl::Uniform(uViewPos, g.camera.pos);
 
             // texture mapping
             {
@@ -191,15 +305,15 @@ void main() {
 
             {
                 auto setVec3 = [&](const char* name, float x, float y, float z) {
-                    gl::Uniform_vec3f u = gl::GetUniformLocation(color_prog, name);
+                    auto u = gl::Uniform_vec3f{gl::GetUniformLocation(color_prog, name)};
                     gl::Uniform(u, {x, y, z});
                 };
                 auto setVec3v = [&](const char* name, glm::vec3 const& v) {
-                    gl::Uniform_vec3f u = gl::GetUniformLocation(color_prog, name);
+                    auto u = gl::Uniform_vec3f{gl::GetUniformLocation(color_prog, name)};
                     gl::Uniform(u, v);
                 };
                 auto setFloat = [&](const char* name, float v) {
-                    gl::Uniform_1f u = gl::GetUniformLocation(color_prog, name);
+                    auto u = gl::Uniform_1f{gl::GetUniformLocation(color_prog, name)};
                     gl::Uniform(u, v);
                 };
 
@@ -280,7 +394,7 @@ void main() {
             }
 
             gl::UseProgram(light_prog);
-            gl::Uniform(uViewLightProg, as.view_mtx());
+            gl::Uniform(uViewLightProg, g.camera.view_mtx());
             gl::Uniform(uProjectionLightProg, projection);
             for (auto const& lightPos : pointLightPositions) {
                 glm::mat4 model = glm::mat4(1.0f);
@@ -289,19 +403,46 @@ void main() {
                 gl::Uniform(uModelLightProg, model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+
+
+            // !!! render complete !!!
+
+            // !!! however: beware of multisampling! !!!
+            //
+            // The render has rendered into a multisampled fbo. This must be
+            // blitted to a non-multisampled fbo for the final post-processing
+            // pass.
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo2.handle);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_no_multisamp.handle);
+            glBlitFramebuffer(0, 0, 1024, 768, 0, 0, 1024, 768, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+            // now we have a non-multisampled texture in the no_multisamp one.
+            // so now we need to draw onto the actual screen.
+
+            gl::BindFrameBuffer();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            gl::Clear(GL_COLOR_BUFFER_BIT);
+
+            gl::UseProgram(quad_prog);
+            glDisable(GL_DEPTH_TEST);
+            glActiveTexture(GL_TEXTURE0);
+            gl::BindTexture(fbotex_no_multisamp);
+            gl::BindVertexArray(quadProg_vao);
+            {
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
         }
     };
 }
 
 int main(int, char**) {
-    constexpr float camera_speed = 0.1f;
-    constexpr float mouse_sensitivity = 0.001f;
-
-    auto s = ui::Window_state{};
-    SDL_SetWindowGrab(s.window, SDL_TRUE);
+    auto sdl = ui::Window_state{};
+    SDL_SetWindowGrab(sdl.window, SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
     auto gls = Gl_State{};
-    auto as = App_State{};
+
+    auto game = ui::Game_state{};
+    game.camera.pos = {0.0f, 0.0f, 3.0f};
 
     glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
@@ -311,80 +452,24 @@ int main(int, char**) {
 
     SDL_Event e;
     std::chrono::milliseconds last_time = util::now();
-    std::chrono::milliseconds dt = {};
     while (true) {
         std::chrono::milliseconds cur_time = util::now();
-        dt = cur_time - last_time;
+        std::chrono::milliseconds dt = cur_time - last_time;
+        last_time = cur_time;
 
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
+            if (game.handle(e) == ui::Handle_response::should_quit) {
                 return 0;
-            } else if (e.type == SDL_KEYDOWN or e.type == SDL_KEYUP) {
-                bool is_button_down = e.type == SDL_KEYDOWN ? true : false;
-                switch (e.key.keysym.sym) {
-                case SDLK_w:
-                    as.moving_forward = is_button_down;
-                    break;
-                case SDLK_s:
-                    as.moving_backward = is_button_down;
-                    break;
-                case SDLK_d:
-                    as.moving_left = is_button_down;
-                    break;
-                case SDLK_a:
-                    as.moving_right = is_button_down;
-                    break;
-                case SDLK_SPACE:
-                    as.moving_up = is_button_down;
-                    break;
-                case SDLK_LCTRL:
-                    as.moving_down = is_button_down;
-                    break;
-                case SDLK_ESCAPE:
-                    return 0;
-                }
-            } else if (e.type == SDL_MOUSEMOTION) {
-                as.yaw += e.motion.xrel * mouse_sensitivity;
-                as.pitch -= e.motion.yrel * mouse_sensitivity;
-                if (as.pitch > pi_f/2.0f - 0.5f) {
-                    as.pitch = pi_f/2.0f - 0.5f;
-                }
-                if (as.pitch < -pi_f/2.0f + 0.5f) {
-                    as.pitch = -pi_f/2.0f + 0.5f;
-                }
             }
         }
 
-        if (as.moving_forward) {
-            as.pos += camera_speed * as.front();
-        }
-
-        if (as.moving_backward) {
-            as.pos -= camera_speed * as.front();
-        }
-
-        if (as.moving_left) {
-            as.pos += camera_speed * as.right();
-        }
-
-        if (as.moving_right) {
-            as.pos -= camera_speed * as.right();
-        }
-
-        if (as.moving_up) {
-            as.pos += camera_speed * as.up();
-        }
-
-        if (as.moving_down) {
-            as.pos -= camera_speed * as.up();
-        }
+        game.tick(dt);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        gls.draw(as);
+        gls.draw(game);
 
         throttle.wait();
 
-        SDL_GL_SwapWindow(s.window);
+        SDL_GL_SwapWindow(sdl.window);
     }
 }

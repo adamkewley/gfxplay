@@ -139,6 +139,22 @@ target_link_libraries(logl_face-culling common)
 add_executable(logl_geom-shader-normals src/logl_geom-shader-normals.cpp)
 target_link_libraries(logl_geom-shader-normals common)
 
+# https://learnopengl.com/Advanced-OpenGL/Cubemaps
+add_executable(logl_cubemaps src/logl_cubemaps.cpp)
+target_link_libraries(logl_cubemaps common)
+
+# https://learnopengl.com/Advanced-OpenGL/Instancing
+add_executable(logl_instancing_1_basic src/logl_instancing_1_basic.cpp)
+target_link_libraries(logl_instancing_1_basic common)
+
+# https://learnopengl.com/Advanced-OpenGL/Instancing
+add_executable(logl_instancing_2_instanced-arrays src/logl_instancing_2_instanced-arrays.cpp)
+target_link_libraries(logl_instancing_2_instanced-arrays common)
+
+# https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing
+add_executable(logl_anti-aliasing-a-framebuffer src/logl_anti-aliasing-a-framebuffer.cpp)
+target_link_libraries(logl_anti-aliasing-a-framebuffer common)
+
 add_executable(logl_save-to-file src/logl_save-to-file.cpp)
 target_link_libraries(logl_save-to-file common)
 

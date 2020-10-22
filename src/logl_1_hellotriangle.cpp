@@ -23,8 +23,8 @@ void main() {
 )"
         ));
         gl::Attribute aPos = gl::GetAttribLocation(prog, "aPos");
-        gl::Array_buffer ab = {};
-        gl::Element_array_buffer ebo = {};
+        gl::Array_buffer ab = gl::GenArrayBuffer();
+        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
         gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
@@ -41,9 +41,9 @@ void main() {
 
             gl::BindVertexArray(vao);
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
             gl::BindBuffer(ebo);
-            gl::BufferData(ebo, sizeof(indices), indices, GL_STATIC_DRAW);
+            gl::BufferData(ebo.type, sizeof(indices), indices, GL_STATIC_DRAW);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::BindVertexArray();

@@ -45,9 +45,9 @@ namespace {
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
         gl::Attribute aPos = 0;
         gl::Attribute aTexCoords = 1;
-        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(prog, "model");
-        gl::UniformMatrix4fv uView = gl::GetUniformLocation(prog, "view");
-        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(prog, "projection");
+        gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "model");
+        gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "view");
+        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
                 gl::mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =
@@ -99,9 +99,9 @@ namespace {
                 -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
                 -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
             };
-            auto vbo = gl::Array_buffer{};
+            auto vbo = gl::GenArrayBuffer();
             gl::BindBuffer(vbo);
-            gl::BufferData(vbo, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+            gl::BufferData(vbo.type, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
             return vbo;
         }();
 
@@ -128,9 +128,9 @@ namespace {
                 -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
                  5.0f, -0.5f, -5.0f,  2.0f, 2.0f,
             };
-            auto vbo = gl::Array_buffer();
+            auto vbo = gl::GenArrayBuffer();
             gl::BindBuffer(vbo);
-            gl::BufferData(vbo, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+            gl::BufferData(vbo.type, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
             return vbo;
         }();
 
@@ -157,9 +157,9 @@ namespace {
                 1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
                 1.0f,  0.5f,  0.0f,  1.0f,  1.0f,
             };
-            auto vbo = gl::Array_buffer{};
+            auto vbo = gl::GenArrayBuffer();
             gl::BindBuffer(vbo);
-            gl::BufferData(vbo, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+            gl::BufferData(vbo.type, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
             return vbo;
         }();
 

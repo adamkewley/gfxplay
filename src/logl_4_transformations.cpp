@@ -34,13 +34,13 @@ void main() {
         ));
         gl::Texture_2d wall = gl::mipmapped_texture(RESOURCES_DIR "wall.jpg");
         gl::Texture_2d face = gl::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::UniformMatrix4fv uTransform = gl::GetUniformLocation(prog, "uTransform");
+        gl::Uniform_mat4f uTransform = gl::GetUniformLocation(prog, "uTransform");
         gl::Attribute aPos = 0;
         gl::Attribute aTexCoord = 1;
-        gl::Uniform1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
-        gl::Array_buffer ab = {};
-        gl::Element_array_buffer ebo = {};
+        gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Array_buffer ab = gl::GenArrayBuffer();
+        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
         gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
@@ -60,7 +60,7 @@ void main() {
             gl::BindVertexArray(vao);
 
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);
@@ -69,7 +69,7 @@ void main() {
             gl::EnableVertexAttribArray(aTexCoord);
 
             gl::BindBuffer(ebo);
-            gl::BufferData(ebo, sizeof(indices), indices, GL_STATIC_DRAW);
+            gl::BufferData(ebo.type, sizeof(indices), indices, GL_STATIC_DRAW);
 
             gl::BindVertexArray();
         }
@@ -84,11 +84,11 @@ void main() {
             gl::Uniform(uTransform, trans);
 
             glActiveTexture(GL_TEXTURE0);
-            gl::BindTexture(wall);
+            gl::BindTexture(wall.type, wall);
             gl::Uniform(uSampler0, 0);
 
             glActiveTexture(GL_TEXTURE1);
-            gl::BindTexture(face);
+            gl::BindTexture(face.type, face);
             gl::Uniform(uSampler1, 1);
 
             gl::BindVertexArray(vao);

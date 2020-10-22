@@ -48,15 +48,15 @@ void main() {
         ));
         gl::Texture_2d wall = gl::mipmapped_texture(RESOURCES_DIR "wall.jpg");
         gl::Texture_2d face = gl::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::UniformMatrix4fv uModel = gl::GetUniformLocation(prog, "uModel");
-        gl::UniformMatrix4fv uView = gl::GetUniformLocation(prog, "uView");
-        gl::UniformMatrix4fv uProjection = gl::GetUniformLocation(prog, "uProjection");
+        gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "uModel");
+        gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "uView");
+        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "uProjection");
         gl::Attribute aPos = 0;
         gl::Attribute aTexCoord = 1;
-        gl::Uniform1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
-        gl::Array_buffer ab = {};
-        gl::Element_array_buffer ebo = {};
+        gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Array_buffer ab = gl::GenArrayBuffer();
+        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
         gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
@@ -107,7 +107,7 @@ void main() {
             gl::BindVertexArray(vao);
 
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), nullptr);
             gl::EnableVertexAttribArray(aPos);

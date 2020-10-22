@@ -102,18 +102,18 @@ void main() {
         ));
         gl::Attribute aPos = {0};
         gl::Attribute aNormal = {1};
-        gl::UniformMatrix4fv uModelColorProg = gl::GetUniformLocation(color_prog, "model");
-        gl::UniformMatrix4fv uViewColorProg = gl::GetUniformLocation(color_prog, "view");
-        gl::UniformMatrix4fv uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
-        gl::UniformVec3f uLightPosColorProg = gl::GetUniformLocation(color_prog, "lightPos");
-        gl::UniformVec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
-        gl::UniformMatrix3fv uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
-        gl::UniformVec3f uObjectColor = gl::GetUniformLocation(color_prog, "objectColor");
-        gl::UniformVec3f uLightColor = gl::GetUniformLocation(color_prog, "lightColor");
-        gl::UniformMatrix4fv uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::UniformMatrix4fv uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::UniformMatrix4fv uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = {};
+        gl::Uniform_mat4f uModelColorProg = gl::GetUniformLocation(color_prog, "model");
+        gl::Uniform_mat4f uViewColorProg = gl::GetUniformLocation(color_prog, "view");
+        gl::Uniform_mat4f uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
+        gl::Uniform_vec3f uLightPosColorProg = gl::GetUniformLocation(color_prog, "lightPos");
+        gl::Uniform_vec3f uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
+        gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        gl::Uniform_vec3f uObjectColor = gl::GetUniformLocation(color_prog, "objectColor");
+        gl::Uniform_vec3f uLightColor = gl::GetUniformLocation(color_prog, "lightColor");
+        gl::Uniform_mat4f uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::Uniform_mat4f uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::Uniform_mat4f uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
         gl::Vertex_array light_vao = gl::GenVertexArrays();
 
@@ -163,7 +163,7 @@ void main() {
             };
 
             gl::BindBuffer(ab);
-            gl::BufferData(ab, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
             gl::BindVertexArray(color_cube_vao);
             {
