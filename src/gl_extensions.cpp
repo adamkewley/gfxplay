@@ -91,7 +91,7 @@ static std::string slurp_file(const char* path) {
 }
 
 // asserts there are no current OpenGL errors (globally)
-void gl::assert_no_errors(char const* func) {
+void gl::assert_no_errors(char const* label) {
     static auto to_string = [](GLubyte const* err_string) {
         return std::string{reinterpret_cast<char const*>(err_string)};
     };
@@ -108,7 +108,7 @@ void gl::assert_no_errors(char const* func) {
     } while ((err = glGetError()) != GL_NO_ERROR);
 
     std::stringstream msg;
-    msg << func << " failed";
+    msg << label << " failed";
     if (errors.size() == 1) {
         msg << ": ";
     } else {

@@ -400,15 +400,11 @@ void main() {
             glDisable(GL_DEPTH_TEST);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, fbotex);
-            gl::BindVertexArray(quadProg_vao);
-            {
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
-        }
 
-    public:
-        gl::Uniform_mat4f getUProjectionColorProg() const;
-        void setUProjectionColorProg(const gl::Uniform_mat4f &value);
+            gl::BindVertexArray(quadProg_vao);
+            gl::DrawArrays(GL_TRIANGLES, 0, 6);
+            gl::BindVertexArray();
+        }
     };
 }
 

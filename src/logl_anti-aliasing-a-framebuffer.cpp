@@ -202,6 +202,8 @@ void main() {
                                       depthbuf.handle);
             gl::BindRenderBuffer();
 
+            AKGL_ASSERT_NO_ERRORS();
+
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
             gl::BindFrameBuffer();
 
@@ -261,6 +263,7 @@ void main() {
             gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo2);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
             glEnable(GL_DEPTH_TEST);
 
             auto ticks = util::now().count() / 200.0f;

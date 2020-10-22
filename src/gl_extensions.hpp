@@ -15,6 +15,25 @@
 // these are helpful sugar methods over the base OpenGL API. Anything that is
 // OpenGL-ey, but not "pure" OpenGL, goes here.
 
+// MACROS: usually for sanity-checking during debugging
+
+#ifndef NDEBUG
+#define AKGL_ENABLE(capability) { \
+    glEnable(capability); \
+    gl::assert_no_errors("glEnable: " #capability); \
+}
+#else
+#define AKGL_ENABLE(capability) { \
+    glEnable(capability); \
+}
+#endif
+
+#define AKGL_STRINGIZE(x) AKGL_STRINGIZE2(x)
+#define AKGL_STRINGIZE2(x) #x
+#define AKGL_ASSERT_NO_ERRORS() { \
+    gl::assert_no_errors(__FILE__ ":" AKGL_STRINGIZE(__LINE__)); \
+}
+
 namespace gl {
     // thin wrapper for GL_ARRAY_BUFFER
     class Array_buffer final : public Buffer_handle {
@@ -270,7 +289,7 @@ namespace gl {
     // OTHER:
 
     // asserts there are no current OpenGL errors (globally)
-    void assert_no_errors(char const* func);
+    void assert_no_errors(char const* label);
 
     // read an image file into an OpenGL 2D texture
     gl::Texture_2d mipmapped_texture(char const* path);
