@@ -134,20 +134,33 @@ gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
     return CompileGeometryShader(slurp_file(path).c_str());
 }
 
-gl::Texture_2d gl::mipmapped_texture(char const* path) {
+gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path) {
     auto t = gl::GenTexture2d();
     auto img = stbi::Image{path};
+
+    GLenum format;
+    if (img.nrChannels == 1) {
+        format = GL_RED;
+    } else if (img.nrChannels == 3) {
+        format = GL_RGB;
+    } else if (img.nrChannels == 4) {
+        format = GL_RGBA;
+    } else {
+        std::stringstream msg;
+        msg << path << ": error: contains " << img.nrChannels << " color channels (the implementation doesn't know how to handle this)";
+        throw std::runtime_error{std::move(msg).str()};
+    }
 
     stbi_set_flip_vertically_on_load(true);
 
     gl::BindTexture(t.type, t);
     glTexImage2D(t.type,
                  0,
-                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 format,
                  img.width,
                  img.height,
                  0,
-                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 format,
                  GL_UNSIGNED_BYTE,
                  img.data);
     glGenerateMipmap(t.type);
@@ -155,18 +168,59 @@ gl::Texture_2d gl::mipmapped_texture(char const* path) {
     return t;
 }
 
-// helper method: load a file into an image and send it to OpenGL
-static void load_cubemap_surface(char const* path, GLenum target) {
+gl::Texture_2d gl::nonflipped_and_mipmapped_texture(char const* path) {
+    auto t = gl::GenTexture2d();
     auto img = stbi::Image{path};
-    glTexImage2D(target,
+
+    GLenum format;
+    if (img.nrChannels == 1) {
+        format = GL_RED;
+    } else if (img.nrChannels == 3) {
+        format = GL_RGB;
+    } else if (img.nrChannels == 4) {
+        format = GL_RGBA;
+    } else {
+        std::stringstream msg;
+        msg << path << ": error: contains " << img.nrChannels << " color channels (the implementation doesn't know how to handle this)";
+        throw std::runtime_error{std::move(msg).str()};
+    }
+
+    stbi_set_flip_vertically_on_load(false);
+
+    gl::BindTexture(t.type, t);
+    glTexImage2D(t.type,
                  0,
-                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 format,
                  img.width,
                  img.height,
                  0,
-                 img.nrChannels == 3 ? GL_RGB : GL_RGBA,
+                 format,
                  GL_UNSIGNED_BYTE,
                  img.data);
+    glGenerateMipmap(t.type);
+
+    return t;
+}
+
+
+// helper method: load a file into an image and send it to OpenGL
+static void load_cubemap_surface(char const* path, GLenum target) {
+    auto img = stbi::Image{path};
+
+    GLenum format;
+    if (img.nrChannels == 1) {
+        format = GL_RED;
+    } else if (img.nrChannels == 3) {
+        format = GL_RGB;
+    } else if (img.nrChannels == 4) {
+        format = GL_RGBA;
+    } else {
+        std::stringstream msg;
+        msg << path << ": error: contains " << img.nrChannels << " color channels (the implementation doesn't know how to handle this)";
+        throw std::runtime_error{std::move(msg).str()};
+    }
+
+    glTexImage2D(target, 0, format, img.width, img.height, 0, format, GL_UNSIGNED_BYTE, img.data);
 };
 
 gl::Texture_cubemap gl::read_cubemap(

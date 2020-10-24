@@ -48,6 +48,7 @@ target_link_libraries(common
     ${OPENGL_LIBRARIES}
     SDL2
     glew_s
+    stdc++fs
 )
 target_compile_options(common PUBLIC
     # disable MSVC permissiveness. Forces MSVC to obey C++ standard

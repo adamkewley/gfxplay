@@ -32,8 +32,8 @@ uniform sampler2D uSampler1;
 void main() {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 })"));
-        gl::Texture_2d wall = gl::mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = gl::mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+        gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
         gl::Attribute aPos = 0;
         gl::Attribute aColor = 1;
         gl::Attribute aTexCoord = 2;

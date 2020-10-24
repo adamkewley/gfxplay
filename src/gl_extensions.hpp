@@ -17,10 +17,13 @@
 
 // MACROS: usually for sanity-checking during debugging
 
+#define AKGL_STRINGIZE(x) AKGL_STRINGIZE2(x)
+#define AKGL_STRINGIZE2(x) #x
+
 #ifndef NDEBUG
 #define AKGL_ENABLE(capability) { \
     glEnable(capability); \
-    gl::assert_no_errors("glEnable: " #capability); \
+    gl::assert_no_errors(__FILE__ ":" AKGL_STRINGIZE(__LINE__) ": glEnable: " #capability); \
 }
 #else
 #define AKGL_ENABLE(capability) { \
@@ -28,8 +31,6 @@
 }
 #endif
 
-#define AKGL_STRINGIZE(x) AKGL_STRINGIZE2(x)
-#define AKGL_STRINGIZE2(x) #x
 #define AKGL_ASSERT_NO_ERRORS() { \
     gl::assert_no_errors(__FILE__ ":" AKGL_STRINGIZE(__LINE__)); \
 }
@@ -292,7 +293,9 @@ namespace gl {
     void assert_no_errors(char const* label);
 
     // read an image file into an OpenGL 2D texture
-    gl::Texture_2d mipmapped_texture(char const* path);
+    gl::Texture_2d flipped_and_mipmapped_texture(char const* path);
+
+    gl::Texture_2d nonflipped_and_mipmapped_texture(char const* path);
 
     // read 6 image files into a single OpenGL cubemap (GL_TEXTURE_CUBE_MAP)
     gl::Texture_cubemap read_cubemap(

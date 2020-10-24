@@ -51,9 +51,9 @@ void main() {
 }
 )"
         ));
-        gl::Texture_2d container2_tex = gl::mipmapped_texture(RESOURCES_DIR "container2.png");
-        gl::Texture_2d container2_spec = gl::mipmapped_texture(RESOURCES_DIR "container2_specular.png");
-        gl::Texture_2d container2_emission = gl::mipmapped_texture(RESOURCES_DIR "matrix.jpg");
+        gl::Texture_2d container2_tex = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "container2.png");
+        gl::Texture_2d container2_spec = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "container2_specular.png");
+        gl::Texture_2d container2_emission = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "matrix.jpg");
 
         gl::Attribute aPos = 0;
         gl::Attribute aNormal = 1;

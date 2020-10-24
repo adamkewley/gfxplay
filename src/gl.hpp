@@ -174,6 +174,10 @@ namespace gl {
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindBuffer.xhtml
     //     *overload that unbinds current buffer
     inline void BindBuffer() {
+        // from docs:
+        // > Instead, buffer set to zero effectively unbinds any buffer object
+        // > previously bound, and restores client memory usage for that buffer
+        // > object target (if supported for that target)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
