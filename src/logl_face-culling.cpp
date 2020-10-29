@@ -43,8 +43,8 @@ namespace {
         gl::Program prog = gl::CreateProgramFrom(
             gl::CompileVertexShaderFile(RESOURCES_DIR "logl_blending.vert"),
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
-        gl::Attribute aPos = 0;
-        gl::Attribute aTexCoords = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "model");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "view");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "projection");

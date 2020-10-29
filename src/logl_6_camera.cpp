@@ -82,8 +82,8 @@ void main()
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "uModel");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "uView");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "uProjection");
-        gl::Attribute aPos = 0;
-        gl::Attribute aTexCoord = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
         gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = gl::GenArrayBuffer();

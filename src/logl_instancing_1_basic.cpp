@@ -33,8 +33,8 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = 0;
-        static constexpr gl::Attribute aColor = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
         gl::Uniform_vec2f uOffsets = gl::GetUniformLocation(prog, "offsets[0]");
 
         gl::Array_buffer quad_vbo = []() {

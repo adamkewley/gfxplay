@@ -33,9 +33,9 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = 0;
-        static constexpr gl::Attribute aColor = 1;
-        static constexpr gl::Attribute aOffset = 2;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute aOffset = gl::AttributeAtLocation(2);
 
         gl::Array_buffer quad_vbo = []() {
             static constexpr float quad[] = {

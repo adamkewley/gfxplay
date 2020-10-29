@@ -55,9 +55,9 @@ void main() {
         gl::Texture_2d container2_spec = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "container2_specular.png");
         gl::Texture_2d container2_emission = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "matrix.jpg");
 
-        gl::Attribute aPos = 0;
-        gl::Attribute aNormal = 1;
-        gl::Attribute aTexCoords = 2;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(color_prog, "model");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(color_prog, "view");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(color_prog, "projection");

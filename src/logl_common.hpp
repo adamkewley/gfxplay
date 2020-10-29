@@ -27,6 +27,7 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <array>
 
 using std::literals::string_literals::operator""s;
 using std::literals::chrono_literals::operator""ms;

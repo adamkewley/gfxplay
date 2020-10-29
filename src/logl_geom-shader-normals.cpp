@@ -43,8 +43,8 @@ namespace {
         gl::Program prog = gl::CreateProgramFrom(
             gl::CompileVertexShaderFile(RESOURCES_DIR "logl_blending.vert"),
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
-        gl::Attribute aPos = 0;
-        gl::Attribute aTexCoords = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "model");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "view");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "projection");
@@ -186,8 +186,8 @@ namespace {
             gl::CompileVertexShaderFile(RESOURCES_DIR "logl_geom_normals.vert"),
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_geom_normals.frag"),
             gl::CompileGeometryShaderFile(RESOURCES_DIR "logl_geom_normals.geom"));
-        gl::Attribute normals_aPos = 0;
-        gl::Attribute normals_aNormal = 1;
+        static constexpr gl::Attribute normals_aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute normals_aNormal = gl::AttributeAtLocation(1);
         gl::Uniform_mat4f normals_uModel = gl::GetUniformLocation(normals_prog, "model");
         gl::Uniform_mat4f normals_uView = gl::GetUniformLocation(normals_prog, "view");
         gl::Uniform_mat4f normals_uProjection = gl::GetUniformLocation(normals_prog, "projection");

@@ -32,67 +32,82 @@ uniform sampler2D uSampler1;
 void main() {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 })"));
-        gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::Attribute aPos = 0;
-        gl::Attribute aColor = 1;
-        gl::Attribute aTexCoord = 2;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
         gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
-        gl::Vertex_array vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            float vertices[] = {
-                // positions          // colors           // texture coords
-                 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-                 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-                -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-                -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
-            };
+        struct Vbo_data final {
+            glm::vec3 pos;
+            glm::vec3 color;
+            glm::vec2 tex_coord;
+        };
+        static_assert(sizeof(Vbo_data) == 8*sizeof(float), "unexpected size: this code relies on a strict struct layout for attrib pointers");
 
-            unsigned int indices[] = {
-                0, 1, 3,   // first triangle
-                1, 2, 3    // second triangle
-            };
+        static constexpr std::array<Vbo_data, 4> cube_verts = {{
+            // pos                 // color            // tex_coord
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},  // top right
+            {{ 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},  // bottom right
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},  // bottom left
+            {{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},  // top left
+        }};
+
+        gl::Array_buffer vbo = []() {
+            auto vbo = gl::GenArrayBuffer();
+            gl::BindBuffer(vbo);
+            gl::BufferData(vbo.type, sizeof(cube_verts), cube_verts.data(), GL_STATIC_DRAW);
+            return vbo;
+        }();
+
+        static constexpr std::array<unsigned, 6> cube_els = {
+            0, 1, 3,  // first triangle
+            1, 2, 3,  // second triangle
+        };
+
+        gl::Element_array_buffer ebo = []() {
+            auto ebo = gl::GenElementArrayBuffer();
+            gl::BindBuffer(ebo);
+            gl::BufferData(ebo.type, sizeof(cube_els), cube_els.data(), GL_STATIC_DRAW);
+            return ebo;
+        }();
+
+        gl::Vertex_array vao = [this]() {
+            auto vao = gl::GenVertexArrays();
 
             gl::BindVertexArray(vao);
-
-            gl::BindBuffer(ab);
-            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+            gl::BindBuffer(vbo);
+            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vbo_data), reinterpret_cast<void*>(offsetof(Vbo_data, pos)));
             gl::EnableVertexAttribArray(aPos);
-
-            gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3* sizeof(float)));
+            gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Vbo_data), reinterpret_cast<void*>(offsetof(Vbo_data, color)));
             gl::EnableVertexAttribArray(aColor);
-
-            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6* sizeof(float)));
+            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Vbo_data), reinterpret_cast<void*>(offsetof(Vbo_data, tex_coord)));
             gl::EnableVertexAttribArray(aTexCoord);
-
             gl::BindBuffer(ebo);
-            gl::BufferData(ebo.type, sizeof(indices), indices, GL_STATIC_DRAW);
-
             gl::BindVertexArray();
-        }
+
+            return vao;
+        }();
+
+        gl::Texture_2d wall =
+            gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face =
+            gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
 
         void draw() {
             gl::UseProgram(prog);
 
-            glActiveTexture(GL_TEXTURE0);
+            gl::ActiveTexture(GL_TEXTURE0);
             gl::BindTexture(wall.type, wall);
             gl::Uniform(uSampler0, 0);
 
-            glActiveTexture(GL_TEXTURE1);
+            gl::ActiveTexture(GL_TEXTURE1);
             gl::BindTexture(face.type, face);
             gl::Uniform(uSampler1, 1);
 
             gl::BindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+            gl::DrawElements(GL_TRIANGLES, cube_els.size(), GL_UNSIGNED_INT, nullptr);
             gl::BindVertexArray();
-
-            gl::UseProgram();
         }
     };
 }
@@ -101,21 +116,20 @@ int main(int, char**) {
     auto s = ui::Window_state{};
     auto gls = Gl_State{};
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    gl::ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
     auto throttle = util::Software_throttle{8ms};
 
-    SDL_Event e;
     while (true) {
-        while (SDL_PollEvent(&e)) {
+        for (SDL_Event e; SDL_PollEvent(&e);) {
             if (e.type == SDL_QUIT) {
                 return 0;
             }
         }
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         gls.draw();
 

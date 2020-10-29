@@ -1,19 +1,19 @@
 #include "logl_common.hpp"
 
-static const glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,  0.0f),
-    glm::vec3( 2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f, -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3( 2.4f, -0.4f, -3.5f),
-    glm::vec3(-1.7f,  3.0f, -7.5f),
-    glm::vec3( 1.3f, -2.0f, -2.5f),
-    glm::vec3( 1.5f,  2.0f, -2.5f),
-    glm::vec3( 1.5f,  0.2f, -1.5f),
-    glm::vec3(-1.3f,  1.0f, -1.5f)
-};
-
 namespace {
+    const glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
             gl::CompileVertexShader(R"(
@@ -51,8 +51,8 @@ void main() {
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "uModel");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "uView");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "uProjection");
-        gl::Attribute aPos = 0;
-        gl::Attribute aTexCoord = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
         gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = gl::GenArrayBuffer();

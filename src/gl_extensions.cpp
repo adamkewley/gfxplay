@@ -169,6 +169,8 @@ gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path) {
 }
 
 gl::Texture_2d gl::nonflipped_and_mipmapped_texture(char const* path) {
+    stbi_set_flip_vertically_on_load(false);
+
     auto t = gl::GenTexture2d();
     auto img = stbi::Image{path};
 
@@ -184,8 +186,6 @@ gl::Texture_2d gl::nonflipped_and_mipmapped_texture(char const* path) {
         msg << path << ": error: contains " << img.nrChannels << " color channels (the implementation doesn't know how to handle this)";
         throw std::runtime_error{std::move(msg).str()};
     }
-
-    stbi_set_flip_vertically_on_load(false);
 
     gl::BindTexture(t.type, t);
     glTexImage2D(t.type,

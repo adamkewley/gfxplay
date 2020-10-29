@@ -9,6 +9,8 @@
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <stdexcept>
+
 
 // gl extensions: useful extension/helper methods over base OpenGL API
 //
@@ -36,6 +38,10 @@
 }
 
 namespace gl {
+    [[nodiscard]] constexpr Attribute AttributeAtLocation(GLuint loc) noexcept {
+        return Attribute{loc};
+    }
+
     // thin wrapper for GL_ARRAY_BUFFER
     class Array_buffer final : public Buffer_handle {
         friend Array_buffer GenArrayBuffer();
@@ -128,7 +134,7 @@ namespace gl {
     }
 
     // convenience wrapper for glBindTexture
-    inline void BindTexture(Texture_2d& texture) {
+    inline void BindTexture(Texture_2d const& texture) {
         BindTexture(texture.type, texture);
     }
 
@@ -152,7 +158,7 @@ namespace gl {
         return Texture_cubemap{};
     }
 
-    inline void BindTexture(Texture_cubemap& texture) {
+    inline void BindTexture(Texture_cubemap const& texture) {
         BindTexture(texture.type, texture);
     }
 
@@ -173,7 +179,7 @@ namespace gl {
         return Texture_2d_multisample{};
     }
 
-    inline void BindTexture(Texture_2d_multisample& texture) {
+    inline void BindTexture(Texture_2d_multisample const& texture) {
         BindTexture(texture.type, texture);
     }
 
@@ -239,6 +245,10 @@ namespace gl {
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
     inline void Uniform(Uniform_1i& u, GLint value) {
         glUniform1i(u.handle, value);
+    }
+
+    inline void Uniform(Uniform_1i& u, GLsizei n, GLint const* vs) {
+        glUniform1iv(u.handle, n, vs);
     }
 
     // set uniforms directly from GLM types

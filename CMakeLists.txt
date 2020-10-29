@@ -144,6 +144,18 @@ target_link_libraries(logl_geom-shader-normals common)
 add_executable(logl_cubemaps src/logl_cubemaps.cpp)
 target_link_libraries(logl_cubemaps common)
 
+# https://learnopengl.com/Advanced-OpenGL/Cubemaps
+add_executable(logl_cubemaps_environment-mapping
+    src/logl_cubemaps_environment-mapping.cpp
+)
+target_link_libraries(logl_cubemaps_environment-mapping common)
+
+# https://learnopengl.com/Advanced-OpenGL/Cubemaps
+add_executable(logl_cubemaps_environment-mapping_refractions
+    src/logl_cubemaps_environment-mapping_refractions.cpp
+)
+target_link_libraries(logl_cubemaps_environment-mapping_refractions common)
+
 # https://learnopengl.com/Advanced-OpenGL/Instancing
 add_executable(logl_instancing_1_basic src/logl_instancing_1_basic.cpp)
 target_link_libraries(logl_instancing_1_basic common)

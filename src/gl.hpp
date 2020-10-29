@@ -109,7 +109,7 @@ namespace gl {
     //     (just prevents accidently handing a GLint to the wrong API)
     struct Attribute final {
         GLuint handle;
-        constexpr Attribute(GLuint _handle) : handle{_handle} {}
+        explicit constexpr Attribute(GLuint _handle) : handle{_handle} {}
     };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetAttribLocation.xhtml
@@ -259,8 +259,13 @@ namespace gl {
         return Texture_handle{};
     }
 
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glActiveTexture.xhtml
+    inline void ActiveTexture(GLenum texture) {
+        glActiveTexture(texture);
+    }
+
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
-    inline void BindTexture(GLenum target, Texture_handle& texture) {
+    inline void BindTexture(GLenum target, Texture_handle const& texture) {
         glBindTexture(target, texture.handle);
     }
 
@@ -361,7 +366,17 @@ namespace gl {
         glDrawArraysInstanced(mode, first, count, instancecount);
     }
 
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glVertexAttribDivisor.xhtml
     inline void VertexAttribDivisor(gl::Attribute const& attr, GLuint divisor) {
         glVertexAttribDivisor(attr.handle, divisor);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDrawElements.xhtml
+    inline void DrawElements(GLenum mode, GLsizei count, GLenum type, const void * indices) {
+        glDrawElements(mode, count, type, indices);
+    }
+
+    inline void ClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) {
+        glClearColor(red, green, blue, alpha);
     }
 }

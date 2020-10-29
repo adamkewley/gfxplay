@@ -22,12 +22,11 @@ namespace {
     };
 
     struct Mesh_tex final {
-        path source_path;
         Tex_type type;
         gl::Texture_2d handle;
 
-        Mesh_tex(path _p, Tex_type _t, gl::Texture_2d _h) :
-            source_path{std::move(_p)}, type{_t}, handle{std::move(_h)} {
+        Mesh_tex(Tex_type _type, gl::Texture_2d _handle) :
+            type{_type}, handle{std::move(_handle)} {
         }
     };
 
@@ -42,32 +41,45 @@ namespace {
         std::vector<Mesh> meshes;
     };
 
-    static std::shared_ptr<Mesh_tex> load_texture(path p, Tex_type type) {
-        static std::unordered_map<std::string, std::shared_ptr<Mesh_tex>> textures;
-        static std::mutex m;
-
+    static std::unique_ptr<Mesh_tex> load_tex(path p, Tex_type type) {
+        // TODO: these should be set on a per-texture basis
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        auto lock = std::lock_guard{m};
-
-        auto it = textures.find(p);
-        if (it != textures.end()) {
-            // texture previously loaded, just return a referenced-counted
-            // handle to it
-            return it->second;
-        }
-
-        auto tex = std::make_shared<Mesh_tex>(
-            p,
+        // TODO: the nonflipped API sucks
+        return std::make_unique<Mesh_tex>(
             type,
             gl::nonflipped_and_mipmapped_texture(p.c_str()));
+    }
 
-        textures.emplace(p.string(), tex);
+    struct Caching_model_loader final {
+        std::unordered_map<std::string, std::shared_ptr<Mesh_tex>> cache;
 
-        return tex;
+        std::shared_ptr<Mesh_tex> load(path p, Tex_type type) {
+            auto it = cache.find(p);
+
+            if (it != cache.end()) {
+                return it->second;
+            }
+
+            std::shared_ptr<Mesh_tex> t = load_tex(p, type);
+
+            cache.emplace(std::move(p).string(), t);
+
+            return t;
+        }
+    };
+
+    static std::shared_ptr<Mesh_tex> load_texture_cached(path p, Tex_type type) {
+        // TODO: the texture loader probably shouldn't be a global like this,
+        //       but cba'd refactoring right now
+        static Caching_model_loader cml;
+        static std::mutex m;
+
+        auto l = std::lock_guard(m);
+        return cml.load(p, type);
     }
 
     static Mesh load_mesh(path const& dir,
@@ -140,7 +152,7 @@ namespace {
 
                 path path_to_texture = dir / s.C_Str();
                 textures.push_back(
-                    load_texture(std::move(path_to_texture), Tex_type::diffuse));
+                    load_texture_cached(std::move(path_to_texture), Tex_type::diffuse));
             }
 
             for (size_t i = 0, len = m.GetTextureCount(aiTextureType_SPECULAR); i < len; ++i) {
@@ -149,7 +161,7 @@ namespace {
 
                 path path_to_texture = dir / s.C_Str();
                 textures.push_back(
-                    load_texture(std::move(path_to_texture), Tex_type::specular));
+                    load_texture_cached(std::move(path_to_texture), Tex_type::specular));
             }
 
             return textures;
@@ -187,8 +199,8 @@ namespace {
             throw std::runtime_error{std::move(msg).str()};
         }
 
-        std::filesystem::path model_path = path;
-        std::filesystem::path model_dir = model_path.parent_path();
+        std::filesystem::path model_dir =
+                std::filesystem::path{path}.parent_path();
 
         Model rv;
         process_node(model_dir, *scene, *scene->mRootNode, rv);
@@ -200,12 +212,27 @@ namespace {
             gl::CompileVertexShaderFile(RESOURCES_DIR "model_loading.vert"),
             gl::CompileFragmentShaderFile(RESOURCES_DIR "model_loading.frag"));
 
-        static constexpr gl::Attribute aPos = 0;
-        static constexpr gl::Attribute aNormals = 1;
-        static constexpr gl::Attribute aTexCoords = 2;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
         gl::Uniform_mat4f uModel = gl::GetUniformLocation(p, "model");
         gl::Uniform_mat4f uView = gl::GetUniformLocation(p, "view");
         gl::Uniform_mat4f uProjection = gl::GetUniformLocation(p, "projection");
+        gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+
+        gl::Uniform_vec3f uViewPos = gl::GetUniformLocation(p, "viewPos");
+
+        gl::Uniform_vec3f uDirLightDirection = gl::GetUniformLocation(p, "light.direction");
+        gl::Uniform_vec3f uDirLightAmbient = gl::GetUniformLocation(p, "light.ambient");
+        gl::Uniform_vec3f uDirLightDiffuse = gl::GetUniformLocation(p, "light.diffuse");
+        gl::Uniform_vec3f uDirLightSpecular = gl::GetUniformLocation(p, "light.specular");
+
+        static constexpr size_t maxDiffuseTextures = 4;
+        gl::Uniform_1i uDiffuseTextures = gl::GetUniformLocation(p, "diffuseTextures");
+        gl::Uniform_1i uActiveDiffuseTextures = gl::GetUniformLocation(p, "activeDiffuseTextures");
+        static constexpr size_t maxSpecularTextures = 4;
+        gl::Uniform_1i uSpecularTextures = gl::GetUniformLocation(p, "specularTextures");
+        gl::Uniform_1i uActiveSpecularTextures = gl::GetUniformLocation(p, "activeSpecularTextures");
     };
 
     // A mesh that has been "compiled" against its target program (effectively,
@@ -264,14 +291,97 @@ namespace {
                      ui::Game_state& gs) {
         gl::UseProgram(p.p);
 
-        assert(m.textures.size() > 0);
+        // assign textures
+        {
+            size_t active_diff_textures = 0;
+            std::array<gl::Texture_2d const*, Model_program::maxDiffuseTextures> diff_handles;
 
-        glActiveTexture(GL_TEXTURE0);
-        gl::BindTexture(m.textures[0]->handle);
+            size_t active_spec__textures = 0;
+            std::array<gl::Texture_2d const*, Model_program::maxSpecularTextures> spec_handles;
 
-        gl::Uniform(p.uModel, glm::identity<glm::mat4>());
+            // pass through texture list, gathering textures by type
+            for (std::shared_ptr<Mesh_tex> const& tp : m.textures) {
+                Mesh_tex const& t = *tp;
+
+                if (t.type == Tex_type::diffuse) {
+                    if (active_diff_textures >= diff_handles.size()) {
+                        static bool once = []() {
+                            std::cerr << "WARNING: skipping assignment of diffuse texture: too many textures" << std::endl;
+                            return true;
+                        }();
+                        continue;
+                    }
+
+                    diff_handles[active_diff_textures++] = &t.handle;
+                } else if (t.type == Tex_type::specular) {
+                    if (active_spec__textures >= spec_handles.size()) {
+                        static bool once = []() {
+                            std::cerr << "WARNING: skipping assignment of specular texture" << std::endl;
+                            return true;
+                        }();
+
+                        continue;  // skip assigning it (for now)
+                    }
+                    spec_handles[active_spec__textures++] = &t.handle;
+                } else {
+                    throw std::runtime_error{"unhandled texture type encounted when drawing: this is probably because a new texture type has been added, but the drawing method has not been updated"};
+                }
+            }
+
+            // bind the diffuse textures
+            {
+                // the uniform array contains pointers to the GL texture index
+                // (e.g. GL_TEXTURE0). Must be contiguous for the assignment, so
+                // swizzle them into an array and assign the uniform.
+                std::array<GLint, Model_program::maxDiffuseTextures> tex_indices;
+                for (size_t i = 0; i < active_diff_textures; ++i) {
+                    tex_indices[i] = i;
+                }
+                gl::Uniform(p.uDiffuseTextures, active_diff_textures, tex_indices.data());
+
+                // and then bind the correct user-side texture handles to the correct
+                // shader-side index
+                for (size_t i = 0; i < active_diff_textures; ++i) {
+                    glActiveTexture(GL_TEXTURE0 + i);
+                    gl::BindTexture(*diff_handles[i]);
+                }
+
+                gl::Uniform(p.uActiveDiffuseTextures, active_diff_textures);
+            }
+
+            // bind the specular textures:
+            //     same story as diffuse textures (above), but they start
+            //     *after* them so they must be offset by `active_diff_textures`
+            {
+                std::array<GLint, Model_program::maxSpecularTextures> tex_indices;
+                for (size_t i = 0; i < active_spec__textures; ++i) {
+                    // this is offset by `active_diff_textures` because the
+                    // diff textures are already activated
+                    tex_indices[i] = active_diff_textures + i;
+                }
+                gl::Uniform(p.uSpecularTextures, active_spec__textures, tex_indices.data());
+
+                for (size_t i = 0; i < active_spec__textures; ++i) {
+                    glActiveTexture(GL_TEXTURE0 + active_diff_textures + i);
+                    gl::BindTexture(*spec_handles[i]);
+                }
+
+                gl::Uniform(p.uActiveSpecularTextures, active_spec__textures);
+            }
+        }
+
+        auto model_mat = glm::identity<glm::mat4>();
+        gl::Uniform(p.uModel, model_mat);
         gl::Uniform(p.uView, gs.camera.view_mtx());
         gl::Uniform(p.uProjection, gs.camera.persp_mtx());
+        gl::Uniform(p.uNormalMatrix, glm::transpose(glm::inverse(model_mat)));
+
+        // light
+        gl::Uniform(p.uDirLightDirection, glm::vec3{1.0f, 0.0f, 0.0f});
+        gl::Uniform(p.uDirLightAmbient, glm::vec3{1.0f});
+        gl::Uniform(p.uDirLightDiffuse, glm::vec3{1.0f});
+        gl::Uniform(p.uDirLightSpecular, glm::vec3{1.0f});
+        gl::Uniform(p.uViewPos, gs.camera.pos);
 
         gl::BindVertexArray(m.vao);
         glDrawElements(GL_TRIANGLES, m.num_indices, GL_UNSIGNED_INT, nullptr);
@@ -325,7 +435,4 @@ int main(int, char**) {
 
         SDL_GL_SwapWindow(sdl.window);
     }
-
-    // TODO: need to do L12_multiple-lights first
-    return 0;
 }

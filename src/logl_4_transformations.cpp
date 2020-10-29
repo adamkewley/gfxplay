@@ -35,8 +35,8 @@ void main() {
         gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
         gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
         gl::Uniform_mat4f uTransform = gl::GetUniformLocation(prog, "uTransform");
-        gl::Attribute aPos = 0;
-        gl::Attribute aTexCoord = 1;
+        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
         gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = gl::GenArrayBuffer();
@@ -44,7 +44,7 @@ void main() {
         gl::Vertex_array vao = gl::GenVertexArrays();
 
         Gl_State() {
-            float vertices[] = {
+            static constexpr float vertices[] = {
                 // positions          // colors           // texture coords
                  0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
                  0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
@@ -52,7 +52,7 @@ void main() {
                 -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
             };
 
-            unsigned int indices[] = {
+            static constexpr unsigned int indices[] = {
                 0, 1, 3,   // first triangle
                 1, 2, 3    // second triangle
             };
