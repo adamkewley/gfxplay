@@ -213,7 +213,7 @@ namespace ui {
         }
 
         glm::mat4 persp_mtx() const {
-            return glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+            return glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 1000.0f);
         }
     };
 
@@ -308,7 +308,6 @@ namespace ui {
 }
 
 namespace util {
-
     std::chrono::milliseconds now() {
         // milliseconds is grabbed from SDL to ensure the clocks used by the UI
         // (e.g. SDL_Delay, etc.) match

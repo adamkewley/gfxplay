@@ -107,7 +107,7 @@ void main() {
 int main(int, char**) {
     // SDL setup
     auto sdl = ui::Window_state{};
-    SDL_SetWindowGrab(sdl.window, SDL_TRUE);
+    //SDL_SetWindowGrab(sdl.window, SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     // Extra GL setup

@@ -178,8 +178,17 @@ if (GFXPLAY_USE_ASSIMP)
     add_subdirectory(third_party/assimp-5.0.1 EXCLUDE_FROM_ALL)
 
     # https://learnopengl.com/Model-Loading/Assimp
-    add_executable(logl_13_model-loading src/logl_13_model-loading.cpp)
+    add_executable(logl_13_model-loading
+        src/logl_13_model-loading.cpp
+        src/logl_model.hpp
+    )
     target_link_libraries(logl_13_model-loading common assimp)
+
+    # https://learnopengl.com/Advanced-OpenGL/Instancing
+    add_executable(logl_instancing_3_planet
+        src/logl_instancing_3_planet.cpp
+    )
+    target_link_libraries(logl_instancing_3_planet common assimp)
 endif()
 
 if (GFXPLAY_USE_CAIRO)
