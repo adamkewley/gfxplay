@@ -36,139 +36,82 @@ namespace {
     using model::Model;
     using model::Tex_type;
 
-    // A mesh that has been "compiled" against its target program (effectively,
-    // its VAO has been initialized against the program)
-    struct Compiled_mesh final {
-        gl::Array_buffer vbo;
-        gl::Element_array_buffer ebo;
-        size_t num_indices;
-        gl::Vertex_array vao;
-        std::vector<std::shared_ptr<Mesh_tex>> textures;
-    };
+    gl::Vertex_array create_vao(Model_program& p, Mesh& m) {
+        gl::Vertex_array vao = gl::GenVertexArrays();
 
-    static Compiled_mesh compile(Model_program& p, Mesh m) {
-        Compiled_mesh rv = {
-            std::move(m.vbo),
-            std::move(m.ebo),
-            m.num_indices,
-            gl::GenVertexArrays(),
-            std::move(m.textures),
-        };
+        gl::BindVertexArray(vao);
 
-        gl::BindVertexArray(rv.vao);
+        gl::BindBuffer(m.ebo);
 
-        gl::BindBuffer(rv.ebo);
-
-        // bind the vertices vbo
-        gl::BindBuffer(rv.vbo);
+        gl::BindBuffer(m.vbo);
         gl::VertexAttribPointer(p.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)0);
         gl::EnableVertexAttribArray(p.aPos);
         gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, normal));
         gl::EnableVertexAttribArray(p.aNormals);
         gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, tex_coords));
         gl::EnableVertexAttribArray(p.aTexCoords);
+
         gl::BindVertexArray();
 
-        return rv;
+        return vao;
     }
 
     struct Compiled_model final {
-        std::vector<Compiled_mesh> meshes;
+        std::shared_ptr<Model> m;
+        std::vector<gl::Vertex_array> vaos;
+
+        Compiled_model(Model_program& p, std::shared_ptr<Model> _m) :
+            m{std::move(_m)} {
+
+            vaos.reserve(m->meshes.size());
+            for (Mesh& m : m->meshes) {
+                vaos.push_back(create_vao(p, m));
+            }
+        }
     };
 
-    static Compiled_model compile(Model_program &p, Model m) {
-        Compiled_model rv;
-        rv.meshes.reserve(m.meshes.size());
-
-        for (Mesh& mesh : m.meshes) {
-            rv.meshes.push_back(compile(p, std::move(mesh)));
-        }
-
-        return rv;
-    }
-
     static void draw(Model_program& p,
-                     Compiled_mesh& m,
+                     Mesh& m,
+                     gl::Vertex_array& vao,
                      ui::Game_state& gs) {
         gl::UseProgram(p.p);
 
         // assign textures
         {
             size_t active_diff_textures = 0;
-            std::array<gl::Texture_2d const*, Model_program::maxDiffuseTextures> diff_handles;
+            std::array<GLint, Model_program::maxDiffuseTextures> diff_indices;
+            size_t active_spec_textures = 0;
+            std::array<GLint, Model_program::maxDiffuseTextures> spec_indices;
 
-            size_t active_spec__textures = 0;
-            std::array<gl::Texture_2d const*, Model_program::maxSpecularTextures> spec_handles;
-
-            // pass through texture list, gathering textures by type
-            for (std::shared_ptr<Mesh_tex> const& tp : m.textures) {
-                Mesh_tex const& t = *tp;
+            for (size_t i = 0; i < m.textures.size(); ++i) {
+                Mesh_tex const& t = *m.textures[i];
 
                 if (t.type == Tex_type::diffuse) {
-                    if (active_diff_textures >= diff_handles.size()) {
-                        static bool once = []() {
-                            std::cerr << "WARNING: skipping assignment of diffuse texture: too many textures" << std::endl;
-                            return true;
-                        }();
-                        continue;
+                    if (active_diff_textures >= diff_indices.size()) {
+                        throw std::runtime_error{"cannot assign diffuse texture: too many textures to assign"};
                     }
-
-                    diff_handles[active_diff_textures++] = &t.handle;
+                    diff_indices[active_diff_textures++] = static_cast<GLint>(i);
                 } else if (t.type == Tex_type::specular) {
-                    if (active_spec__textures >= spec_handles.size()) {
-                        static bool once = []() {
-                            std::cerr << "WARNING: skipping assignment of specular texture" << std::endl;
-                            return true;
-                        }();
-
-                        continue;  // skip assigning it (for now)
+                    if (active_spec_textures >= spec_indices.size()) {
+                        throw std::runtime_error{"cannot assign spec texture: too many textures to assign"};
                     }
-                    spec_handles[active_spec__textures++] = &t.handle;
+                    spec_indices[active_spec_textures++] = static_cast<GLint>(i);
                 } else {
                     throw std::runtime_error{"unhandled texture type encounted when drawing: this is probably because a new texture type has been added, but the drawing method has not been updated"};
                 }
+
+                glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+                gl::BindTexture(t.handle);
             }
 
-            // bind the diffuse textures
-            {
-                // the uniform array contains pointers to the GL texture index
-                // (e.g. GL_TEXTURE0). Must be contiguous for the assignment, so
-                // swizzle them into an array and assign the uniform.
-                std::array<GLint, Model_program::maxDiffuseTextures> tex_indices;
-                for (size_t i = 0; i < active_diff_textures; ++i) {
-                    tex_indices[i] = i;
-                }
-                gl::Uniform(p.uDiffuseTextures, active_diff_textures, tex_indices.data());
-
-                // and then bind the correct user-side texture handles to the correct
-                // shader-side index
-                for (size_t i = 0; i < active_diff_textures; ++i) {
-                    glActiveTexture(GL_TEXTURE0 + i);
-                    gl::BindTexture(*diff_handles[i]);
-                }
-
-                gl::Uniform(p.uActiveDiffuseTextures, active_diff_textures);
-            }
-
-            // bind the specular textures:
-            //     same story as diffuse textures (above), but they start
-            //     *after* them so they must be offset by `active_diff_textures`
-            {
-                std::array<GLint, Model_program::maxSpecularTextures> tex_indices;
-                for (size_t i = 0; i < active_spec__textures; ++i) {
-                    // this is offset by `active_diff_textures` because the
-                    // diff textures are already activated
-                    tex_indices[i] = active_diff_textures + i;
-                }
-                gl::Uniform(p.uSpecularTextures, active_spec__textures, tex_indices.data());
-
-                for (size_t i = 0; i < active_spec__textures; ++i) {
-                    glActiveTexture(GL_TEXTURE0 + active_diff_textures + i);
-                    gl::BindTexture(*spec_handles[i]);
-                }
-
-                gl::Uniform(p.uActiveSpecularTextures, active_spec__textures);
-            }
+            gl::Uniform(p.uDiffuseTextures,
+                        static_cast<GLsizei>(active_diff_textures),
+                        diff_indices.data());
+            gl::Uniform(p.uActiveDiffuseTextures, active_diff_textures);
+            gl::Uniform(p.uSpecularTextures,
+                        static_cast<GLsizei>(active_spec_textures),
+                        spec_indices.data());
+            gl::Uniform(p.uActiveSpecularTextures, active_spec_textures);
         }
 
         auto model_mat = glm::identity<glm::mat4>();
@@ -184,16 +127,16 @@ namespace {
         gl::Uniform(p.uDirLightSpecular, glm::vec3{1.0f});
         gl::Uniform(p.uViewPos, gs.camera.pos);
 
-        gl::BindVertexArray(m.vao);
+        gl::BindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, m.num_indices, GL_UNSIGNED_INT, nullptr);
         gl::BindVertexArray();
     }
 
     static void draw(Model_program& p,
                      Compiled_model& m,
-                     ui::Game_state& gs) {
-        for (Compiled_mesh& cm : m.meshes) {
-            draw(p, cm, gs);
+                     ui::Game_state& gs) {        
+        for (size_t i = 0; i < m.vaos.size(); ++i) {
+            draw(p, m.m->meshes[i], m.vaos[i], gs);
         }
     }
 }
@@ -206,8 +149,8 @@ int main(int, char**) {
 
     // Extra GL setup
     auto prog = Model_program{};
-    Model model = model::load_model(RESOURCES_DIR "backpack/backpack.obj");
-    Compiled_model cmodel = compile(prog, std::move(model));
+    std::shared_ptr<Model> model = model::load_model_cached(RESOURCES_DIR "backpack/backpack.obj");
+    Compiled_model cmodel{prog, std::move(model)};
 
     // Game state setup
     auto game = ui::Game_state{};

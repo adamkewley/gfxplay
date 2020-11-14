@@ -189,6 +189,12 @@ if (GFXPLAY_USE_ASSIMP)
         src/logl_instancing_3_planet.cpp
     )
     target_link_libraries(logl_instancing_3_planet common assimp)
+
+    # https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+    add_executable(logl_advanced-lighting
+        src/logl_advanced-lighting.cpp
+    )
+    target_link_libraries(logl_advanced-lighting common assimp)
 endif()
 
 if (GFXPLAY_USE_CAIRO)

@@ -47,7 +47,7 @@ namespace model {
         std::vector<Mesh> meshes;
     };
 
-    std::unique_ptr<Mesh_tex> load_tex(path p, Tex_type type) {
+    Mesh_tex load_texture(path p, Tex_type type) {
         // TODO: these should be set on a per-texture basis
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -55,22 +55,26 @@ namespace model {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         // TODO: the nonflipped API sucks
-        return std::make_unique<Mesh_tex>(
+        return Mesh_tex{
             type,
-            gl::nonflipped_and_mipmapped_texture(p.c_str()));
+            gl::nonflipped_and_mipmapped_texture(p.c_str())
+        };
     }
 
-    struct Caching_model_loader final {
+    struct Caching_texture_loader final {
         std::unordered_map<std::string, std::shared_ptr<Mesh_tex>> cache;
+        std::mutex m;
 
         std::shared_ptr<Mesh_tex> load(path p, Tex_type type) {
+            auto l = std::lock_guard(m);
             auto it = cache.find(p);
 
             if (it != cache.end()) {
                 return it->second;
             }
 
-            std::shared_ptr<Mesh_tex> t = load_tex(p, type);
+            std::shared_ptr<Mesh_tex> t =
+                std::make_shared<Mesh_tex>(load_texture(p, type));
 
             cache.emplace(std::move(p).string(), t);
 
@@ -79,13 +83,8 @@ namespace model {
     };
 
     std::shared_ptr<Mesh_tex> load_texture_cached(path p, Tex_type type) {
-        // TODO: the texture loader probably shouldn't be a global like this,
-        //       but cba'd refactoring right now
-        static Caching_model_loader cml;
-        static std::mutex m;
-
-        auto l = std::lock_guard(m);
-        return cml.load(p, type);
+        static Caching_texture_loader ctl;
+        return ctl.load(p, type);
     }
 
     Mesh load_mesh(path const& dir, aiScene const& scene, aiMesh const& mesh) {
@@ -179,6 +178,8 @@ namespace model {
             return textures;
         }();
 
+        textures.shrink_to_fit();
+
         return Mesh{std::move(vbo), std::move(ebo), num_indices , std::move(textures)};
     }
 
@@ -198,7 +199,7 @@ namespace model {
         }
     }
 
-    Model load_model(char const* path) {
+    Model load_model_(char const* path) {
         Assimp::Importer imp;
         aiScene const* scene =
             imp.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
@@ -218,6 +219,32 @@ namespace model {
         Model rv;
         process_node(model_dir, *scene, *scene->mRootNode, rv);
         return rv;
+    }
+
+    struct Caching_model_loader final {
+        std::unordered_map<std::string, std::shared_ptr<Model>> cache;
+        std::mutex m;
+
+        std::shared_ptr<Model> load(path p) {
+            auto l = std::lock_guard(m);
+            auto it = cache.find(p);
+
+            if (it != cache.end()) {
+                return it->second;
+            }
+
+            std::shared_ptr<Model> t =
+                std::make_shared<Model>(load_model_(p.c_str()));
+
+            cache.emplace(std::move(p).string(), t);
+
+            return t;
+        }
+    };
+
+    std::shared_ptr<Model> load_model_cached(char const* path) {
+        static Caching_model_loader cml;
+        return cml.load(path);
     }
 }
 
