@@ -199,6 +199,8 @@ namespace gl {
         Uniform_1i(GLint _handle) : handle{_handle} {}
     };
 
+    using Uniform_sampler2d = Uniform_1i;
+
     // type-safe wrapper for glUniformMatrix4fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
     struct Uniform_mat4f final {
@@ -268,6 +270,14 @@ namespace gl {
         glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
     }
 
+    struct Uniform_identity_val_tag {};
+
+    inline Uniform_identity_val_tag identity_val;
+
+    inline void Uniform(Uniform_mat4f& u, Uniform_identity_val_tag) {
+        Uniform(u, glm::identity<glm::mat4>());
+    }
+
     inline void Uniform(Uniform_vec2f& u, glm::vec2 const& v) {
         glUniform2fv(u.handle, 1, glm::value_ptr(v));
     }
@@ -303,7 +313,7 @@ namespace gl {
     void assert_no_errors(char const* label);
 
     // read an image file into an OpenGL 2D texture
-    gl::Texture_2d flipped_and_mipmapped_texture(char const* path);
+    gl::Texture_2d flipped_and_mipmapped_texture(char const* path, bool srgb = false);
 
     gl::Texture_2d nonflipped_and_mipmapped_texture(char const* path);
 
@@ -315,4 +325,8 @@ namespace gl {
             char const* path_neg_y,
             char const* path_pos_z,
             char const* path_neg_z);
+
+    inline glm::mat3 normal_matrix(glm::mat4 const& m) {
+         return glm::transpose(glm::inverse(m));
+    }
 }

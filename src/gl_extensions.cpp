@@ -134,16 +134,20 @@ gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
     return CompileGeometryShader(slurp_file(path).c_str());
 }
 
-gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path) {
+gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {
     auto t = gl::GenTexture2d();
     auto img = stbi::Image{path};
 
+    GLenum internalFormat;
     GLenum format;
     if (img.nrChannels == 1) {
+        internalFormat = GL_RED;
         format = GL_RED;
     } else if (img.nrChannels == 3) {
+        internalFormat = srgb ? GL_SRGB : GL_RGB;
         format = GL_RGB;
     } else if (img.nrChannels == 4) {
+        internalFormat = srgb ? GL_SRGB_ALPHA : GL_RGBA;
         format = GL_RGBA;
     } else {
         std::stringstream msg;
@@ -156,7 +160,7 @@ gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path) {
     gl::BindTexture(t.type, t);
     glTexImage2D(t.type,
                  0,
-                 format,
+                 internalFormat,
                  img.width,
                  img.height,
                  0,

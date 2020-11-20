@@ -1,4 +1,5 @@
 #include "logl_common.hpp"
+#include "logl_model.hpp"
 
 struct Blinn_phong_program final {
     gl::Program p = gl::CreateProgramFrom(
@@ -61,7 +62,7 @@ struct Whole_app final {
     }();
 
     gl::Texture_2d floor =
-        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png");
+        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png", true);
 
     void draw(ui::Game_state const& s, bool blinn) {
         gl::UseProgram(prog.p);
@@ -94,6 +95,8 @@ int main(int, char**) {
     auto sdl = ui::Window_state{};
     SDL_SetWindowGrab(sdl.window, SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
+
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     auto app = Whole_app{};
 

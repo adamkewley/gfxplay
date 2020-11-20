@@ -1,66 +1,44 @@
 #version 330 core
 
-out vec4 FragColor;
-
-struct DirLight {
-    vec3 direction;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
 in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoords;
 
-uniform vec3 viewPos;
-uniform DirLight light;
+out vec4 FragColor;
 
-#define MAX_DIFFUSE_TEXTURES 4
-uniform sampler2D diffuseTextures[MAX_DIFFUSE_TEXTURES];
-uniform int activeDiffuseTextures;
-#define MAX_SPECULAR_TEXTURES 4
-uniform sampler2D specularTextures[MAX_SPECULAR_TEXTURES];
-uniform int activeSpecularTextures;
+uniform sampler2D texture1;
+uniform vec3 lightPos;
+uniform vec3 viewPos;
+uniform bool blinn;
 
 void main() {
-    // Phong shader
+    vec3 color = texture(texture1, TexCoords).rgb;
+    // ambient
+    vec3 ambient = 0.00000005 * color;
+    // diffuse
+    vec3 lightDir = normalize(lightPos - FragPos);
+    vec3 normal = normalize(Normal);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = diff * color;
+    // specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = 0.0;
 
-    // ambient + diffuse: texture-independent vars
-    vec3 norm = normalize(Normal);
-    vec3 dirTowardsLight = normalize(-light.direction);
-    float diffuseStrength = max(dot(norm, dirTowardsLight), 0.0f);
-
-    // ambient:
-    //     surfaces are lit, regardless of orientation
-    // diffuse:
-    //     surfaces pointed towards light are lit more
-    vec3 ambient = vec3(0.0f);
-    vec3 diffuse = vec3(0.0f);
-    for (int i = 0; i < activeDiffuseTextures; ++i) {
-        vec3 textel = vec3(texture(diffuseTextures[i], TexCoords));
-
-        ambient += light.ambient * textel;
-        diffuse += light.diffuse * diffuseStrength * textel;
+    if (blinn) {
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    } else {
+        vec3 reflectDir = reflect(-lightDir, normal);
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), 64.0);
     }
 
-    // specular: texture-independent vars
-    vec3 dirAwayFromLight = -dirTowardsLight;
-    vec3 lightToViewReflect = reflect(norm, dirAwayFromLight);
-    vec3 fragToView = normalize(viewPos - FragPos);
-    float specularScaling = max(dot(fragToView, lightToViewReflect), 0.0f);
-    float materialShininess = 32.0f;
-    float specularAmount = pow(specularScaling, materialShininess);
+    vec3 specular = vec3(0.3) * spec; // assuming bright white light color
 
-    // specular: light that bounces from the light into the camera creates
-    //           highlights - if the material is shiny enough (decided by a
-    //           specular texture)
-    vec3 specular = vec3(0.0f);
-    for (int i = 0; i < activeSpecularTextures; ++i) {
-        vec3 textel = vec3(texture(specularTextures[i], TexCoords));
-        specular += light.specular * specularAmount * textel;
-    }
+    float distance = length(lightPos - FragPos);
+    float attenuation = 1.0 / (distance * distance);
+    diffuse *= attenuation;
+    specular *= attenuation;
 
-    FragColor = vec4(ambient + diffuse + specular, 1.0f);
+    FragColor = vec4(ambient + diffuse + specular, 1.0);
 }

@@ -189,13 +189,24 @@ if (GFXPLAY_USE_ASSIMP)
         src/logl_instancing_3_planet.cpp
     )
     target_link_libraries(logl_instancing_3_planet common assimp)
-
-    # https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
-    add_executable(logl_advanced-lighting
-        src/logl_advanced-lighting.cpp
-    )
-    target_link_libraries(logl_advanced-lighting common assimp)
 endif()
+
+# https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+add_executable(logl_advanced-lighting
+    src/logl_advanced-lighting.cpp
+)
+target_link_libraries(logl_advanced-lighting common)
+
+# https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+add_executable(logl_gamma-correction
+    src/logl_gamma-correction.cpp
+)
+target_link_libraries(logl_gamma-correction common)
+
+add_executable(logl_shadows_shadow-mapping
+    src/logl_shadows_shadow-mapping.cpp
+)
+target_link_libraries(logl_shadows_shadow-mapping common)
 
 if (GFXPLAY_USE_CAIRO)
     find_package(Cairo REQUIRED)

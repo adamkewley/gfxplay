@@ -379,4 +379,8 @@ namespace gl {
     inline void ClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha) {
         glClearColor(red, green, blue, alpha);
     }
+
+    inline void Viewport(GLint x, GLint y, GLsizei w, GLsizei h) {
+        glViewport(x, y, w, h);
+    }
 }
