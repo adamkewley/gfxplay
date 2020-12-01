@@ -138,7 +138,6 @@ namespace gl {
         BindTexture(texture.type, texture);
     }
 
-
     // type-safe wrapper around GL_TEXTURE_CUBE_MAP
     class Texture_cubemap final : public Texture_handle {
         friend Texture_cubemap GenTextureCubemap();
@@ -194,39 +193,39 @@ namespace gl {
 
     // type-safe wrapper for glUniform1i
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_1i final {
+    struct Uniform_int final {
         GLint handle;
-        Uniform_1i(GLint _handle) : handle{_handle} {}
+        Uniform_int(GLint _handle) : handle{_handle} {}
     };
 
-    using Uniform_sampler2d = Uniform_1i;
+    using Uniform_sampler2d = Uniform_int;
 
     // type-safe wrapper for glUniformMatrix4fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_mat4f final {
+    struct Uniform_mat4 final {
         GLint handle;
-        Uniform_mat4f(GLint _handle) : handle{_handle} {}
+        Uniform_mat4(GLint _handle) : handle{_handle} {}
     };
 
     // type-safe wrapper for glUniformMatrix3fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_mat3f final {
+    struct Uniform_mat3 final {
         GLint handle;
-        Uniform_mat3f(GLint _handle) : handle{_handle} {}
+        Uniform_mat3(GLint _handle) : handle{_handle} {}
     };
 
     // type-safe wrapper for UniformVec4f
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_vec4f final {
+    struct Uniform_vec4 final {
         GLint handle;
-        Uniform_vec4f(GLint _handle) : handle{_handle} {}
+        Uniform_vec4(GLint _handle) : handle{_handle} {}
     };
 
     // type-safe wrapper for UniformVec3f
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_vec3f final {
+    struct Uniform_vec3 final {
         GLint handle;
-        Uniform_vec3f(GLint _handle) : handle{_handle} {}
+        Uniform_vec3(GLint _handle) : handle{_handle} {}
     };
 
     struct Uniform_vec2f final {
@@ -234,39 +233,45 @@ namespace gl {
         Uniform_vec2f(GLint _handle) : handle{_handle} {}
     };
 
+    using Uniform_bool = Uniform_int;
+
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
     inline void Uniform(Uniform_1f& u, GLfloat value) {
         glUniform1f(u.handle, value);
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_mat4f& u, GLfloat const* value) {
+    inline void Uniform(Uniform_mat4& u, GLfloat const* value) {
         glUniformMatrix4fv(u.handle, 1, false, value);
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_1i& u, GLint value) {
+    inline void Uniform(Uniform_int& u, GLint value) {
         glUniform1i(u.handle, value);
     }
 
-    inline void Uniform(Uniform_1i& u, GLsizei n, GLint const* vs) {
+    inline void Uniform(Uniform_int& u, GLsizei n, GLint const* vs) {
         glUniform1iv(u.handle, n, vs);
     }
 
     // set uniforms directly from GLM types
-    inline void Uniform(Uniform_mat3f& u, glm::mat3 const& mat) {
+    inline void Uniform(Uniform_mat3& u, glm::mat3 const& mat) {
         glUniformMatrix3fv(u.handle, 1, false, glm::value_ptr(mat));
     }
 
-    inline void Uniform(Uniform_vec4f& u, glm::vec4 const& v) {
+    inline void Uniform(Uniform_vec4& u, glm::vec4 const& v) {
         glUniform4fv(u.handle, 1, glm::value_ptr(v));
     }
 
-    inline void Uniform(Uniform_vec3f& u, glm::vec3 const& v) {
+    inline void Uniform(Uniform_vec3& u, glm::vec3 const& v) {
         glUniform3fv(u.handle, 1, glm::value_ptr(v));
     }
 
-    inline void Uniform(Uniform_mat4f& u, glm::mat4 const& mat) {
+    inline void Uniform(Uniform_vec3& u, float x, float y, float z) {
+        glUniform3f(u.handle, x, y, z);
+    }
+
+    inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) {
         glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
     }
 
@@ -274,7 +279,7 @@ namespace gl {
 
     inline Uniform_identity_val_tag identity_val;
 
-    inline void Uniform(Uniform_mat4f& u, Uniform_identity_val_tag) {
+    inline void Uniform(Uniform_mat4& u, Uniform_identity_val_tag) {
         Uniform(u, glm::identity<glm::mat4>());
     }
 
@@ -290,15 +295,17 @@ namespace gl {
         glUniform2fv(u.handle, n, glm::value_ptr(*vs));
     }
 
-
     // COMPILE + LINK PROGRAMS:
 
     Vertex_shader CompileVertexShader(char const* src);
     Vertex_shader CompileVertexShaderFile(char const* path);
+    Vertex_shader CompileVertexShaderResource(char const* resource_id);
     Fragment_shader CompileFragmentShader(char const* src);
     Fragment_shader CompileFragmentShaderFile(char const* path);
+    Fragment_shader CompileFragmentShaderResource(char const* resource_id);
     Geometry_shader CompileGeometryShader(char const* src);
     Geometry_shader CompileGeometryShaderFile(char const* path);
+    Geometry_shader CompileGeometryShaderResource(char const* resource_id);
 
     Program CreateProgramFrom(Vertex_shader const& vs,
                               Fragment_shader const& fs);
@@ -329,4 +336,49 @@ namespace gl {
     inline glm::mat3 normal_matrix(glm::mat4 const& m) {
          return glm::transpose(glm::inverse(m));
     }
+
+    template<GLenum E>
+    inline constexpr unsigned texture_index() {
+        static_assert(GL_TEXTURE0 <= E and E <= GL_TEXTURE30);
+        return E - GL_TEXTURE0;
+    }
+
+    template<typename T>
+    class Sized_array_buffer final {
+        size_t _size = 0;
+        gl::Array_buffer _vbo = gl::GenArrayBuffer();
+
+    public:
+        template<typename Collection>
+        Sized_array_buffer(Collection const& c) :
+            Sized_array_buffer{c.begin(), c.end()} {
+        }
+
+        Sized_array_buffer(std::initializer_list<T> const& els) :
+            Sized_array_buffer{els.begin(), els.end()} {
+        }
+
+        Sized_array_buffer(T const* begin, T const* end) :
+            _size{static_cast<size_t>(std::distance(begin, end))} {
+
+            gl::BindBuffer(_vbo);
+            gl::BufferData(_vbo.type, static_cast<long>(_size * sizeof(T)), begin, GL_STATIC_DRAW);
+        }
+
+        gl::Array_buffer& data() noexcept {
+            return _vbo;
+        }
+
+        gl::Array_buffer const& data() const noexcept {
+            return _vbo;
+        }
+
+        size_t size() const noexcept {
+            return _size;
+        }
+
+        GLsizei sizei() const noexcept {
+            return static_cast<GLsizei>(_size);
+        }
+    };
 }

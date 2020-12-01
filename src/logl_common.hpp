@@ -309,7 +309,7 @@ namespace ui {
 }
 
 namespace util {
-    std::chrono::milliseconds now() {
+    inline std::chrono::milliseconds now() {
         // milliseconds is grabbed from SDL to ensure the clocks used by the UI
         // (e.g. SDL_Delay, etc.) match
         return std::chrono::milliseconds{SDL_GetTicks()};

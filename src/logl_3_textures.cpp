@@ -35,8 +35,8 @@ void main() {
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
         static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
-        gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
 
         struct Vbo_data final {
             glm::vec3 pos;

@@ -107,7 +107,7 @@ namespace gl {
 
     // type-safe wrapper for an GLSL attribute index
     //     (just prevents accidently handing a GLint to the wrong API)
-    struct Attribute final {
+    struct Attribute {
         GLuint handle;
         explicit constexpr Attribute(GLuint _handle) : handle{_handle} {}
     };
@@ -274,6 +274,20 @@ namespace gl {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+    inline void TexImage2D(
+            GLenum target,
+            GLint level,
+            GLint internalformat,
+            GLsizei width,
+            GLsizei height,
+            GLint border,
+            GLenum format,
+            GLenum type,
+            const void * data) {
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, data);
+    }
+
     // RAII wrapper for glDeleteFrameBuffers
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteFramebuffers.xhtml
     struct Frame_buffer final {
@@ -309,10 +323,38 @@ namespace gl {
         glBindFramebuffer(target, fb.handle);
     }
 
+    inline void BindFrameBuffer(GLenum target) {
+        glBindFramebuffer(target, 0);  // 0 is the window's FBO
+    }
+
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
     inline void BindFrameBuffer() {
-        // reset to default (monitor) FB
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);  // 0 is the window's FBO
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glFramebufferTexture2D.xml
+    inline void FramebufferTexture2D(
+            GLenum target,
+            GLenum attachment,
+            GLenum textarget,
+            GLuint texture,
+            GLint level) {
+        glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBlitFramebuffer.xhtml
+    inline void BlitFramebuffer(
+            GLint srcX0,
+            GLint srcY0,
+            GLint srcX1,
+            GLint srcY1,
+            GLint dstX0,
+            GLint dstY0,
+            GLint dstX1,
+            GLint dstY1,
+            GLbitfield mask,
+            GLenum filter) {
+        glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     }
 
     // RAII wrapper for glDeleteRenderBuffers

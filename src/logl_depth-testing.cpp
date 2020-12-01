@@ -77,13 +77,13 @@ void main()
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
         static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
-        gl::Uniform_mat4f uModel = gl::GetUniformLocation(color_prog, "model");
-        gl::Uniform_mat4f uView = gl::GetUniformLocation(color_prog, "view");
-        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(color_prog, "projection");
+        gl::Uniform_mat4 uModel = gl::GetUniformLocation(color_prog, "model");
+        gl::Uniform_mat4 uView = gl::GetUniformLocation(color_prog, "view");
+        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(color_prog, "projection");
 
-        gl::Uniform_mat4f uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::Uniform_mat4f uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::Uniform_mat4f uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
+        gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
+        gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
         gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
         gl::Vertex_array light_vao = gl::GenVertexArrays();
@@ -306,8 +306,8 @@ void main()
         }
 
     public:
-        gl::Uniform_mat4f getUProjectionColorProg() const;
-        void setUProjectionColorProg(const gl::Uniform_mat4f &value);
+        gl::Uniform_mat4 getUProjectionColorProg() const;
+        void setUProjectionColorProg(const gl::Uniform_mat4 &value);
     };
 }
 

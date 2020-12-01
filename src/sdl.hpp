@@ -223,6 +223,22 @@ namespace sdl {
     // https://wiki.libsdl.org/SDL_GetWindowSize
     Window_dimensions GetWindowSize(SDL_Window* window);
 
+    struct Mouse_state final {
+        int x;
+        int y;
+        Uint32 st;
+    };
+
+    // https://wiki.libsdl.org/SDL_GetMouseState
+    //
+    // mouse state relative to the focus window
+    inline Mouse_state GetMouseState() {
+        Mouse_state rv;
+        Uint32 st = SDL_GetMouseState(&rv.x, &rv.y);
+        rv.st = st;
+        return rv;
+    }
+
     void GL_SetSwapInterval(int interval);
 
     using Event = SDL_Event;

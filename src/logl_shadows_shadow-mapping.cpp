@@ -8,8 +8,8 @@ struct Depthmap_shader final {
 
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
 
-    gl::Uniform_mat4f uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
-    gl::Uniform_mat4f uModel = gl::GetUniformLocation(p, "model");
+    gl::Uniform_mat4 uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
+    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
 };
 
 struct Shadowmap_shader final {
@@ -20,16 +20,16 @@ struct Shadowmap_shader final {
     static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
     static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
 
-    gl::Uniform_mat4f uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4f uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4f uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
+    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
+    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
     //gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
-    gl::Uniform_mat4f uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
+    gl::Uniform_mat4 uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
 
     gl::Uniform_sampler2d uTexture = gl::GetUniformLocation(p, "diffuseTexture");
     gl::Uniform_sampler2d uShadowMap = gl::GetUniformLocation(p, "shadowMap");
-    gl::Uniform_vec3f uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3f uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
+    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
 };
 
 // debugging: basic texture shader /w no lighting calcs

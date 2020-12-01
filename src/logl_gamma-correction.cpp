@@ -1,5 +1,4 @@
 #include "logl_common.hpp"
-#include "logl_model.hpp"
 
 struct Blinn_phong_program final {
     gl::Program p = gl::CreateProgramFrom(
@@ -10,16 +9,16 @@ struct Blinn_phong_program final {
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
     static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
     static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
-    gl::Uniform_mat4f uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4f uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4f uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
+    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
+    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
 
     // frag shader attrs/uniforms
-    gl::Uniform_1i uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_vec3f uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3f uViewPos = gl::GetUniformLocation(p, "viewPos");
-    gl::Uniform_1i uBlinn = gl::GetUniformLocation(p, "blinn");
+    gl::Uniform_int uTexture1 = gl::GetUniformLocation(p, "texture1");
+    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
+    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_int uBlinn = gl::GetUniformLocation(p, "blinn");
 };
 
 struct Whole_app final {

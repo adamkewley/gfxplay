@@ -1,5 +1,7 @@
 #include "gl_extensions.hpp"
 
+#include "logl_common.hpp"
+
 // stbi for image loading
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -11,6 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <filesystem>
 
 using std::literals::operator""s;
 
@@ -90,6 +93,26 @@ static std::string slurp_file(const char* path) {
     return ss.str();
 }
 
+static std::string resource_path(const char* path) {
+    std::filesystem::path p{path};
+
+    if (p.has_root_directory()) {
+        return p;
+    }
+
+    auto it = p.begin();
+    if (it == p.end()) {
+        throw std::runtime_error{"empty path given to CompileVertexShaderFile"};
+    }
+
+    auto first = *it;
+    if (first == RESOURCES_DIR) {
+        return p;
+    }
+
+    return std::filesystem::path{RESOURCES_DIR} / p;
+}
+
 // asserts there are no current OpenGL errors (globally)
 void gl::assert_no_errors(char const* label) {
     static auto to_string = [](GLubyte const* err_string) {
@@ -126,12 +149,24 @@ gl::Vertex_shader gl::CompileVertexShaderFile(char const* path) {
     return CompileVertexShader(slurp_file(path).c_str());
 }
 
+gl::Vertex_shader gl::CompileVertexShaderResource(char const* resource) {
+    return CompileVertexShaderFile(resource_path(resource).c_str());
+}
+
 gl::Fragment_shader gl::CompileFragmentShaderFile(char const* path) {
     return CompileFragmentShader(slurp_file(path).c_str());
 }
 
+gl::Fragment_shader gl::CompileFragmentShaderResource(char const* resource) {
+    return CompileFragmentShaderFile(resource_path(resource).c_str());
+}
+
 gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
     return CompileGeometryShader(slurp_file(path).c_str());
+}
+
+gl::Geometry_shader gl::CompileGeometryShaderResource(char const* resource) {
+    return CompileGeometryShaderFile(resource_path(resource).c_str());
 }
 
 gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {

@@ -48,13 +48,13 @@ void main() {
         ));
         gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
         gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
-        gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "uModel");
-        gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "uView");
-        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "uProjection");
+        gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "uModel");
+        gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "uView");
+        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "uProjection");
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
-        gl::Uniform_1i uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform_1i uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
+        gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
         gl::Array_buffer ab = gl::GenArrayBuffer();
         gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
         gl::Vertex_array vao = gl::GenVertexArrays();

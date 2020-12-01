@@ -45,9 +45,9 @@ namespace {
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
-        gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "model");
-        gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "view");
-        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "projection");
+        gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "model");
+        gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
+        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
                 gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =

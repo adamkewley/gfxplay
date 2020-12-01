@@ -48,23 +48,23 @@ struct Instanced_model_program final {
     static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
     static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
     static constexpr gl::Attribute aInstanceMatrix = gl::AttributeAtLocation(3);
-    gl::Uniform_mat4f uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4f uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
+    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
 
-    gl::Uniform_vec3f uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
 
-    gl::Uniform_vec3f uDirLightDirection = gl::GetUniformLocation(p, "light.direction");
-    gl::Uniform_vec3f uDirLightAmbient = gl::GetUniformLocation(p, "light.ambient");
-    gl::Uniform_vec3f uDirLightDiffuse = gl::GetUniformLocation(p, "light.diffuse");
-    gl::Uniform_vec3f uDirLightSpecular = gl::GetUniformLocation(p, "light.specular");
+    gl::Uniform_vec3 uDirLightDirection = gl::GetUniformLocation(p, "light.direction");
+    gl::Uniform_vec3 uDirLightAmbient = gl::GetUniformLocation(p, "light.ambient");
+    gl::Uniform_vec3 uDirLightDiffuse = gl::GetUniformLocation(p, "light.diffuse");
+    gl::Uniform_vec3 uDirLightSpecular = gl::GetUniformLocation(p, "light.specular");
 
     static constexpr size_t maxDiffuseTextures = 4;
-    gl::Uniform_1i uDiffuseTextures = gl::GetUniformLocation(p, "diffuseTextures");
-    gl::Uniform_1i uActiveDiffuseTextures = gl::GetUniformLocation(p, "activeDiffuseTextures");
+    gl::Uniform_int uDiffuseTextures = gl::GetUniformLocation(p, "diffuseTextures");
+    gl::Uniform_int uActiveDiffuseTextures = gl::GetUniformLocation(p, "activeDiffuseTextures");
     static constexpr size_t maxSpecularTextures = 4;
-    gl::Uniform_1i uSpecularTextures = gl::GetUniformLocation(p, "specularTextures");
-    gl::Uniform_1i uActiveSpecularTextures = gl::GetUniformLocation(p, "activeSpecularTextures");
+    gl::Uniform_int uSpecularTextures = gl::GetUniformLocation(p, "specularTextures");
+    gl::Uniform_int uActiveSpecularTextures = gl::GetUniformLocation(p, "activeSpecularTextures");
 };
 
 using model::Mesh_tex;

@@ -45,9 +45,9 @@ namespace {
             gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
-        gl::Uniform_mat4f uModel = gl::GetUniformLocation(prog, "model");
-        gl::Uniform_mat4f uView = gl::GetUniformLocation(prog, "view");
-        gl::Uniform_mat4f uProjection = gl::GetUniformLocation(prog, "projection");
+        gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "model");
+        gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
+        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
                 gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =
@@ -188,9 +188,9 @@ namespace {
             gl::CompileGeometryShaderFile(RESOURCES_DIR "logl_geom_normals.geom"));
         static constexpr gl::Attribute normals_aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute normals_aNormal = gl::AttributeAtLocation(1);
-        gl::Uniform_mat4f normals_uModel = gl::GetUniformLocation(normals_prog, "model");
-        gl::Uniform_mat4f normals_uView = gl::GetUniformLocation(normals_prog, "view");
-        gl::Uniform_mat4f normals_uProjection = gl::GetUniformLocation(normals_prog, "projection");
+        gl::Uniform_mat4 normals_uModel = gl::GetUniformLocation(normals_prog, "model");
+        gl::Uniform_mat4 normals_uView = gl::GetUniformLocation(normals_prog, "view");
+        gl::Uniform_mat4 normals_uProjection = gl::GetUniformLocation(normals_prog, "projection");
         gl::Array_buffer normals_vbo = []() {
             static const float vertices[] = {
                 -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,

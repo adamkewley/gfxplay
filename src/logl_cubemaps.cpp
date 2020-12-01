@@ -107,8 +107,8 @@ void main() {
         ));
 
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        gl::Uniform_mat4f projection = gl::GetUniformLocation(prog, "projection");
-        gl::Uniform_mat4f view = gl::GetUniformLocation(prog, "view");
+        gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
+        gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
 
         gl::Array_buffer cube_ab = []() {
             auto buf = gl::GenArrayBuffer();
@@ -175,8 +175,8 @@ void main() {
         ));
 
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        gl::Uniform_mat4f projection = gl::GetUniformLocation(prog, "projection");
-        gl::Uniform_mat4f view = gl::GetUniformLocation(prog, "view");
+        gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
+        gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
 
         gl::Array_buffer cube_ab = []() {
             auto buf = gl::GenArrayBuffer();
