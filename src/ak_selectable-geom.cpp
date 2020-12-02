@@ -7,13 +7,21 @@ struct Shaded_textured_vert final {
 };
 static_assert(sizeof(Shaded_textured_vert) == 8*sizeof(float));
 
-// basic shader that:
+struct Plain_vert final {
+    glm::vec3 pos;
+};
+static_assert(sizeof(Plain_vert) == 3*sizeof(float));
+
+struct Colored_vert final {
+    glm::vec3 pos;
+    glm::vec3 color;
+};
+static_assert(sizeof(Colored_vert) == 6*sizeof(float));
+
+// shader that renders geometry with Blinn-Phong shading. Requires the geometry
+// to have surface normals and textures
 //
-// - renders Blinn-Phong shadeable geometry (i.e. has normals,
-//   normal matrix, a single light)
-// - that has a texture
-//
-// no extras (e.g. specular maps, multiple lights), just a basic shader
+// only supports one light and one diffuse texture
 struct Blinn_phong_textured_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderResource("selectable.vert"),
@@ -53,13 +61,7 @@ static gl::Vertex_array create_vao(
     return vao;
 }
 
-// shader that:
-//
-// - renders *not-shaded* geometry
-// - that has a texture
-//
-// ideal for debugging textures, because it does nothing more than show the
-// texture
+// shader that renders geometry with basic texture mapping (no lighting etc.)
 struct Plain_texture_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderResource("plain_texture_shader.vert"),
@@ -94,12 +96,7 @@ static gl::Vertex_array create_vao(
     return vao;
 }
 
-// shader that:
-//
-// - renders *not-shaded* geometry
-// - all one (uniform-defined) color
-//
-// ideal for adding solid-colored UI elements (highlights, axes, manipulators)
+// shader that renders geometry with a solid, uniform-defined, color
 struct Uniform_color_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderResource("uniform_color_shader.vert"),
@@ -125,6 +122,56 @@ static gl::Vertex_array create_vao(
     gl::BindBuffer(vbo.data());
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
+
+    gl::BindVertexArray();
+
+    return vao;
+}
+
+static gl::Vertex_array create_vao(
+        Uniform_color_shader& s,
+        gl::Sized_array_buffer<Plain_vert>& vbo) {
+
+    gl::Vertex_array vao = gl::GenVertexArrays();
+
+    gl::BindVertexArray(vao);
+
+    gl::BindBuffer(vbo.data());
+    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Plain_vert), reinterpret_cast<void*>(offsetof(Plain_vert, pos)));
+    gl::EnableVertexAttribArray(s.aPos);
+
+    gl::BindVertexArray();
+
+    return vao;
+}
+
+// shader that renders geometry with an attribute-defined color
+struct Attribute_color_shader final {
+    gl::Program p = gl::CreateProgramFrom(
+        gl::CompileVertexShaderResource("attribute_color_shader.vert"),
+        gl::CompileFragmentShaderResource("attribute_color_shader.frag"));
+
+    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+    static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+
+    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
+    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
+    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+};
+
+static gl::Vertex_array create_vao(
+        Attribute_color_shader& s,
+        gl::Sized_array_buffer<Colored_vert>& vbo) {
+
+    gl::Vertex_array vao = gl::GenVertexArrays();
+
+    gl::BindVertexArray(vao);
+
+    gl::BindBuffer(vbo.data());
+    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, pos)));
+    gl::EnableVertexAttribArray(s.aPos);
+    gl::VertexAttribPointer(s.aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, color)));
+    gl::EnableVertexAttribArray(s.aColor);
 
     gl::BindVertexArray();
 
@@ -189,6 +236,31 @@ static constexpr std::array<Shaded_textured_vert, 6> shaded_textured_quad_verts 
     {{ 1.0f,  1.0f,  0.0f}, {0.0f,  0.0f,  1.0f}, {1.0f, 1.0f}}, // top-right
     {{-1.0f, -1.0f,  0.0f}, {0.0f,  0.0f,  1.0f}, {0.0f, 0.0f}}, // bottom-left
     {{-1.0f,  1.0f,  0.0f}, {0.0f,  0.0f,  1.0f}, {0.0f, 1.0f}}  // top-left
+}};
+
+static constexpr std::array<Plain_vert, 6> plain_axes_verts = {{
+    {{0.0f, 0.0f, 0.0f}}, // x origin
+    {{1.0f, 0.0f, 0.0f}}, // x
+
+    {{0.0f, 0.0f, 0.0f}}, // y origin
+    {{0.0f, 1.0f, 0.0f}}, // y
+
+    {{0.0f, 0.0f, 0.0f}}, // z origin
+    {{0.0f, 0.0f, 1.0f}}  // z
+}};
+
+static constexpr std::array<Colored_vert, 6> colored_axes_verts = {{
+    // x axis (red)
+    {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+
+    // y axis (green)
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+
+    // z axis (blue)
+    {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}
 }};
 
 // data associated with a single instance of (in this case) a cube
@@ -333,6 +405,8 @@ struct Renderer final {
         return gl::Sized_array_buffer<Shaded_textured_vert>{quad_copy};
     }();
 
+    gl::Sized_array_buffer<Colored_vert> axes_vbo{colored_axes_verts};
+
     Blinn_phong_textured_shader bps_shader;
     gl::Vertex_array bps_cube_vao = create_vao(bps_shader, cube_vbo);
     gl::Vertex_array bps_floor_vao = create_vao(bps_shader, floor_vbo);
@@ -344,6 +418,8 @@ struct Renderer final {
     gl::Vertex_array ucs_quad_vao = create_vao(ucs_shader, quad_vbo);
     gl::Vertex_array ucs_cube_vao = create_vao(ucs_shader, cube_vbo);
 
+    Attribute_color_shader acs_shader;
+    gl::Vertex_array acs_axes_vao = create_vao(acs_shader, axes_vbo);
 
     static constexpr glm::vec3 light_pos = {-2.0f, 1.0f, -1.0f};
 
@@ -574,6 +650,8 @@ struct Renderer final {
         // draws a quad on-screen that shows the depth map. Handy if the
         // shadows look like ass
         {
+            glDisable(GL_DEPTH_TEST);
+
             gl::UseProgram(pts_shader.p);
 
             {
@@ -587,6 +665,35 @@ struct Renderer final {
             gl::BindVertexArray(pts_quad_vao);
             gl::DrawArrays(GL_TRIANGLES, 0, quad_vbo.sizei());
             gl::BindVertexArray();
+
+            glEnable(GL_DEPTH_TEST);
+        }
+
+        // (optional 3): draw axes in bottom-right corner
+        {
+            glDisable(GL_DEPTH_TEST);
+
+            gl::UseProgram(acs_shader.p);
+
+            // the axes should be *rotated* the same way that the scene is
+            // due to the camera location but shouldn't be translated
+            glm::mat4 v = view_mtx;
+            v[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+
+            glm::mat4 m = glm::identity<glm::mat4>();
+            m = glm::translate(m, glm::vec3{-0.9f, -0.9f, 0.0f});
+            m = m * v;
+            m = glm::scale(m, glm::vec3{0.1f});
+
+            gl::Uniform(acs_shader.uModel, m);
+            gl::Uniform(acs_shader.uView, gl::identity_val);
+            gl::Uniform(acs_shader.uProjection, gl::identity_val);
+            gl::BindVertexArray(acs_axes_vao);
+            gl::DrawArrays(GL_LINES, 0, axes_vbo.sizei());
+            gl::BindVertexArray();
+
+            glEnable(GL_DEPTH_TEST);
         }
     }
 };

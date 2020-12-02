@@ -203,10 +203,16 @@ add_executable(logl_gamma-correction
 )
 target_link_libraries(logl_gamma-correction common)
 
+# https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 add_executable(logl_shadows_shadow-mapping
     src/logl_shadows_shadow-mapping.cpp
 )
 target_link_libraries(logl_shadows_shadow-mapping common)
+
+
+# personal experiment: selectable geometry
+add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)
+target_link_libraries(ak_selectable-geom common)
 
 if (GFXPLAY_USE_CAIRO)
     find_package(Cairo REQUIRED)
@@ -214,6 +220,10 @@ if (GFXPLAY_USE_CAIRO)
     add_executable(clock src/clock.cpp)
     target_link_libraries(clock common ${Cairo_LIBRARY})
     target_include_directories(clock PUBLIC src/cairo.hpp)
+
+    add_executable(qtree src/qtree.cpp)
+    target_link_libraries(qtree common ${Cairo_LIBRARY})
+    target_include_directories(qtree PUBLIC src/cairo.hpp)
 endif()
 
 source_group(TREE third_party/)
