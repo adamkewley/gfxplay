@@ -146,7 +146,15 @@ void gl::assert_no_errors(char const* label) {
 }
 
 gl::Vertex_shader gl::CompileVertexShaderFile(char const* path) {
-    return CompileVertexShader(slurp_file(path).c_str());
+    try {
+        return CompileVertexShader(slurp_file(path).c_str());
+    } catch (std::exception const& e) {
+        std::stringstream ss;
+        ss << path;
+        ss << ": cannot compile vertex shader: ";
+        ss << e.what();
+        throw std::runtime_error{std::move(ss).str()};
+    }
 }
 
 gl::Vertex_shader gl::CompileVertexShaderResource(char const* resource) {
@@ -154,7 +162,15 @@ gl::Vertex_shader gl::CompileVertexShaderResource(char const* resource) {
 }
 
 gl::Fragment_shader gl::CompileFragmentShaderFile(char const* path) {
-    return CompileFragmentShader(slurp_file(path).c_str());
+    try {
+        return CompileFragmentShader(slurp_file(path).c_str());
+    } catch (std::exception const& e) {
+        std::stringstream ss;
+        ss << path;
+        ss << ": cannot compile fragment shader: ";
+        ss << e.what();
+        throw std::runtime_error{std::move(ss).str()};
+    }
 }
 
 gl::Fragment_shader gl::CompileFragmentShaderResource(char const* resource) {
@@ -162,7 +178,15 @@ gl::Fragment_shader gl::CompileFragmentShaderResource(char const* resource) {
 }
 
 gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
-    return CompileGeometryShader(slurp_file(path).c_str());
+    try {
+        return CompileGeometryShader(slurp_file(path).c_str());
+    } catch (std::exception const& e) {
+        std::stringstream ss;
+        ss << path;
+        ss << ": cannot compile geometry shader: ";
+        ss << e.what();
+        throw std::runtime_error{std::move(ss).str()};
+    }
 }
 
 gl::Geometry_shader gl::CompileGeometryShaderResource(char const* resource) {

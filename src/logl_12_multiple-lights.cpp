@@ -69,7 +69,7 @@ void main() {
 
         gl::Uniform_int uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
         gl::Uniform_int uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform_1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_float uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
 
         gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
         gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
@@ -199,7 +199,7 @@ void main() {
                     gl::Uniform(u, v);
                 };
                 auto setFloat = [&](const char* name, float v) {
-                    gl::Uniform_1f u = gl::GetUniformLocation(color_prog, name);
+                    gl::Uniform_float u = gl::GetUniformLocation(color_prog, name);
                     gl::Uniform(u, v);
                 };
 

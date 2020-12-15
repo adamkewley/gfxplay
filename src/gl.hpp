@@ -16,8 +16,7 @@
 // to have an API that is simple, rather than robustly encapsulated etc.
 //
 // `inline`ing here is alright, provided it just forwards the gl calls and
-//  doesn't do much else (e.g. throw exceptions, which this header doesn't
-//  expose to keep compilation units small)
+//  doesn't do much else
 
 namespace gl {
     // RAII wrapper for glDeleteShader
@@ -319,18 +318,16 @@ namespace gl {
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
+    inline void BindFrameBuffer(GLenum target, GLuint handle) {
+        glBindFramebuffer(target, handle);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
     inline void BindFrameBuffer(GLenum target, Frame_buffer const& fb) {
         glBindFramebuffer(target, fb.handle);
     }
 
-    inline void BindFrameBuffer(GLenum target) {
-        glBindFramebuffer(target, 0);  // 0 is the window's FBO
-    }
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
-    inline void BindFrameBuffer() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);  // 0 is the window's FBO
-    }
+    static constexpr GLuint window_fbo = 0;
 
     // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glFramebufferTexture2D.xml
     inline void FramebufferTexture2D(

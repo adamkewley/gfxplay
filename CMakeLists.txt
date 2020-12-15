@@ -7,13 +7,17 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(GFXPLAY_USE_ASSIMP "build assimp-related demos" NO)
-option(GFXPLAY_USE_CAIRO "build cairo-based demos" NO)
+if (CMAKE_BUILD_TYPE MATCHES "Rel")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+option(GFXPLAY_USE_ASSIMP "build assimp-related demos" YES)
+option(GFXPLAY_USE_CAIRO "build cairo-based demos" YES)
 
 add_subdirectory(third_party/glew-2.1.0/build/cmake/ EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/glm-0.9.9.8 EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/SDL2-2.0.12 EXCLUDE_FROM_ALL)
-find_package(OpenGL REQUIRED)
+# find_package(OpenGL REQUIRED) linking to glew/glew_s resolves this
 
 set(RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources/)
 configure_file(src/gfxplay_config.hpp.in gfxplay_config.hpp)
@@ -35,6 +39,7 @@ add_library(common STATIC
     src/imgui_extensions.hpp
     src/imgui_extensions.cpp
     src/logl_common.hpp
+    src/ak_common-shaders.hpp
 )
 target_include_directories(common PUBLIC
     third_party/SDL2-2.0.12/include
@@ -44,12 +49,14 @@ target_include_directories(common PUBLIC
     third_party/stb_image/
     ${PROJECT_BINARY_DIR}  # so configure_file config can be #included
 )
-target_link_libraries(common
-    ${OPENGL_LIBRARIES}
-    SDL2
-    glew_s
-    stdc++fs
-)
+
+target_link_libraries(common stdc++fs)
+if (CMAKE_BUILD_TYPE MATCHES "Rel")
+    target_link_libraries(common SDL2 glew)
+else()
+    target_link_libraries(common SDL2-static glew_s)
+endif()
+
 target_compile_options(common PUBLIC
     # disable MSVC permissiveness. Forces MSVC to obey C++ standard
     # - specifically, this enables the use of 'and', 'not', etc.
@@ -209,6 +216,16 @@ add_executable(logl_shadows_shadow-mapping
 )
 target_link_libraries(logl_shadows_shadow-mapping common)
 
+# https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
+add_executable(logl_shadows_point-shadows
+    src/logl_shadows_point-shadows.cpp
+)
+target_link_libraries(logl_shadows_point-shadows common)
+
+add_executable(logl_normal-mapping
+    src/logl_normal-mapping.cpp
+)
+target_link_libraries(logl_normal-mapping common)
 
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)

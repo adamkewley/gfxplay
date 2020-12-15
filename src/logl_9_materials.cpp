@@ -126,7 +126,7 @@ void main() {
         gl::Uniform_vec3 uMaterialAmbient = gl::GetUniformLocation(color_prog, "material.ambient");
         gl::Uniform_vec3 uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
         gl::Uniform_vec3 uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform_1f uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_float uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
 
         gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(color_prog, "light.pos");
         gl::Uniform_vec3 uLightAmbient = gl::GetUniformLocation(color_prog, "light.ambient");

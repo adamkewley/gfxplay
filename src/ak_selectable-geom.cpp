@@ -471,7 +471,7 @@ struct Renderer final {
         // attach FBO color to texture
         gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quad_texture.type, quad_texture, 0);
 
-        gl::BindFrameBuffer();
+        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
         return fbo;
     }();
@@ -550,13 +550,11 @@ struct Renderer final {
 
             // DEBUG: blit the object ID render to a texture
             {
-                gl::BindFrameBuffer(GL_READ_FRAMEBUFFER);
+                gl::BindFrameBuffer(GL_READ_FRAMEBUFFER, gl::window_fbo);
                 gl::BindFrameBuffer(GL_DRAW_FRAMEBUFFER, quad_fbo);
                 auto [ww, wh] = sdl::GetWindowSize(w.window);
                 gl::BlitFramebuffer(0, 0, ww, wh, 0, 0, quad_width, quad_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-                gl::BindFrameBuffer();
-
-
+                gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
             }
 
             // clear the rendered data: it's served its purpose

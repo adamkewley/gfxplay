@@ -186,9 +186,9 @@ namespace gl {
     // UNIFORMS:
 
     // type-safe wrapper for glUniform1f
-    struct Uniform_1f final {
+    struct Uniform_float final {
         GLint handle;
-        Uniform_1f(GLint _handle) : handle{_handle} {}
+        Uniform_float(GLint _handle) : handle{_handle} {}
     };
 
     // type-safe wrapper for glUniform1i
@@ -199,6 +199,7 @@ namespace gl {
     };
 
     using Uniform_sampler2d = Uniform_int;
+    using Uniform_samplerCube = Uniform_int;
 
     // type-safe wrapper for glUniformMatrix4fv
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
@@ -236,7 +237,7 @@ namespace gl {
     using Uniform_bool = Uniform_int;
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_1f& u, GLfloat value) {
+    inline void Uniform(Uniform_float& u, GLfloat value) {
         glUniform1f(u.handle, value);
     }
 
@@ -273,6 +274,11 @@ namespace gl {
 
     inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) {
         glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
+    }
+
+    inline void Uniform(Uniform_mat4& u, GLsizei n, glm::mat4 const* first) {
+        static_assert(sizeof(glm::mat4) == 16*sizeof(GLfloat));
+        glUniformMatrix4fv(u.handle, n, false, glm::value_ptr(*first));
     }
 
     struct Uniform_identity_val_tag {};
@@ -348,7 +354,7 @@ namespace gl {
         size_t _size = 0;
         gl::Array_buffer _vbo = gl::GenArrayBuffer();
 
-    public:
+    public:     
         template<typename Collection>
         Sized_array_buffer(Collection const& c) :
             Sized_array_buffer{c.begin(), c.end()} {

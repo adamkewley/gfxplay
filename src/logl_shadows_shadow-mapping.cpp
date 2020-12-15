@@ -268,7 +268,7 @@ struct App final {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map, 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
-        gl::BindFrameBuffer();
+        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
         return fbo;
     }();
 
@@ -320,7 +320,7 @@ struct App final {
             gl::BindVertexArray();
             glCullFace(GL_BACK);
 
-            gl::BindFrameBuffer();
+            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
             auto [width, height] = sdl::GetWindowSize(w.window);
             gl::Viewport(0, 0, width, height);
         }
