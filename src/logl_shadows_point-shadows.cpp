@@ -87,7 +87,7 @@ static std::array<glm::mat4, 6> generate_shadow_matrices(glm::vec3 light_pos) {
     }};
 }
 
-struct Renderer final {
+struct Screen final {
     // scene: skybox cube with some cubes dangling around inside
     glm::vec3 lightPos{0.0f, 0.0f, 0.0f};
 
@@ -171,7 +171,7 @@ struct Renderer final {
 
 
     gl::Texture_2d wood_texture{
-        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png", true)
+        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB)
     };
 
     gl::Texture_cubemap depth_cubemap = []() {
@@ -281,7 +281,7 @@ int main(int, char**) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    Renderer renderer;
+    Screen renderer;
 
     // Game state setup
     auto game = ui::Game_state{};

@@ -50,8 +50,8 @@ static std::array<Tangentspace_vert, N> compute_tangents_and_bitangents(std::arr
 
 struct Parallax_texture_shader final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderResource("bumpmap_shader.vert"),
-        gl::CompileFragmentShaderResource("bumpmap_shader.frag"));
+        gl::CompileVertexShaderResource("parallax_shader.vert"),
+        gl::CompileFragmentShaderResource("parallax_shader.frag"));
 
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
     static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
@@ -63,17 +63,17 @@ struct Parallax_texture_shader final {
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
     gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
     gl::Uniform_mat4 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
-
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_sampler2d uNormalMap = gl::GetUniformLocation(p, "normalMap");
     gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
     gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+
+    gl::Uniform_sampler2d uDiffuseTex = gl::GetUniformLocation(p, "DiffuseTex");
+    gl::Uniform_sampler2d uNormalTex = gl::GetUniformLocation(p, "NormalTex");
+    gl::Uniform_sampler2d uDepthTex = gl::GetUniformLocation(p, "DepthTex");
+    gl::Uniform_float uHeightScale = gl::GetUniformLocation(p, "HeightScale");
 };
 
 template<typename T>
-static gl::Vertex_array create_vao(
-        Parallax_texture_shader& s,
-        gl::Sized_array_buffer<T>& vbo) {
+static gl::Vertex_array create_vao(Parallax_texture_shader& s, gl::Sized_array_buffer<T>& vbo) {
 
     gl::Vertex_array vao = gl::GenVertexArrays();
 
@@ -97,20 +97,38 @@ static gl::Vertex_array create_vao(
     return vao;
 }
 
-struct Screen final {
+struct Renderer final {
     gl::Sized_array_buffer<Tangentspace_vert> quad_vbo =
         compute_tangents_and_bitangents(shaded_textured_quad_verts);
 
     Parallax_texture_shader bs;
     gl::Vertex_array bs_quad_vao = create_vao(bs, quad_vbo);
 
-    gl::Texture_2d diffuse_tex{
-        gl::load_tex(RESOURCES_DIR "textures/brickwall.jpg", gl::TexFlag_SRGB)
-    };
+    struct {
+        gl::Texture_2d diffuse{
+            gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB)
+        };
+        gl::Texture_2d normals{
+            gl::load_tex(RESOURCES_DIR "textures/toy_box_normal.png")
+        };
+        gl::Texture_2d depth{
+            gl::load_tex(RESOURCES_DIR "textures/toy_box_disp.png")
+        };
+    } wood;
 
-    gl::Texture_2d normal_tex{
-        gl::load_tex(RESOURCES_DIR "textures/brickwall_normal.jpg")
-    };
+    struct {
+        gl::Texture_2d diffuse{
+            gl::load_tex(RESOURCES_DIR "textures/bricks2.jpg", gl::TexFlag_SRGB)
+        };
+        gl::Texture_2d normals{
+            gl::load_tex(RESOURCES_DIR "textures/bricks2_normal.jpg")
+        };
+        gl::Texture_2d depth{
+            gl::load_tex(RESOURCES_DIR "textures/bricks2_disp.jpg")
+        };
+    } brick;
+
+    bool use_wood = true;
 
     glm::vec3 light_pos{0.0f, 0.1f, 1.0f};
 
@@ -119,6 +137,8 @@ struct Screen final {
         m = glm::rotate(m, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f});
         return m;
     }();
+
+    static constexpr float height_scale = 0.05f;
 
     void tick(std::chrono::milliseconds cur) {
         auto x = static_cast<float>(cur.count()) / 1000.0f;
@@ -133,14 +153,23 @@ struct Screen final {
         gl::Uniform(bs.uProjection, s.camera.persp_mtx());
         gl::Uniform(bs.uNormalMatrix, gl::normal_matrix(model_mtx));
 
+        gl::Texture_2d& diff = use_wood ? wood.diffuse : brick.diffuse;
+        gl::Texture_2d& norms = use_wood ? wood.normals : brick.normals;
+        gl::Texture_2d& depth = use_wood ? wood.depth : brick.depth;
+
         gl::ActiveTexture(GL_TEXTURE0);
-        gl::BindTexture(diffuse_tex);
-        gl::Uniform(bs.uTexture1, gl::texture_index<GL_TEXTURE0>());
+        gl::BindTexture(diff);
+        gl::Uniform(bs.uDiffuseTex, gl::texture_index<GL_TEXTURE0>());
 
         gl::ActiveTexture(GL_TEXTURE1);
-        gl::BindTexture(normal_tex);
-        gl::Uniform(bs.uNormalMap, gl::texture_index<GL_TEXTURE1>());
+        gl::BindTexture(norms);
+        gl::Uniform(bs.uNormalTex, gl::texture_index<GL_TEXTURE1>());
 
+        gl::ActiveTexture(GL_TEXTURE2);
+        gl::BindTexture(depth);
+        gl::Uniform(bs.uDepthTex, gl::texture_index<GL_TEXTURE2>());
+
+        gl::Uniform(bs.uHeightScale, height_scale);
         gl::Uniform(bs.uLightPos, light_pos);
         gl::Uniform(bs.uViewPos, s.camera.pos);
 
@@ -153,6 +182,7 @@ struct Screen final {
 int main(int, char**) {
     // SDL setup
     auto sdl = ui::Window_state{};
+
     SDL_SetWindowGrab(sdl.window, SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
     glEnable(GL_FRAMEBUFFER_SRGB);
@@ -160,23 +190,25 @@ int main(int, char**) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    Screen renderer;
-
-    // Game state setup
-    auto game = ui::Game_state{};
-
     // game loop
-    auto throttle = util::Software_throttle{8ms};
-    SDL_Event e;
+    Renderer renderer;
+    ui::Game_state game;
+    util::Software_throttle throttle{8ms};
     std::chrono::milliseconds last_time = util::now();
+
     while (true) {
         std::chrono::milliseconds cur_time = util::now();
         std::chrono::milliseconds dt = cur_time - last_time;
         last_time = cur_time;
 
+        SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (game.handle(e) == ui::Handle_response::should_quit) {
                 return 0;
+            }
+
+            if (e.type == SDL_KEYDOWN and e.key.keysym.sym == SDLK_e) {
+                renderer.use_wood = not renderer.use_wood;
             }
         }
 

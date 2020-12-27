@@ -77,8 +77,8 @@ void main()
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 }
 )"));
-        gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+        gl::Texture_2d wall = gl::load_tex(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face = gl::load_tex(RESOURCES_DIR "awesomeface.png");
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "uModel");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "uView");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "uProjection");

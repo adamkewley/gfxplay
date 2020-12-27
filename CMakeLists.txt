@@ -222,10 +222,17 @@ add_executable(logl_shadows_point-shadows
 )
 target_link_libraries(logl_shadows_point-shadows common)
 
+# https://learnopengl.com/Advanced-Lighting/Normal-Mapping
 add_executable(logl_normal-mapping
     src/logl_normal-mapping.cpp
 )
 target_link_libraries(logl_normal-mapping common)
+
+# https://learnopengl.com/Advanced-Lighting/Parallax-Mapping
+add_executable(logl_parallax-mapping
+    src/logl_parallax-mapping.cpp
+)
+target_link_libraries(logl_parallax-mapping common)
 
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)

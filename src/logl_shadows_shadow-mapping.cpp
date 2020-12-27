@@ -170,7 +170,7 @@ struct App final {
     gl::Vertex_array cube_vao = create_vao(shader, cube.vbo);
 
     gl::Texture_2d wood =
-        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png");
+        gl::load_tex(RESOURCES_DIR "textures/wood.png");
 
     glm::mat4 cube1 = []() {
         glm::mat4 m = glm::identity<glm::mat4>();

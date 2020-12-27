@@ -90,9 +90,9 @@ void main() {
         }();
 
         gl::Texture_2d wall =
-            gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
+            gl::load_tex(RESOURCES_DIR "wall.jpg");
         gl::Texture_2d face =
-            gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+            gl::load_tex(RESOURCES_DIR "awesomeface.png", gl::TexFlag_Flip_Pixels_Vertically);
 
         void draw() {
             gl::UseProgram(prog);

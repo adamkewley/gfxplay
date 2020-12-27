@@ -381,7 +381,7 @@ struct Game_state_new final {
     }
 };
 
-struct Renderer final {    
+struct Screen final {    
     // standard cube
     gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo{
         shaded_textured_cube_verts
@@ -477,7 +477,7 @@ struct Renderer final {
     }();
 
     gl::Texture_2d wood_texture{
-        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png", true)
+        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB)
     };
 
     void draw(ui::Window_state& w, Game_state_new& game) {
@@ -708,7 +708,7 @@ int main(int, char**) {
     glStencilMask(0xff);
 
     Game_state_new st{};
-    Renderer r{};
+    Screen r{};
     util::Software_throttle throttle{8ms};
 
     auto t0 = util::now();

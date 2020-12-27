@@ -93,18 +93,6 @@ void sdl::RenderCopy(SDL_Renderer* r, SDL_Texture* t, SDL_Rect* src, SDL_Rect* d
     }
 }
 
-void sdl::RenderPresent(SDL_Renderer* r) {
-    // this method exists just so that the namespace-based naming is
-    // consistent
-    SDL_RenderPresent(r);
-}
-
-sdl::Window_dimensions sdl::GetWindowSize(SDL_Window* window) {
-    Window_dimensions d;
-    SDL_GetWindowSize(window, &d.w, &d.h);
-    return d;
-}
-
 void sdl::GL_SetSwapInterval(int interval) {
     int rv = SDL_GL_SetSwapInterval(interval);
 

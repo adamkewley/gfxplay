@@ -61,7 +61,7 @@ struct Whole_app final {
     }();
 
     gl::Texture_2d floor =
-        gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/wood.png", true);
+        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB);
 
     void draw(ui::Game_state const& s, bool blinn) {
         gl::UseProgram(prog.p);

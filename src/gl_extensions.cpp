@@ -193,9 +193,16 @@ gl::Geometry_shader gl::CompileGeometryShaderResource(char const* resource) {
     return CompileGeometryShaderFile(resource_path(resource).c_str());
 }
 
-gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {
+gl::Texture_2d gl::load_tex(char const* path, Tex_flags flags) {
     auto t = gl::GenTexture2d();
+
+    if (flags & TexFlag_Flip_Pixels_Vertically) {
+        stbi_set_flip_vertically_on_load(true);
+    }
     auto img = stbi::Image{path};
+    if (flags & TexFlag_Flip_Pixels_Vertically) {
+        stbi_set_flip_vertically_on_load(false);
+    }
 
     GLenum internalFormat;
     GLenum format;
@@ -203,10 +210,10 @@ gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {
         internalFormat = GL_RED;
         format = GL_RED;
     } else if (img.nrChannels == 3) {
-        internalFormat = srgb ? GL_SRGB : GL_RGB;
+        internalFormat = flags & TexFlag_SRGB ? GL_SRGB : GL_RGB;
         format = GL_RGB;
     } else if (img.nrChannels == 4) {
-        internalFormat = srgb ? GL_SRGB_ALPHA : GL_RGBA;
+        internalFormat = flags & TexFlag_SRGB ? GL_SRGB_ALPHA : GL_RGBA;
         format = GL_RGBA;
     } else {
         std::stringstream msg;
@@ -214,10 +221,8 @@ gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {
         throw std::runtime_error{std::move(msg).str()};
     }
 
-    stbi_set_flip_vertically_on_load(true);
-
     gl::BindTexture(t.type, t);
-    glTexImage2D(t.type,
+    gl::TexImage2D(t.type,
                  0,
                  internalFormat,
                  img.width,
@@ -230,41 +235,6 @@ gl::Texture_2d gl::flipped_and_mipmapped_texture(char const* path, bool srgb) {
 
     return t;
 }
-
-gl::Texture_2d gl::nonflipped_and_mipmapped_texture(char const* path) {
-    stbi_set_flip_vertically_on_load(false);
-
-    auto t = gl::GenTexture2d();
-    auto img = stbi::Image{path};
-
-    GLenum format;
-    if (img.nrChannels == 1) {
-        format = GL_RED;
-    } else if (img.nrChannels == 3) {
-        format = GL_RGB;
-    } else if (img.nrChannels == 4) {
-        format = GL_RGBA;
-    } else {
-        std::stringstream msg;
-        msg << path << ": error: contains " << img.nrChannels << " color channels (the implementation doesn't know how to handle this)";
-        throw std::runtime_error{std::move(msg).str()};
-    }
-
-    gl::BindTexture(t.type, t);
-    glTexImage2D(t.type,
-                 0,
-                 format,
-                 img.width,
-                 img.height,
-                 0,
-                 format,
-                 GL_UNSIGNED_BYTE,
-                 img.data);
-    glGenerateMipmap(t.type);
-
-    return t;
-}
-
 
 // helper method: load a file into an image and send it to OpenGL
 static void load_cubemap_surface(char const* path, GLenum target) {

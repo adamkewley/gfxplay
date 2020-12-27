@@ -32,8 +32,8 @@ void main() {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 })"
         ));
-        gl::Texture_2d wall = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "wall.jpg");
-        gl::Texture_2d face = gl::flipped_and_mipmapped_texture(RESOURCES_DIR "awesomeface.png");
+        gl::Texture_2d wall = gl::load_tex(RESOURCES_DIR "wall.jpg");
+        gl::Texture_2d face = gl::load_tex(RESOURCES_DIR "awesomeface.png");
         gl::Uniform_mat4 uTransform = gl::GetUniformLocation(prog, "uTransform");
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);

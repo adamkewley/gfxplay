@@ -213,7 +213,12 @@ namespace sdl {
     void RenderCopy(SDL_Renderer* r, SDL_Texture* t, SDL_Rect* src, SDL_Rect* dest);
 
     // https://wiki.libsdl.org/SDL_RenderPresent
-    void RenderPresent(SDL_Renderer* r);
+    inline void RenderPresent(SDL_Renderer* r) {
+        // this method exists just so that the namespace-based naming is
+        // consistent
+        SDL_RenderPresent(r);
+    }
+
 
     struct Window_dimensions {
         int w;
@@ -221,7 +226,11 @@ namespace sdl {
     };
 
     // https://wiki.libsdl.org/SDL_GetWindowSize
-    Window_dimensions GetWindowSize(SDL_Window* window);
+    inline Window_dimensions GetWindowSize(SDL_Window* window) {
+        Window_dimensions d;
+        SDL_GetWindowSize(window, &d.w, &d.h);
+        return d;
+    }
 
     struct Mouse_state final {
         int x;

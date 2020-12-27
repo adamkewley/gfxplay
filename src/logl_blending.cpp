@@ -49,11 +49,11 @@ namespace {
         gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
-                gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/marble.jpg");
+                gl::load_tex(RESOURCES_DIR "textures/marble.jpg");
         gl::Texture_2d tex_floor =
-                gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/metal.png");
+                gl::load_tex(RESOURCES_DIR "textures/metal.png");
         gl::Texture_2d tex_grass =
-                gl::flipped_and_mipmapped_texture(RESOURCES_DIR "textures/window.png");
+                gl::load_tex(RESOURCES_DIR "textures/window.png");
         gl::Array_buffer cube_vbo = []() {
             static const float cubeVertices[] = {
                 // positions          // texture Coords

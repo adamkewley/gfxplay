@@ -325,10 +325,19 @@ namespace gl {
     // asserts there are no current OpenGL errors (globally)
     void assert_no_errors(char const* label);
 
-    // read an image file into an OpenGL 2D texture
-    gl::Texture_2d flipped_and_mipmapped_texture(char const* path, bool srgb = false);
+    enum Tex_flags {
+        TexFlag_None = 0,
+        TexFlag_SRGB = 1,
 
-    gl::Texture_2d nonflipped_and_mipmapped_texture(char const* path);
+        // beware: this flips pixels vertically (in Y) but leaves the pixel's
+        // contents untouched. This is fine if the pixels represent colors,
+        // but causes surprising behavior if the pixels represent vectors (e.g.
+        // normal maps)
+        TexFlag_Flip_Pixels_Vertically = 2,
+    };
+
+    // read an image file into an OpenGL 2D texture
+    gl::Texture_2d load_tex(char const* path, Tex_flags = TexFlag_None);
 
     // read 6 image files into a single OpenGL cubemap (GL_TEXTURE_CUBE_MAP)
     gl::Texture_cubemap read_cubemap(
