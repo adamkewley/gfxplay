@@ -272,6 +272,11 @@ namespace gl {
         glUniform3f(u.handle, x, y, z);
     }
 
+    inline void Uniform(Uniform_vec3& u, GLsizei n, glm::vec3 const* vs) {
+        static_assert(sizeof(glm::vec3) == 3*sizeof(GLfloat));
+        glUniform3fv(u.handle, n, glm::value_ptr(*vs));
+    }
+
     inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) {
         glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
     }
@@ -294,10 +299,7 @@ namespace gl {
     }
 
     inline void Uniform(Uniform_vec2f& u, GLsizei n, glm::vec2 const* vs) {
-        // sanity assert: GLM vecs *should* only contain tightly packed floats
-        // if they don't, then the OpenGL Uniform2fv call will fail.
-        static_assert(sizeof(glm::vec2) == 2*sizeof(float));
-
+        static_assert(sizeof(glm::vec2) == 2*sizeof(GLfloat));
         glUniform2fv(u.handle, n, glm::value_ptr(*vs));
     }
 
@@ -363,7 +365,9 @@ namespace gl {
         size_t _size = 0;
         gl::Array_buffer _vbo = gl::GenArrayBuffer();
 
-    public:     
+    public:
+        using value_type = T;
+
         template<typename Collection>
         Sized_array_buffer(Collection const& c) :
             Sized_array_buffer{c.begin(), c.end()} {
@@ -380,11 +384,11 @@ namespace gl {
             gl::BufferData(_vbo.type, static_cast<long>(_size * sizeof(T)), begin, GL_STATIC_DRAW);
         }
 
-        gl::Array_buffer& data() noexcept {
+        operator gl::Array_buffer&() noexcept {
             return _vbo;
         }
 
-        gl::Array_buffer const& data() const noexcept {
+        operator gl::Array_buffer const&() const noexcept {
             return _vbo;
         }
 

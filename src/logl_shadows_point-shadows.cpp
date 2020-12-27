@@ -24,7 +24,7 @@ struct Depthmap_shader final {
 gl::Vertex_array create_vao(Depthmap_shader& s, gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
     gl::Vertex_array vao = gl::GenVertexArrays();
     gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::BindBuffer();
@@ -58,7 +58,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, norm)));

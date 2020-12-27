@@ -43,19 +43,20 @@ struct Blinn_phong_textured_shader final {
     gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
 };
 
-static gl::Vertex_array create_vao(
-        Blinn_phong_textured_shader& s,
-        gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
+template<typename Vbo>
+static gl::Vertex_array create_vao(Blinn_phong_textured_shader& s, Vbo& vbo) {
+    using T = typename Vbo::value_type;
+
     gl::Vertex_array vao = gl::GenVertexArrays();
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::BindBuffer(vbo);
+    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, norm)));
+    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, norm)));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
     gl::EnableVertexAttribArray(s.aTexCoords);
 
     gl::BindVertexArray();
@@ -87,7 +88,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aTextureCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
@@ -121,7 +122,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
 
@@ -138,7 +139,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Plain_vert), reinterpret_cast<void*>(offsetof(Plain_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
 
@@ -169,7 +170,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, color)));

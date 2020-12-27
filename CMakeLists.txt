@@ -234,6 +234,12 @@ add_executable(logl_parallax-mapping
 )
 target_link_libraries(logl_parallax-mapping common)
 
+# https://learnopengl.com/Advanced-Lighting/HDR
+add_executable(logl_hdr
+    src/logl_hdr.cpp
+)
+target_link_libraries(logl_hdr common)
+
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)
 target_link_libraries(ak_selectable-geom common)

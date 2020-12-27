@@ -79,7 +79,7 @@ static gl::Vertex_array create_vao(Parallax_texture_shader& s, gl::Sized_array_b
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
 
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
     gl::EnableVertexAttribArray(s.aPos);

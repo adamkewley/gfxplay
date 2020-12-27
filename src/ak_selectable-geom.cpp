@@ -48,7 +48,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, norm)));
@@ -85,7 +85,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aTextureCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
@@ -119,7 +119,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
 
@@ -136,7 +136,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Plain_vert), reinterpret_cast<void*>(offsetof(Plain_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
 
@@ -167,7 +167,7 @@ static gl::Vertex_array create_vao(
 
     gl::BindVertexArray(vao);
 
-    gl::BindBuffer(vbo.data());
+    gl::BindBuffer(vbo);
     gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, pos)));
     gl::EnableVertexAttribArray(s.aPos);
     gl::VertexAttribPointer(s.aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, color)));
