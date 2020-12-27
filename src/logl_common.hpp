@@ -102,6 +102,9 @@ static void glOnDebugMessage(GLenum source,
 }
 
 namespace ui {
+    constexpr int window_width = 1024;
+    constexpr int window_height = 768;
+
     struct Window_state final {
         sdl::Context context = sdl::Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
         sdl::Window window = [&]() {
@@ -126,8 +129,8 @@ namespace ui {
                 "gfxplay",
                 SDL_WINDOWPOS_CENTERED,
                 SDL_WINDOWPOS_CENTERED,
-                1024,
-                768,
+                window_width,
+                window_height,
                 SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
         }();
         sdl::GLContext gl = sdl::GL_CreateContext(window);

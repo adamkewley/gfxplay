@@ -26,14 +26,14 @@ void main() {
         vec3 lightColor = uLightColors[i];
 
         // diffuse
-        vec3 frag2light = normalize(lightPos - fsi.FragPos);
-        float diffuse_str = max(dot(frag2light, normal), 0.0f);
+        vec3 frag2lightDir = normalize(lightPos - fsi.FragPos);
+        float diffuse_str = max(dot(frag2lightDir, normal), 0.0f);
         vec3 diffuse = lightColor * diffuse_str * color;
 
         vec3 result = diffuse;
 
         // attenuation (use quadratic as we have gamma correction)
-        float distance = length(frag2light);
+        float distance = length(lightPos - fsi.FragPos);
         float attenuation = 1.0f / (distance * distance);
         result *= attenuation;
 

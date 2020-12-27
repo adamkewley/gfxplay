@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <cassert>
 
 // gl: thin C++ wrappers around OpenGL
 //
@@ -365,11 +366,25 @@ namespace gl {
         }
     public:
         Render_buffer(Render_buffer const&) = delete;
-        Render_buffer(Render_buffer&&) = delete;
+        Render_buffer(Render_buffer&& tmp) : handle{tmp.handle} {
+            tmp.handle = 0;
+        }
         Render_buffer& operator=(Render_buffer const&) = delete;
-        Render_buffer& operator=(Render_buffer&&) = delete;
+        Render_buffer& operator=(Render_buffer&& tmp) {
+            GLuint v = handle;
+            handle = tmp.handle;
+            tmp.handle = v;
+            return *this;
+        }
+
         ~Render_buffer() noexcept {
-            glDeleteRenderbuffers(1, &handle);
+            if (handle != 0) {
+                glDeleteRenderbuffers(1, &handle);
+            }
+        }
+
+        operator GLuint() const noexcept {
+            return handle;
         }
     };
 
@@ -377,6 +392,7 @@ namespace gl {
     inline Render_buffer GenRenderBuffer() {
         GLuint handle;
         glGenRenderbuffers(1, &handle);
+        assert(handle != 0 && "OpenGL spec: The value zero is reserved, but there is no default renderbuffer object. Instead, renderbuffer set to zero effectively unbinds any renderbuffer object previously bound");
         return Render_buffer{handle};
     }
 
