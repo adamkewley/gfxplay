@@ -240,6 +240,12 @@ add_executable(logl_hdr
 )
 target_link_libraries(logl_hdr common)
 
+# https://learnopengl.com/Advanced-Lighting/Bloom
+add_executable(logl_bloom
+    src/logl_bloom.cpp
+)
+target_link_libraries(logl_bloom common)
+
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)
 target_link_libraries(ak_selectable-geom common)
