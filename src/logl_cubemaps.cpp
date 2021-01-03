@@ -118,13 +118,15 @@ void main() {
         }();
 
         gl::Vertex_array vao = [&]() {
-            auto vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
+            gl::Vertex_array rv = gl::GenVertexArrays();
+
+            gl::BindVertexArray(rv);
             gl::BindBuffer(cube_ab);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::BindVertexArray();
-            return vao;
+
+            return rv;
         }();
 
         void draw(ui::Game_state const& g) {
@@ -185,14 +187,16 @@ void main() {
             return buf;
         }();
 
-        gl::Vertex_array vao = [&]() {
-            auto vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
+        gl::Vertex_array vao = [this]() {
+            gl::Vertex_array rv = gl::GenVertexArrays();
+
+            gl::BindVertexArray(rv);
             gl::BindBuffer(cube_ab);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::BindVertexArray();
-            return vao;
+
+            return rv;
         }();
 
         void draw(ui::Game_state const& g) {

@@ -18,8 +18,8 @@ namespace model {
 
     struct Mesh_vert final {
         glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec2 tex_coords;
+        glm::vec3 norm;
+        glm::vec2 uv;
     };
 
     enum class Tex_type {
@@ -47,18 +47,19 @@ namespace model {
         std::vector<Mesh> meshes;
     };
 
-    Mesh_tex load_texture(path p, Tex_type type) {
-        // TODO: these should be set on a per-texture basis
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    static Mesh_tex load_texture(path p, Tex_type type) {
+        gl::Tex_flags flgs = type == Tex_type::diffuse ?
+            gl::Tex_flags::TexFlag_SRGB :
+            gl::Tex_flags::TexFlag_None;
 
-        // TODO: the nonflipped API sucks
-        return Mesh_tex{
-            type,
-            gl::nonflipped_and_mipmapped_texture(p.c_str())
-        };
+        Mesh_tex rv = Mesh_tex{type, gl::load_tex(p.c_str(), flgs)};
+
+        glTextureParameteri(rv.handle.handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(rv.handle.handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(rv.handle.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTextureParameteri(rv.handle.handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        return rv;
     }
 
     struct Caching_texture_loader final {
@@ -82,12 +83,12 @@ namespace model {
         }
     };
 
-    std::shared_ptr<Mesh_tex> load_texture_cached(path p, Tex_type type) {
+    static std::shared_ptr<Mesh_tex> load_texture_cached(path p, Tex_type type) {
         static Caching_texture_loader ctl;
         return ctl.load(p, type);
     }
 
-    Mesh load_mesh(path const& dir, aiScene const& scene, aiMesh const& mesh) {
+    static Mesh load_mesh(path const& dir, aiScene const& scene, aiMesh const& mesh) {
         // load verts into an OpenGL VBO
         gl::Array_buffer vbo = [&mesh]() {
             bool has_tex_coords = mesh.mTextureCoords[0] != nullptr;
@@ -104,24 +105,23 @@ namespace model {
                 v.pos.z = p.z;
 
                 aiVector3D const& n = mesh.mNormals[i];
-                v.normal.x = n.x;
-                v.normal.y = n.y;
-                v.normal.z = n.z;
+                v.norm.x = n.x;
+                v.norm.y = n.y;
+                v.norm.z = n.z;
 
                 if (has_tex_coords) {
-                    v.tex_coords.x = mesh.mTextureCoords[0][i].x;
-                    v.tex_coords.y = mesh.mTextureCoords[0][i].y;
+                    v.uv.x = mesh.mTextureCoords[0][i].x;
+                    v.uv.y = mesh.mTextureCoords[0][i].y;
                 } else {
-                    v.tex_coords.x = 0.0f;
-                    v.tex_coords.y = 0.0f;
+                    v.uv.x = 0.0f;
+                    v.uv.y = 0.0f;
                 }
             }
 
-            gl::Array_buffer vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, dest_verts.size() * sizeof(Mesh_vert), dest_verts.data(), GL_STATIC_DRAW);
-
-            return vbo;
+            gl::Array_buffer rv = gl::GenArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, dest_verts.size() * sizeof(Mesh_vert), dest_verts.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         // load indices into an OpenGL EBO
@@ -137,15 +137,15 @@ namespace model {
             }
             num_indices = indices.size();
 
-            gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
-            gl::BindBuffer(ebo);
-            gl::BufferData(ebo.type, indices.size() * sizeof(unsigned), indices.data(), GL_STATIC_DRAW);
-            return ebo;
+            gl::Element_array_buffer rv = gl::GenElementArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, indices.size() * sizeof(unsigned), indices.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         // load textures into a std::vector for later binding
         std::vector<std::shared_ptr<Mesh_tex>> textures = [&dir, &scene, &mesh]() {
-            std::vector<std::shared_ptr<Mesh_tex>> textures;
+            std::vector<std::shared_ptr<Mesh_tex>> rv;
             aiMaterial const& m = *scene.mMaterials[mesh.mMaterialIndex];
 
             for (size_t i = 0, len = m.GetTextureCount(aiTextureType_DIFFUSE); i < len; ++i) {
@@ -153,7 +153,7 @@ namespace model {
                 m.GetTexture(aiTextureType_DIFFUSE, i, &s);
 
                 path path_to_texture = dir / s.C_Str();
-                textures.push_back(
+                rv.push_back(
                     load_texture_cached(std::move(path_to_texture), Tex_type::diffuse));
             }
 
@@ -162,7 +162,7 @@ namespace model {
                 m.GetTexture(aiTextureType_SPECULAR, i, &s);
 
                 path path_to_texture = dir / s.C_Str();
-                textures.push_back(
+                rv.push_back(
                     load_texture_cached(std::move(path_to_texture), Tex_type::specular));
             }
 
@@ -171,11 +171,11 @@ namespace model {
                 m.GetTexture(aiTextureType_AMBIENT, i, &s);
 
                 path path_to_texture = dir / s.C_Str();
-                textures.push_back(
+                rv.push_back(
                     load_texture_cached(std::move(path_to_texture), Tex_type::diffuse));
             }
 
-            return textures;
+            return rv;
         }();
 
         textures.shrink_to_fit();
@@ -183,10 +183,10 @@ namespace model {
         return Mesh{std::move(vbo), std::move(ebo), num_indices , std::move(textures)};
     }
 
-    void process_node(path const& dir,
-                      aiScene const& scene,
-                      aiNode const& node,
-                      Model& out) {
+    static void process_node(path const& dir,
+                             aiScene const& scene,
+                             aiNode const& node,
+                             Model& out) {
 
         // process all meshes in `node`
         for (size_t i = 0; i < node.mNumMeshes; ++i) {
@@ -199,7 +199,7 @@ namespace model {
         }
     }
 
-    Model load_model_(char const* path) {
+    static Model load_model_(char const* path) {
         Assimp::Importer imp;
         aiScene const* scene =
             imp.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
@@ -242,7 +242,7 @@ namespace model {
         }
     };
 
-    std::shared_ptr<Model> load_model_cached(char const* path) {
+    static std::shared_ptr<Model> load_model_cached(char const* path) {
         static Caching_model_loader cml;
         return cml.load(path);
     }

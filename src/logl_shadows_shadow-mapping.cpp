@@ -67,10 +67,10 @@ struct Plane final {
     }};
 
     gl::Array_buffer vbo = []() {
-        gl::Array_buffer vbo = gl::GenArrayBuffer();
-        gl::BindBuffer(vbo);
-        gl::BufferData(vbo.type, sizeof(data), data.data(), GL_STATIC_DRAW);
-        return vbo;
+        gl::Array_buffer rv = gl::GenArrayBuffer();
+        gl::BindBuffer(rv);
+        gl::BufferData(rv.type, sizeof(data), data.data(), GL_STATIC_DRAW);
+        return rv;
     }();
 };
 
@@ -121,14 +121,14 @@ struct Cube final {
     }};
 
     gl::Array_buffer vbo = []() {
-        gl::Array_buffer vbo = gl::GenArrayBuffer();
-        gl::BindBuffer(vbo);
-        gl::BufferData(vbo.type, sizeof(data), data.data(), GL_STATIC_DRAW);
-        return vbo;
+        gl::Array_buffer rv = gl::GenArrayBuffer();
+        gl::BindBuffer(rv);
+        gl::BufferData(rv.type, sizeof(data), data.data(), GL_STATIC_DRAW);
+        return rv;
     }();
 };
 
-gl::Vertex_array create_vao(Shadowmap_shader& s, gl::Array_buffer& vbo) {
+static gl::Vertex_array create_vao(Shadowmap_shader& s, gl::Array_buffer& vbo) {
     gl::Vertex_array vao = gl::GenVertexArrays();
 
     gl::BindVertexArray(vao);
@@ -146,7 +146,7 @@ gl::Vertex_array create_vao(Shadowmap_shader& s, gl::Array_buffer& vbo) {
     return vao;
 }
 
-gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer& vbo) {
+static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer& vbo) {
     gl::Vertex_array vao = gl::GenVertexArrays();
 
     gl::BindVertexArray(vao);

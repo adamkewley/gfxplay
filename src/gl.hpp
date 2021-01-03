@@ -438,4 +438,23 @@ namespace gl {
     inline void Viewport(GLint x, GLint y, GLsizei w, GLsizei h) {
         glViewport(x, y, w, h);
     }
+
+    inline void FramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {
+        glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
+    inline void TexParameteri(GLenum target, GLenum pname, GLint param) {
+        glTexParameteri(target, pname, param);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
+    inline void TextureParameteri(GLuint texture, GLenum pname, GLint param) {
+        glTextureParameteri(texture, pname, param);
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glRenderbufferStorage.xhtml
+    void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {
+        glRenderbufferStorage(target, internalformat, width, height);
+    }
 }

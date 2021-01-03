@@ -46,9 +46,9 @@ namespace {
         gl::BindBuffer(m.vbo);
         gl::VertexAttribPointer(p.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)0);
         gl::EnableVertexAttribArray(p.aPos);
-        gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, normal));
+        gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, norm));
         gl::EnableVertexAttribArray(p.aNormals);
-        gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, tex_coords));
+        gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, uv));
         gl::EnableVertexAttribArray(p.aTexCoords);
 
         gl::BindVertexArray();
@@ -64,8 +64,8 @@ namespace {
             m{std::move(_m)} {
 
             vaos.reserve(m->meshes.size());
-            for (Mesh& m : m->meshes) {
-                vaos.push_back(create_vao(p, m));
+            for (Mesh& mesh : m->meshes) {
+                vaos.push_back(create_vao(p, mesh));
             }
         }
     };
@@ -81,7 +81,7 @@ namespace {
             size_t active_diff_textures = 0;
             std::array<GLint, Model_program::maxDiffuseTextures> diff_indices;
             size_t active_spec_textures = 0;
-            std::array<GLint, Model_program::maxDiffuseTextures> spec_indices;
+            std::array<GLint, Model_program::maxSpecularTextures> spec_indices;
 
             for (size_t i = 0; i < m.textures.size(); ++i) {
                 Mesh_tex const& t = *m.textures[i];
@@ -128,7 +128,7 @@ namespace {
         gl::Uniform(p.uViewPos, gs.camera.pos);
 
         gl::BindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, m.num_indices, GL_UNSIGNED_INT, nullptr);
+        gl::DrawElements(GL_TRIANGLES, static_cast<GLsizei>(m.num_indices), GL_UNSIGNED_INT, nullptr);
         gl::BindVertexArray();
     }
 
@@ -151,6 +151,7 @@ int main(int, char**) {
     auto prog = Model_program{};
     std::shared_ptr<Model> model = model::load_model_cached(RESOURCES_DIR "backpack/backpack.obj");
     Compiled_model cmodel{prog, std::move(model)};
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     // Game state setup
     auto game = ui::Game_state{};

@@ -78,6 +78,7 @@ struct Plain_texture_shader final {
     gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
 
     gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
+    gl::Uniform_mat4 uSamplerMultiplier = gl::GetUniformLocation(p, "uSamplerMultiplier");
 };
 
 static gl::Vertex_array create_vao(

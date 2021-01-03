@@ -36,16 +36,16 @@ struct Whole_app final {
              10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
         };
 
-        gl::Array_buffer vbo = gl::GenArrayBuffer();
-        gl::BindBuffer(vbo);
-        gl::BufferData(vbo.type, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-        return vbo;
+        gl::Array_buffer rv = gl::GenArrayBuffer();
+        gl::BindBuffer(rv);
+        gl::BufferData(rv.type, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+        return rv;
     }();
 
     gl::Vertex_array vao = [this]() {
-        gl::Vertex_array vao = gl::GenVertexArrays();
+        gl::Vertex_array rv = gl::GenVertexArrays();
 
-        gl::BindVertexArray(vao);
+        gl::BindVertexArray(rv);
 
         gl::BindBuffer(vbo);
         gl::VertexAttribPointer(prog.aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), reinterpret_cast<void*>(0));
@@ -57,7 +57,7 @@ struct Whole_app final {
 
         gl::BindVertexArray();
 
-        return vao;
+        return rv;
     }();
 
     gl::Texture_2d floor =

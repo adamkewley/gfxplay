@@ -178,11 +178,11 @@ void main()
 
             gl::BindVertexArray(vao);
             for(unsigned int i = 0; i < 10; i++) {
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, cubePositions[i]);
+                glm::mat4 m = glm::mat4(1.0f);
+                m = glm::translate(m, cubePositions[i]);
                 float angle = 20.0f * i;
-                model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                gl::Uniform(uModel, model);
+                m = glm::rotate(m, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+                gl::Uniform(uModel, m);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }

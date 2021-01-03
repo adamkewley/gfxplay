@@ -47,24 +47,22 @@ void main() {
         }};
 
         gl::Array_buffer vbo = []() {
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(triangle), triangle.data(), GL_STATIC_DRAW);
-            return vbo;
+            gl::Array_buffer rv = gl::GenArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, sizeof(triangle), triangle.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         gl::Vertex_array vao = [this]() {
-            auto vao = gl::GenVertexArrays();
-
-            gl::BindVertexArray(vao);
+            gl::Vertex_array rv = gl::GenVertexArrays();
+            gl::BindVertexArray(rv);
             gl::BindBuffer(vbo);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), reinterpret_cast<void*>(offsetof(Vert, pos)));
             gl::EnableVertexAttribArray(aPos);
             gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), reinterpret_cast<void*>(offsetof(Vert, color)));
             gl::EnableVertexAttribArray(aColor);
             gl::BindVertexArray();
-
-            return vao;
+            return rv;
         }();
 
         void draw() {

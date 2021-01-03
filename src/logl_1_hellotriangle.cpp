@@ -36,10 +36,10 @@ void main() {
         static_assert(sizeof(glm::vec3) == 3*sizeof(float));
 
         gl::Array_buffer vbo = []() {
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(rect_verts), rect_verts.data(), GL_STATIC_DRAW);
-            return vbo;
+            gl::Array_buffer rv = gl::GenArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, sizeof(rect_verts), rect_verts.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         // a rectangle is drawn by drawing two triangle primatives that use a
@@ -50,23 +50,23 @@ void main() {
         };
 
         gl::Element_array_buffer ebo = []() {
-            auto ebo = gl::GenElementArrayBuffer();
-            gl::BindBuffer(ebo);
-            gl::BufferData(ebo.type, sizeof(rect_els), rect_els.data(), GL_STATIC_DRAW);
-            return ebo;
+            gl::Element_array_buffer rv = gl::GenElementArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, sizeof(rect_els), rect_els.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         gl::Vertex_array vao = [this]() {
-            auto vao = gl::GenVertexArrays();
+            gl::Vertex_array rv = gl::GenVertexArrays();
 
-            gl::BindVertexArray(vao);
+            gl::BindVertexArray(rv);
             gl::BindBuffer(vbo);
             gl::BindBuffer(ebo);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
             gl::EnableVertexAttribArray(aPos);
             gl::BindVertexArray();
 
-            return vao;
+            return rv;
         }();
 
         void draw() {

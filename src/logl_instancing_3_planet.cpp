@@ -73,9 +73,9 @@ using model::Mesh;
 using model::Model;
 using model::Tex_type;
 
-gl::Vertex_array create_vao(Instanced_model_program& p,
-                            Mesh& m,
-                            Sized_array_buffer<glm::mat4>& ims) {
+static gl::Vertex_array create_vao(Instanced_model_program& p,
+                                   Mesh& m,
+                                   Sized_array_buffer<glm::mat4>& ims) {
     auto vao = gl::GenVertexArrays();
 
     gl::BindVertexArray(vao);
@@ -86,9 +86,9 @@ gl::Vertex_array create_vao(Instanced_model_program& p,
     gl::BindBuffer(m.vbo);
     gl::VertexAttribPointer(p.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, pos)));
     gl::EnableVertexAttribArray(p.aPos);
-    gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, normal)));
+    gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, norm)));
     gl::EnableVertexAttribArray(p.aNormals);
-    gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, tex_coords)));
+    gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, uv)));
     gl::EnableVertexAttribArray(p.aTexCoords);
 
     // set up instance attribs

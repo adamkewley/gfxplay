@@ -254,7 +254,7 @@ static void load_cubemap_surface(char const* path, GLenum target) {
     }
 
     glTexImage2D(target, 0, format, img.width, img.height, 0, format, GL_UNSIGNED_BYTE, img.data);
-};
+}
 
 gl::Texture_cubemap gl::read_cubemap(
         char const* path_pos_x,

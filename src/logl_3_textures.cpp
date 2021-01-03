@@ -54,10 +54,10 @@ void main() {
         }};
 
         gl::Array_buffer vbo = []() {
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(cube_verts), cube_verts.data(), GL_STATIC_DRAW);
-            return vbo;
+            gl::Array_buffer rv = gl::GenArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, sizeof(cube_verts), cube_verts.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         static constexpr std::array<unsigned, 6> cube_els = {
@@ -66,16 +66,16 @@ void main() {
         };
 
         gl::Element_array_buffer ebo = []() {
-            auto ebo = gl::GenElementArrayBuffer();
-            gl::BindBuffer(ebo);
-            gl::BufferData(ebo.type, sizeof(cube_els), cube_els.data(), GL_STATIC_DRAW);
-            return ebo;
+            gl::Element_array_buffer rv = gl::GenElementArrayBuffer();
+            gl::BindBuffer(rv);
+            gl::BufferData(rv.type, sizeof(cube_els), cube_els.data(), GL_STATIC_DRAW);
+            return rv;
         }();
 
         gl::Vertex_array vao = [this]() {
-            auto vao = gl::GenVertexArrays();
+            gl::Vertex_array rv = gl::GenVertexArrays();
 
-            gl::BindVertexArray(vao);
+            gl::BindVertexArray(rv);
             gl::BindBuffer(vbo);
             gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vbo_data), reinterpret_cast<void*>(offsetof(Vbo_data, pos)));
             gl::EnableVertexAttribArray(aPos);
@@ -86,7 +86,7 @@ void main() {
             gl::BindBuffer(ebo);
             gl::BindVertexArray();
 
-            return vao;
+            return rv;
         }();
 
         gl::Texture_2d wall =

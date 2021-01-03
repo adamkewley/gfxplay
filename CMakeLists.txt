@@ -58,17 +58,60 @@ else()
 endif()
 
 target_compile_options(common PUBLIC
-    # disable MSVC permissiveness. Forces MSVC to obey C++ standard
-    # - specifically, this enables the use of 'and', 'not', etc.
-    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    $<$<CXX_COMPILER_ID:MSVC>:
+        # force MSVC to obey ISO C++ (e.g. allow `and` keyword)
+        /permissive-
+    >
+
+    # turn on warnings / errors
+    $<$<CXX_COMPILER_ID:GNU>:
+        -Wall
+        -Wextra
+        -pedantic
+        -Werror
+        -Wuninitialized
+        -Winit-self
+        -Wmaybe-uninitialized
+        -Wshadow
+        -Wcast-align
+        -Wcast-function-type
+        -Wwrite-strings
+        -Wdangling-else
+        -Wdate-time
+        -Wlogical-op
+        -Wmissing-declarations
+        -Wno-multichar
+        -Wnormalized
+        -Wredundant-decls
+        -Winline
+        -Wint-in-bool-context
+        -Wvla
+        -Wdisabled-optimization
+
+        # disabled because it's a PITA to prototype with it enabled
+        -Wno-unused
+
+        # broken in STB headers
+        -Wno-sign-compare
+
+        # things I would like to enable:
+        #
+        # -Wcast-qual : broken by STB headers
+        # -Wmissing-noreturn : broken by imgui
+        # -Wsuggest-attribute=noreturn : broken by imgui
+        # -Wpacked : broken by ASSIMP
+        # -Wconversion : hits shitloads of lines
+    >
 )
 target_compile_features(common PUBLIC
     cxx_std_20
 )
 target_link_options(common PUBLIC
-    # disable opening a console window when booting normally
-    $<$<CXX_COMPILER_ID:MSVC>:/SUBSYSTEM:windows>
-    $<$<CXX_COMPILER_ID:MSVC>:/ENTRY:mainCRTStartup>
+    $<$<CXX_COMPILER_ID:MSVC>:
+        # disable opening a console window when booting normally
+        /SUBSYSTEM:windows
+        /ENTRY:mainCRTStartup
+    >
 )
 set_target_properties(common PROPERTIES
     CXX_EXTENSIONS OFF
@@ -196,6 +239,12 @@ if (GFXPLAY_USE_ASSIMP)
         src/logl_instancing_3_planet.cpp
     )
     target_link_libraries(logl_instancing_3_planet common assimp)
+
+    # https://learnopengl.com/Advanced-Lighting/Deferred-Shading
+    add_executable(logl_deferred-shading
+        src/logl_deferred-shading.cpp
+    )
+    target_link_libraries(logl_deferred-shading common assimp)
 endif()
 
 # https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
@@ -245,6 +294,12 @@ add_executable(logl_bloom
     src/logl_bloom.cpp
 )
 target_link_libraries(logl_bloom common)
+
+# https://learnopengl.com/Advanced-Lighting/SSAO
+add_executable(logl_ssao
+    src/logl_ssao.cpp
+)
+target_link_libraries(logl_ssao common)
 
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)

@@ -400,4 +400,14 @@ namespace gl {
             return static_cast<GLsizei>(_size);
         }
     };
+
+    template<typename... T>
+    void DrawBuffers(T... vs) {
+        GLenum attachments[sizeof...(vs)] = { static_cast<GLenum>(vs)... };
+        glDrawBuffers(sizeof...(vs), attachments);
+    }
+
+    void assert_current_fbo_complete() {
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
 }

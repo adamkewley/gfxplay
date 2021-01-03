@@ -21,7 +21,7 @@ struct Depthmap_shader final {
     gl::Uniform_float uFar_plane = gl::GetUniformLocation(p, "far_plane");
 };
 
-gl::Vertex_array create_vao(Depthmap_shader& s, gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
+static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
     gl::Vertex_array vao = gl::GenVertexArrays();
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
