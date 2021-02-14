@@ -47,12 +47,12 @@ namespace {
 
     struct Skybox_prog final {
         gl::Texture_cubemap cubemap = gl::read_cubemap(
-            RESOURCES_DIR "textures/skybox/right.jpg",
-            RESOURCES_DIR "textures/skybox/left.jpg",
-            RESOURCES_DIR "textures/skybox/top.jpg",
-            RESOURCES_DIR "textures/skybox/bottom.jpg",
-            RESOURCES_DIR "textures/skybox/front.jpg",
-            RESOURCES_DIR "textures/skybox/back.jpg"
+            gfxplay::resource_path("textures", "skybox", "right.jpg"),
+            gfxplay::resource_path("textures", "skybox", "left.jpg"),
+            gfxplay::resource_path("textures", "skybox", "top.jpg"),
+            gfxplay::resource_path("textures", "skybox", "bottom.jpg"),
+            gfxplay::resource_path("textures", "skybox", "front.jpg"),
+            gfxplay::resource_path("textures", "skybox", "back.jpg")
         );
 
         gl::Program prog = gl::CreateProgramFrom(

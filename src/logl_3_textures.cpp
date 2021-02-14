@@ -90,9 +90,9 @@ void main() {
         }();
 
         gl::Texture_2d wall =
-            gl::load_tex(RESOURCES_DIR "wall.jpg");
+            gl::load_tex(gfxplay::resource_path("wall.jpg"));
         gl::Texture_2d face =
-            gl::load_tex(RESOURCES_DIR "awesomeface.png", gl::TexFlag_Flip_Pixels_Vertically);
+            gl::load_tex(gfxplay::resource_path("awesomeface.png"), gl::TexFlag_Flip_Pixels_Vertically);
 
         void draw() {
             gl::UseProgram(prog);

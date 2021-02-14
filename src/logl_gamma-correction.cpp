@@ -2,8 +2,8 @@
 
 struct Blinn_phong_program final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderFile(RESOURCES_DIR "blinn_phong.vert"),
-        gl::CompileFragmentShaderFile(RESOURCES_DIR "blinn_phong.frag"));
+        gl::CompileVertexShaderFile(gfxplay::resource_path("blinn_phong.vert")),
+        gl::CompileFragmentShaderFile(gfxplay::resource_path("blinn_phong.frag")));
 
     // vertex shader attrs/uniforms
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
@@ -61,7 +61,7 @@ struct Whole_app final {
     }();
 
     gl::Texture_2d floor =
-        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB);
+        gl::load_tex(gfxplay::resource_path("textures", "wood.png"), gl::TexFlag_SRGB);
 
     void draw(ui::Game_state const& s, bool blinn) {
         gl::UseProgram(prog.p);

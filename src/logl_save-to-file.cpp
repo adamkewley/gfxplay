@@ -35,10 +35,10 @@ namespace {
 
     struct Gl_State final {
         gl::Vertex_shader vertex_shader =
-            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_12_light.vert");
+            gl::CompileVertexShaderFile(gfxplay::resource_path("logl_12_light.vert"));
         gl::Program color_prog = gl::CreateProgramFrom(
             vertex_shader,
-            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_12.frag"));
+            gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_12.frag")));
         gl::Program light_prog = gl::CreateProgramFrom(
             vertex_shader,
             gl::CompileFragmentShader(R"(
@@ -51,9 +51,9 @@ void main() {
 }
 )"
         ));
-        gl::Texture_2d container2_tex = gl::load_tex(RESOURCES_DIR "container2.png");
-        gl::Texture_2d container2_spec = gl::load_tex(RESOURCES_DIR "container2_specular.png");
-        gl::Texture_2d container2_emission = gl::load_tex(RESOURCES_DIR "matrix.jpg");
+        gl::Texture_2d container2_tex = gl::load_tex(gfxplay::resource_path("container2.png"));
+        gl::Texture_2d container2_spec = gl::load_tex(gfxplay::resource_path("container2_specular.png"));
+        gl::Texture_2d container2_emission = gl::load_tex(gfxplay::resource_path("matrix.jpg"));
 
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);

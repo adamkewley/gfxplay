@@ -454,7 +454,7 @@ namespace gl {
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glRenderbufferStorage.xhtml
-    void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {
+    inline void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {
         glRenderbufferStorage(target, internalformat, width, height);
     }
 }

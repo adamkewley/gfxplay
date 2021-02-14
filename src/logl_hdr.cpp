@@ -1,6 +1,8 @@
 #include "logl_common.hpp"
 #include "ak_common-shaders.hpp"
 
+#include "runtime_config.hpp"
+
 struct Multilight_textured_shader final {
     gl::Program prog = gl::CreateProgramFrom(
         gl::CompileVertexShaderResource("multilight.vert"),
@@ -85,7 +87,7 @@ struct Renderer final {
     };
 
     gl::Texture_2d wood{
-        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB),
+        gl::load_tex(gfxplay::resource_path("textures", "wood.png"), gl::TexFlag_SRGB),
     };
 
     Multilight_textured_shader bs;

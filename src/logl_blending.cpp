@@ -41,19 +41,19 @@ namespace {
 
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShaderFile(RESOURCES_DIR "logl_blending.vert"),
-            gl::CompileFragmentShaderFile(RESOURCES_DIR "logl_blending.frag"));
+            gl::CompileVertexShaderFile(gfxplay::resource_path("logl_blending.vert")),
+            gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_blending.frag")));
         static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
         static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "model");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
         gl::Texture_2d tex_marble =
-                gl::load_tex(RESOURCES_DIR "textures/marble.jpg");
+                gl::load_tex(gfxplay::resource_path("textures", "marble.jpg"));
         gl::Texture_2d tex_floor =
-                gl::load_tex(RESOURCES_DIR "textures/metal.png");
+                gl::load_tex(gfxplay::resource_path("textures", "metal.png"));
         gl::Texture_2d tex_grass =
-                gl::load_tex(RESOURCES_DIR "textures/window.png");
+                gl::load_tex(gfxplay::resource_path("textures", "window.png"));
         gl::Array_buffer cube_vbo = []() {
             static const float cubeVertices[] = {
                 // positions          // texture Coords

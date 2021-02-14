@@ -136,10 +136,10 @@ static gl::Vertex_array create_vao(Bloom_shader& s, Vbo& vbo) {
 
 struct Renderer final {
     gl::Texture_2d wood_tex =
-        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB);
+        gl::load_tex(gfxplay::resource_path("textures", "wood.png"), gl::TexFlag_SRGB);
 
     gl::Texture_2d container_tex =
-        gl::load_tex(RESOURCES_DIR "textures/container2.png", gl::TexFlag_SRGB);
+        gl::load_tex(gfxplay::resource_path("textures/container2.png"), gl::TexFlag_SRGB);
 
     static constexpr std::array<glm::vec3, 4> light_positions = {{
         { 0.0f, 0.5f,  1.5f},

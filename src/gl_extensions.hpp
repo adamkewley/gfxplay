@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <stdexcept>
+#include <filesystem>
 
 
 // gl extensions: useful extension/helper methods over base OpenGL API
@@ -306,13 +307,13 @@ namespace gl {
     // COMPILE + LINK PROGRAMS:
 
     Vertex_shader CompileVertexShader(char const* src);
-    Vertex_shader CompileVertexShaderFile(char const* path);
+    Vertex_shader CompileVertexShaderFile(std::filesystem::path const&);
     Vertex_shader CompileVertexShaderResource(char const* resource_id);
     Fragment_shader CompileFragmentShader(char const* src);
-    Fragment_shader CompileFragmentShaderFile(char const* path);
+    Fragment_shader CompileFragmentShaderFile(std::filesystem::path const&);
     Fragment_shader CompileFragmentShaderResource(char const* resource_id);
     Geometry_shader CompileGeometryShader(char const* src);
-    Geometry_shader CompileGeometryShaderFile(char const* path);
+    Geometry_shader CompileGeometryShaderFile(std::filesystem::path const&);
     Geometry_shader CompileGeometryShaderResource(char const* resource_id);
 
     Program CreateProgramFrom(Vertex_shader const& vs,
@@ -339,16 +340,16 @@ namespace gl {
     };
 
     // read an image file into an OpenGL 2D texture
-    gl::Texture_2d load_tex(char const* path, Tex_flags = TexFlag_None);
+    gl::Texture_2d load_tex(std::filesystem::path const& path, Tex_flags = TexFlag_None);
 
     // read 6 image files into a single OpenGL cubemap (GL_TEXTURE_CUBE_MAP)
     gl::Texture_cubemap read_cubemap(
-            char const* path_pos_x,
-            char const* path_neg_x,
-            char const* path_pos_y,
-            char const* path_neg_y,
-            char const* path_pos_z,
-            char const* path_neg_z);
+            std::filesystem::path const& path_pos_x,
+            std::filesystem::path const& path_neg_x,
+            std::filesystem::path const& path_pos_y,
+            std::filesystem::path const& path_neg_y,
+            std::filesystem::path const& path_pos_z,
+            std::filesystem::path const& path_neg_z);
 
     inline glm::mat3 normal_matrix(glm::mat4 const& m) {
          return glm::transpose(glm::inverse(m));
@@ -402,12 +403,12 @@ namespace gl {
     };
 
     template<typename... T>
-    void DrawBuffers(T... vs) {
+    inline void DrawBuffers(T... vs) {
         GLenum attachments[sizeof...(vs)] = { static_cast<GLenum>(vs)... };
         glDrawBuffers(sizeof...(vs), attachments);
     }
 
-    void assert_current_fbo_complete() {
+    inline void assert_current_fbo_complete() {
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
     }
 }

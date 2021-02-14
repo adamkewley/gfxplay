@@ -1,6 +1,7 @@
 #include "gl_extensions.hpp"
 
 #include "logl_common.hpp"
+#include "runtime_config.hpp"
 
 // stbi for image loading
 #define STB_IMAGE_IMPLEMENTATION
@@ -24,10 +25,10 @@ namespace stbi {
         int nrChannels;
         unsigned char* data;
 
-        Image(char const* path) :
-            data{stbi_load(path, &width, &height, &nrChannels, 0)} {
+        Image(std::filesystem::path const& path) :
+            data{stbi_load(path.c_str(), &width, &height, &nrChannels, 0)} {
             if (data == nullptr) {
-                throw std::runtime_error{"stbi_load failed for '"s + path + "' : " + stbi_failure_reason()};
+                throw std::runtime_error{"stbi_load failed for '"s + path.string() + "' : " + stbi_failure_reason()};
             }
         }
         Image(Image const&) = delete;
@@ -93,24 +94,8 @@ static std::string slurp_file(const char* path) {
     return ss.str();
 }
 
-static std::string resource_path(const char* path) {
-    std::filesystem::path p{path};
-
-    if (p.has_root_directory()) {
-        return p;
-    }
-
-    auto it = p.begin();
-    if (it == p.end()) {
-        throw std::runtime_error{"empty path given to CompileVertexShaderFile"};
-    }
-
-    auto first = *it;
-    if (first == RESOURCES_DIR) {
-        return p;
-    }
-
-    return std::filesystem::path{RESOURCES_DIR} / p;
+static std::string slurp_file(std::filesystem::path const& path) {
+    return slurp_file(path.c_str());
 }
 
 // asserts there are no current OpenGL errors (globally)
@@ -145,7 +130,7 @@ void gl::assert_no_errors(char const* label) {
     throw std::runtime_error{msg.str()};
 }
 
-gl::Vertex_shader gl::CompileVertexShaderFile(char const* path) {
+gl::Vertex_shader gl::CompileVertexShaderFile(std::filesystem::path const& path) {
     try {
         return CompileVertexShader(slurp_file(path).c_str());
     } catch (std::exception const& e) {
@@ -158,10 +143,10 @@ gl::Vertex_shader gl::CompileVertexShaderFile(char const* path) {
 }
 
 gl::Vertex_shader gl::CompileVertexShaderResource(char const* resource) {
-    return CompileVertexShaderFile(resource_path(resource).c_str());
+    return CompileVertexShaderFile(gfxplay::resource_path(resource).c_str());
 }
 
-gl::Fragment_shader gl::CompileFragmentShaderFile(char const* path) {
+gl::Fragment_shader gl::CompileFragmentShaderFile(std::filesystem::path const& path) {
     try {
         return CompileFragmentShader(slurp_file(path).c_str());
     } catch (std::exception const& e) {
@@ -174,10 +159,10 @@ gl::Fragment_shader gl::CompileFragmentShaderFile(char const* path) {
 }
 
 gl::Fragment_shader gl::CompileFragmentShaderResource(char const* resource) {
-    return CompileFragmentShaderFile(resource_path(resource).c_str());
+    return CompileFragmentShaderFile(gfxplay::resource_path(resource).c_str());
 }
 
-gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
+gl::Geometry_shader gl::CompileGeometryShaderFile(std::filesystem::path const& path) {
     try {
         return CompileGeometryShader(slurp_file(path).c_str());
     } catch (std::exception const& e) {
@@ -190,10 +175,10 @@ gl::Geometry_shader gl::CompileGeometryShaderFile(char const* path) {
 }
 
 gl::Geometry_shader gl::CompileGeometryShaderResource(char const* resource) {
-    return CompileGeometryShaderFile(resource_path(resource).c_str());
+    return CompileGeometryShaderFile(gfxplay::resource_path(resource).c_str());
 }
 
-gl::Texture_2d gl::load_tex(char const* path, Tex_flags flags) {
+gl::Texture_2d gl::load_tex(std::filesystem::path const& path, Tex_flags flags) {
     auto t = gl::GenTexture2d();
 
     if (flags & TexFlag_Flip_Pixels_Vertically) {
@@ -237,7 +222,7 @@ gl::Texture_2d gl::load_tex(char const* path, Tex_flags flags) {
 }
 
 // helper method: load a file into an image and send it to OpenGL
-static void load_cubemap_surface(char const* path, GLenum target) {
+static void load_cubemap_surface(std::filesystem::path const& path, GLenum target) {
     auto img = stbi::Image{path};
 
     GLenum format;
@@ -257,12 +242,12 @@ static void load_cubemap_surface(char const* path, GLenum target) {
 }
 
 gl::Texture_cubemap gl::read_cubemap(
-        char const* path_pos_x,
-        char const* path_neg_x,
-        char const* path_pos_y,
-        char const* path_neg_y,
-        char const* path_pos_z,
-        char const* path_neg_z) {
+        std::filesystem::path const& path_pos_x,
+        std::filesystem::path const& path_neg_x,
+        std::filesystem::path const& path_pos_y,
+        std::filesystem::path const& path_neg_y,
+        std::filesystem::path const& path_pos_z,
+        std::filesystem::path const& path_neg_z) {
     stbi_set_flip_vertically_on_load(false);
 
     gl::Texture_cubemap rv = gl::GenTextureCubemap();

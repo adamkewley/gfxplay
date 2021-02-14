@@ -3,8 +3,8 @@
 // shader for calculating shadowmap's depthmap
 struct Depthmap_shader final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderFile(RESOURCES_DIR "shadows_shadow-maps_depth-maps.vert"),
-        gl::CompileFragmentShaderFile(RESOURCES_DIR "shadows_shadow-maps_depth-maps.frag"));
+        gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.vert")),
+        gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.frag")));
 
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
 
@@ -14,8 +14,8 @@ struct Depthmap_shader final {
 
 struct Shadowmap_shader final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderFile(RESOURCES_DIR "shadows_shadow-maps.vert"),
-        gl::CompileFragmentShaderFile(RESOURCES_DIR "shadows_shadow-maps.frag"));
+        gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps.vert")),
+        gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps.frag")));
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
     static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
     static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
@@ -37,8 +37,8 @@ struct Shadowmap_shader final {
 // used to sample the depthmap onto a quad that can be viewed in-ui
 struct Basic_texture_shader final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderFile(RESOURCES_DIR "shadows_shadow-maps_basic-tex.vert"),
-        gl::CompileFragmentShaderFile(RESOURCES_DIR "shadows_shadow-maps_basic-tex.frag"));
+        gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.vert")),
+        gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.frag")));
     static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
     static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
 
@@ -170,7 +170,7 @@ struct App final {
     gl::Vertex_array cube_vao = create_vao(shader, cube.vbo);
 
     gl::Texture_2d wood =
-        gl::load_tex(RESOURCES_DIR "textures/wood.png");
+        gl::load_tex(gfxplay::resource_path("textures", "wood.png"));
 
     glm::mat4 cube1 = []() {
         glm::mat4 m = glm::identity<glm::mat4>();

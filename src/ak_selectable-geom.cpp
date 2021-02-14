@@ -477,7 +477,7 @@ struct Screen final {
     }();
 
     gl::Texture_2d wood_texture{
-        gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB)
+        gl::load_tex(gfxplay::resource_path("textures/wood.png"), gl::TexFlag_SRGB)
     };
 
     void draw(ui::Window_state& w, Game_state_new& game) {

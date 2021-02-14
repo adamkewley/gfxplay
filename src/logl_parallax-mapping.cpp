@@ -106,25 +106,25 @@ struct Renderer final {
 
     struct {
         gl::Texture_2d diffuse{
-            gl::load_tex(RESOURCES_DIR "textures/wood.png", gl::TexFlag_SRGB)
+            gl::load_tex(gfxplay::resource_path("textures", "wood.png"), gl::TexFlag_SRGB)
         };
         gl::Texture_2d normals{
-            gl::load_tex(RESOURCES_DIR "textures/toy_box_normal.png")
+            gl::load_tex(gfxplay::resource_path("textures", "toy_box_normal.png"))
         };
         gl::Texture_2d depth{
-            gl::load_tex(RESOURCES_DIR "textures/toy_box_disp.png")
+            gl::load_tex(gfxplay::resource_path("textures", "toy_box_disp.png"))
         };
     } wood;
 
     struct {
         gl::Texture_2d diffuse{
-            gl::load_tex(RESOURCES_DIR "textures/bricks2.jpg", gl::TexFlag_SRGB)
+            gl::load_tex(gfxplay::resource_path("textures" , "bricks2.jpg"), gl::TexFlag_SRGB)
         };
         gl::Texture_2d normals{
-            gl::load_tex(RESOURCES_DIR "textures/bricks2_normal.jpg")
+            gl::load_tex(gfxplay::resource_path("textures", "bricks2_normal.jpg"))
         };
         gl::Texture_2d depth{
-            gl::load_tex(RESOURCES_DIR "textures/bricks2_disp.jpg")
+            gl::load_tex(gfxplay::resource_path("textures", "bricks2_disp.jpg"))
         };
     } brick;
 

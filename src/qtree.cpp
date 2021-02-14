@@ -49,7 +49,7 @@ namespace {
     }
 }
 
-namespace sdl {
+namespace {
     Dimensions2d drawable_area(SDL_Renderer* r) {
         Dimensions2d rv;
         SDL_GetRendererOutputSize(r, &rv.w, &rv.h);

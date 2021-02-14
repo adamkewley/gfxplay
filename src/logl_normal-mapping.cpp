@@ -105,11 +105,11 @@ struct Screen final {
     gl::Vertex_array bs_quad_vao = create_vao(bs, quad_vbo);
 
     gl::Texture_2d diffuse_tex{
-        gl::load_tex(RESOURCES_DIR "textures/brickwall.jpg", gl::TexFlag_SRGB)
+        gl::load_tex(gfxplay::resource_path("textures", "brickwall.jpg"), gl::TexFlag_SRGB)
     };
 
     gl::Texture_2d normal_tex{
-        gl::load_tex(RESOURCES_DIR "textures/brickwall_normal.jpg")
+        gl::load_tex(gfxplay::resource_path("textures", "brickwall_normal.jpg"))
     };
 
     glm::vec3 light_pos{0.0f, 0.1f, 1.0f};

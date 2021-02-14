@@ -7,6 +7,8 @@
 #pragma warning(disable: 4455) // "This kind of function may not throw. Declare it 'noexcept'
 #endif
 
+#include "runtime_config.hpp"
+
 // wrappers
 #include "sdl.hpp"
 #include "gl.hpp"

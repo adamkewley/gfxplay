@@ -51,12 +51,12 @@ namespace {
     std::shared_ptr<gl::Texture_cubemap> load_cubemap() {
         static std::shared_ptr<gl::Texture_cubemap> cm = std::make_shared<gl::Texture_cubemap>(
             gl::read_cubemap(
-                RESOURCES_DIR "textures/skybox/right.jpg",
-                RESOURCES_DIR "textures/skybox/left.jpg",
-                RESOURCES_DIR "textures/skybox/top.jpg",
-                RESOURCES_DIR "textures/skybox/bottom.jpg",
-                RESOURCES_DIR "textures/skybox/front.jpg",
-                RESOURCES_DIR "textures/skybox/back.jpg"));
+                gfxplay::resource_path("textures", "skybox", "right.jpg"),
+                gfxplay::resource_path("textures", "skybox", "left.jpg"),
+                gfxplay::resource_path("textures", "skybox", "top.jpg"),
+                gfxplay::resource_path("textures" , "skybox", "bottom.jpg"),
+                gfxplay::resource_path("textures", "skybox", "front.jpg"),
+                gfxplay::resource_path("textures", "skybox", "back.jpg")));
         return cm;
     }
 
