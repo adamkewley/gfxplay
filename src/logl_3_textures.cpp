@@ -32,11 +32,11 @@ uniform sampler2D uSampler1;
 void main() {
     FragColor = mix(texture(uSampler0, TexCoord), texture(uSampler1, TexCoord), 0.2);
 })"));
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
-        static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(2);
-        gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec3 aColor{1};
+        static constexpr gl::Attribute_vec2 aTexCoord{2};
+        gl::Uniform_int uSampler0{prog, "uSampler0"};
+        gl::Uniform_int uSampler1{prog, "uSampler1"};
 
         struct Vbo_data final {
             glm::vec3 pos;
@@ -77,12 +77,12 @@ void main() {
             gl::UseProgram(prog);
 
             gl::ActiveTexture(GL_TEXTURE0);
-            gl::BindTexture(wall.type, wall);
-            gl::Uniform(uSampler0, 0);
+            gl::BindTexture(wall);
+            gl::Uniform(uSampler0, gl::texture_index<GL_TEXTURE0>());
 
             gl::ActiveTexture(GL_TEXTURE1);
-            gl::BindTexture(face.type, face);
-            gl::Uniform(uSampler1, 1);
+            gl::BindTexture(face);
+            gl::Uniform(uSampler1, gl::texture_index<GL_TEXTURE1>());
 
             gl::BindVertexArray(vao);
             gl::DrawElements(GL_TRIANGLES, ebo.sizei(), GL_UNSIGNED_INT, nullptr);

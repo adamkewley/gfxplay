@@ -8,18 +8,18 @@ struct Multilight_textured_shader final {
         gl::CompileVertexShaderResource("multilight.vert"),
         gl::CompileFragmentShaderResource("multilight.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
 
-    gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
-    gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
-    gl::Uniform_mat4 uProjMtx = gl::GetUniformLocation(prog, "uProjMtx");
-    gl::Uniform_mat3 uNormalMtx = gl::GetUniformLocation(prog, "uNormalMtx");
+    gl::Uniform_mat4 uModelMtx{prog, "uModelMtx"};
+    gl::Uniform_mat4 uViewMtx{prog, "uViewMtx"};
+    gl::Uniform_mat4 uProjMtx{prog, "uProjMtx"};
+    gl::Uniform_mat3 uNormalMtx{prog, "uNormalMtx"};
 
-    gl::Uniform_sampler2d uDiffuseTex = gl::GetUniformLocation(prog, "uDiffuseTex");
-    gl::Uniform_vec3 uLightPositions = gl::GetUniformLocation(prog, "uLightPositions");
-    gl::Uniform_vec3 uLightColors = gl::GetUniformLocation(prog, "uLightColors");
+    gl::Uniform_sampler2d uDiffuseTex{prog, "uDiffuseTex"};
+    gl::Uniform_vec3 uLightPositions{prog, "uLightPositions"};
+    gl::Uniform_vec3 uLightColors{prog, "uLightColors"};
 };
 
 template<typename Vbo>
@@ -47,12 +47,12 @@ struct Hdr_shader final {
         gl::CompileVertexShaderResource("hdr.vert"),
         gl::CompileFragmentShaderResource("hdr.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoords{1};
 
-    gl::Uniform_sampler2d hdrBuffer = gl::GetUniformLocation(prog, "hdrBuffer");
-    gl::Uniform_bool hdr = gl::GetUniformLocation(prog, "hdr");
-    gl::Uniform_float exposure = gl::GetUniformLocation(prog, "exposure");
+    gl::Uniform_sampler2d hdrBuffer{prog, "hdrBuffer"};
+    gl::Uniform_bool hdr{prog, "hdr"};
+    gl::Uniform_float exposure{prog, "exposure"};
 };
 
 template<typename Vbo>
@@ -117,28 +117,28 @@ struct Renderer final {
     }};
 
     gl::Texture_2d hdr_colorbuf = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(t.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(t.type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         return t;
     }();
 
     gl::Render_buffer depth_rbo = []() {
-        gl::Render_buffer rbo = gl::GenRenderBuffer();
+        gl::Render_buffer rbo;
         gl::BindRenderBuffer(rbo);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, ui::window_width, ui::window_height);
         return rbo;
     }();
 
     gl::Frame_buffer hdr_fbo = [this]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_colorbuf, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_colorbuf.raw_handle(), 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo.raw_handle());
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::Window_fbo{});
         return fbo;
     }();
 
@@ -146,7 +146,7 @@ struct Renderer final {
     float exposure = 1.0f;
 
     void draw(ui::Window_state& w, ui::Game_state& s) {
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, hdr_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         {
             gl::UseProgram(bs.prog);
@@ -167,7 +167,7 @@ struct Renderer final {
             gl::BindVertexArray();
         }
 
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         {
             gl::UseProgram(hs.prog);

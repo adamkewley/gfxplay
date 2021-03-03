@@ -12,16 +12,16 @@ struct Gbuffer_shader final {
         gl::CompileVertexShaderResource("deferred1.vert"),
         gl::CompileFragmentShaderResource("deferred1.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal  = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal {1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
 
-    gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
-    gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
-    gl::Uniform_mat4 uProjMtx = gl::GetUniformLocation(prog, "uProjMtx");
-    gl::Uniform_mat3 uNormalMtx = gl::GetUniformLocation(prog, "uNormalMtx");
-    gl::Uniform_sampler2d uDiffuseTex = gl::GetUniformLocation(prog, "uDiffuseTex");
-    gl::Uniform_sampler2d uSpecularTex = gl::GetUniformLocation(prog, "uSpecularTex");
+    gl::Uniform_mat4 uModelMtx{prog, "uModelMtx"};
+    gl::Uniform_mat4 uViewMtx{prog, "uViewMtx"};
+    gl::Uniform_mat4 uProjMtx{prog, "uProjMtx"};
+    gl::Uniform_mat3 uNormalMtx{prog, "uNormalMtx"};
+    gl::Uniform_sampler2d uDiffuseTex{prog, "uDiffuseTex"};
+    gl::Uniform_sampler2d uSpecularTex{prog, "uSpecularTex"};
 
     template<typename Vbo, typename T = typename Vbo::value_type>
     static gl::Vertex_array create_vao(Vbo& vbo, gl::Element_array_buffer<unsigned>* ebo = nullptr) {
@@ -50,15 +50,15 @@ struct Deferred2_shader final {
         gl::CompileVertexShaderResource("deferred2.vert"),
         gl::CompileFragmentShaderResource("deferred2.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoords{1};
 
-    gl::Uniform_sampler2d gPosition = gl::GetUniformLocation(prog, "gPosition");
-    gl::Uniform_sampler2d gNormal = gl::GetUniformLocation(prog, "gNormal");
-    gl::Uniform_sampler2d gAlbedoSpec = gl::GetUniformLocation(prog, "gAlbedoSpec");
+    gl::Uniform_sampler2d gPosition{prog, "gPosition"};
+    gl::Uniform_sampler2d gNormal{prog, "gNormal"};
+    gl::Uniform_sampler2d gAlbedoSpec{prog, "gAlbedoSpec"};
     // TODO: deal with bullshit light bindings: LearnOpenGL uses some horrendous
     //       string construction to deal with this
-    gl::Uniform_vec3 viewPos = gl::GetUniformLocation(prog, "viewPos");
+    gl::Uniform_vec3 viewPos{prog, "viewPos"};
 
     template<typename Vbo, typename T = typename Vbo::value_type>
     static gl::Vertex_array create_vao(Vbo& vbo) {
@@ -113,51 +113,51 @@ struct Renderer final {
     std::array<Light, nr_lights> lights = generate_lights<nr_lights>();
 
     gl::Texture_2d gPosition_tex = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;
     }();
 
     gl::Texture_2d gNormal_tex = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;
     }();
 
     gl::Texture_2d gAlbedoSpec_tex = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ui::window_width, ui::window_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ui::window_width, ui::window_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;
     }();
 
     gl::Render_buffer gDepth_rbo = []() {
-        gl::Render_buffer rbo = gl::GenRenderBuffer();
+        gl::Render_buffer rbo;
         gl::BindRenderBuffer(rbo);
         gl::RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, ui::window_width, ui::window_height);
         return rbo;
     }();
 
     gl::Frame_buffer gbuffer_fbo = [this]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition_tex, 0);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal_tex, 0);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec_tex, 0);
-        gl::FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gDepth_rbo);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition_tex.raw_handle(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal_tex.raw_handle(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec_tex.raw_handle(), 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gDepth_rbo.raw_handle());
         gl::DrawBuffers(GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2);
 
         gl::assert_current_fbo_complete();
 
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
         return fbo;
     }();
@@ -196,7 +196,7 @@ struct Renderer final {
     bool debug_mode = false;
 
     void draw(ui::Window_state&, ui::Game_state& s) {
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gl::UseProgram(gbs.prog);
 
@@ -262,7 +262,7 @@ struct Renderer final {
         }
 
 
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (not debug_mode) {
@@ -288,19 +288,19 @@ struct Renderer final {
                 char buf[64];  // swap space for string formatting
 
                 std::snprintf(buf, sizeof(buf), "lights[%zu].Position", i);
-                gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(d2s.prog, buf);
+                gl::Uniform_vec3 uLightPos{d2s.prog, buf};
 
                 std::snprintf(buf, sizeof(buf), "lights[%zu].Color", i);
-                gl::Uniform_vec3 uLightColor = gl::GetUniformLocation(d2s.prog, buf);
+                gl::Uniform_vec3 uLightColor{d2s.prog, buf};
 
                 std::snprintf(buf, sizeof(buf), "lights[%zu].Linear", i);
-                gl::Uniform_float uLightLinear = gl::GetUniformLocation(d2s.prog, buf);
+                gl::Uniform_float uLightLinear{d2s.prog, buf};
 
                 std::snprintf(buf, sizeof(buf), "lights[%zu].Quadratic", i);
-                gl::Uniform_float uLightQuadratic = gl::GetUniformLocation(d2s.prog, buf);
+                gl::Uniform_float uLightQuadratic{d2s.prog, buf};
 
                 std::snprintf(buf, sizeof(buf), "lights[%zu].Radius", i);
-                gl::Uniform_float uLightRadius = gl::GetUniformLocation(d2s.prog, buf);
+                gl::Uniform_float uLightRadius{d2s.prog, buf};
 
                 // perform any necessary per-light calcs
                 const float constant = 1.0f;
@@ -327,10 +327,10 @@ struct Renderer final {
                 // use gBuffer's depth buffer in screen FBO, so that lights
                 // obey depth information (remember, the 3D scene being rendered
                 // before this point is just a flat quad)
-                gl::BindFrameBuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
-                gl::BindFrameBuffer(GL_DRAW_FRAMEBUFFER, gl::window_fbo);
-                gl::BlitFramebuffer(0, 0, ui::window_width, ui::window_height, 0, 0, ui::window_width, ui::window_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-                gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+                gl::BindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
+                gl::BindFramebuffer(GL_DRAW_FRAMEBUFFER, gl::window_fbo);
+                glBlitFramebuffer(0, 0, ui::window_width, ui::window_height, 0, 0, ui::window_width, ui::window_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+                gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
                 gl::UseProgram(ucs.p);
                 gl::Uniform(ucs.uView, s.camera.view_mtx());

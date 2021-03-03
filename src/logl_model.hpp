@@ -54,10 +54,10 @@ namespace model {
 
         Mesh_tex rv = Mesh_tex{type, gl::load_tex(p.c_str(), flgs)};
 
-        glTextureParameteri(rv.handle.handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(rv.handle.handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteri(rv.handle.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTextureParameteri(rv.handle.handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(rv.handle.raw_handle(), GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(rv.handle.raw_handle(), GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(rv.handle.raw_handle(), GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTextureParameteri(rv.handle.raw_handle(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         return rv;
     }

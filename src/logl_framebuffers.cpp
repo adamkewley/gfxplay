@@ -55,27 +55,27 @@ void main() {
         gl::Texture_2d container2_spec = gl::load_tex(gfxplay::resource_path("container2_specular.png"));
         gl::Texture_2d container2_emission = gl::load_tex(gfxplay::resource_path("matrix.jpg"));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-        static constexpr gl::Attribute_vec3 aTexCoords = gl::Attribute_vec3::at_location(2);
-        gl::Uniform_mat4 uModel = gl::GetUniformLocation(color_prog, "model");
-        gl::Uniform_mat4 uView = gl::GetUniformLocation(color_prog, "view");
-        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(color_prog, "projection");
-        gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec3 aNormal{1};
+        static constexpr gl::Attribute_vec3 aTexCoords{2};
+        gl::Uniform_mat4 uModel{color_prog, "model"};
+        gl::Uniform_mat4 uView{color_prog, "view"};
+        gl::Uniform_mat4 uProjection{color_prog, "projection"};
+        gl::Uniform_mat3 uNormalMatrix{color_prog, "normalMatrix"};
 
-        gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(color_prog, "viewPos");
-        gl::Uniform_vec3 uDirLightDirection = gl::GetUniformLocation(color_prog, "dirLight.direction");
-        gl::Uniform_vec3 uDirLightAmbient = gl::GetUniformLocation(color_prog, "dirLight.ambient");
-        gl::Uniform_vec3 uDirLightDiffuse = gl::GetUniformLocation(color_prog, "dirLight.diffuse");
-        gl::Uniform_vec3 uDirLightSpecular = gl::GetUniformLocation(color_prog, "dirLight.specular");
+        gl::Uniform_vec3 uViewPos{color_prog, "viewPos"};
+        gl::Uniform_vec3 uDirLightDirection{color_prog, "dirLight.direction"};
+        gl::Uniform_vec3 uDirLightAmbient{color_prog, "dirLight.ambient"};
+        gl::Uniform_vec3 uDirLightDiffuse{color_prog, "dirLight.diffuse"};
+        gl::Uniform_vec3 uDirLightSpecular{color_prog, "dirLight.specular"};
 
-        gl::Uniform_int uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
-        gl::Uniform_int uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform_float uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_int uMaterialDiffuse{color_prog, "material.diffuse"};
+        gl::Uniform_int uMaterialSpecular{color_prog, "material.specular"};
+        gl::Uniform_float uMaterialShininess{color_prog, "material.shininess"};
 
-        gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Uniform_mat4 uModelLightProg{light_prog, "model"};
+        gl::Uniform_mat4 uViewLightProg{light_prog, "view"};
+        gl::Uniform_mat4 uProjectionLightProg{light_prog, "projection"};
         gl::Array_buffer<float> ab = {
             // positions          // normals           // texture coords
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
@@ -155,8 +155,8 @@ void main() {
 )"),
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_framebuffers.frag"))
         );
-        static constexpr gl::Attribute_vec3 quadProg_aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec2 quadProg_texCoords = gl::Attribute_vec2::at_location(1);
+        static constexpr gl::Attribute_vec3 quadProg_aPos{0};
+        static constexpr gl::Attribute_vec2 quadProg_texCoords{1};
 
         gl::Array_buffer<float> quadProg_ab = {
             // positions   // texCoords
@@ -177,15 +177,15 @@ void main() {
             gl::EnableVertexAttribArray(quadProg_texCoords);
         };
 
-        gl::Texture_2d fbotex = gl::GenTexture2d();
-        gl::Render_buffer depthbuf = gl::GenRenderBuffer();
+        gl::Texture_2d fbotex;
+        gl::Render_buffer depthbuf;
 
         gl::Frame_buffer fbo2 = [&]() {
-            gl::Frame_buffer fbo = gl::GenFrameBuffer();
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
+            gl::Frame_buffer fbo;
+            gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
             // generate texture
-            gl::BindTexture(fbotex.type, fbotex);
+            gl::BindTexture(fbotex);
             glTexImage2D(GL_TEXTURE_2D,
                          0,
                          GL_RGB,
@@ -194,7 +194,7 @@ void main() {
                          0,
                          GL_RGB,
                          GL_UNSIGNED_BYTE,
-                         NULL);
+                         nullptr);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             gl::BindTexture();
@@ -203,7 +203,7 @@ void main() {
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                                    GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_2D,
-                                   fbotex,
+                                   fbotex.raw_handle(),
                                    0);
 
             // generate depth + stencil rbo, so the pipeline still has a storage
@@ -216,17 +216,17 @@ void main() {
             glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                       GL_DEPTH_STENCIL_ATTACHMENT,
                                       GL_RENDERBUFFER,
-                                      depthbuf.handle);
+                                      depthbuf.raw_handle());
             gl::BindRenderBuffer();
 
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
             return fbo;
         }();
 
         void draw(App_State const& as) {
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo2);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, fbo2);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
@@ -247,15 +247,15 @@ void main() {
 
             // texture mapping
             {
-                gl::Uniform(uMaterialDiffuse, 0);
                 glActiveTexture(GL_TEXTURE0);
-                gl::BindTexture(container2_tex.type, container2_tex);
+                gl::BindTexture(container2_tex);
+                gl::Uniform(uMaterialDiffuse, gl::texture_index<GL_TEXTURE0>());
             }
 
             {
-                gl::Uniform(uMaterialSpecular, 1);
                 glActiveTexture(GL_TEXTURE1);
-                gl::BindTexture(container2_spec.type, container2_spec);
+                gl::BindTexture(container2_spec);
+                gl::Uniform(uMaterialSpecular, gl::texture_index<GL_TEXTURE1>());
             }
             gl::Uniform(uMaterialShininess, 32.0f);
 
@@ -376,14 +376,14 @@ void main() {
             // !!! render complete !!!
             // so now switch back to the default fbo (the screen) and sample
             // the now-rendered backend fbo to a quad via texture sampling
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
             gl::UseProgram(quad_prog);
             glDisable(GL_DEPTH_TEST);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, fbotex);
+            gl::BindTexture(fbotex);
 
             gl::BindVertexArray(quadProg_vao);
             gl::DrawArrays(GL_TRIANGLES, 0, 6);

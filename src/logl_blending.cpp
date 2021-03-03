@@ -43,11 +43,11 @@ namespace {
         gl::Program prog = gl::CreateProgramFrom(
             gl::CompileVertexShaderFile(gfxplay::resource_path("logl_blending.vert")),
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_blending.frag")));
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
-        gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "model");
-        gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
-        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec2 aTexCoords{1};
+        gl::Uniform_mat4 uModel{prog, "model"};
+        gl::Uniform_mat4 uView{prog, "view"};
+        gl::Uniform_mat4 uProjection{prog, "projection"};
         gl::Texture_2d tex_marble =
                 gl::load_tex(gfxplay::resource_path("textures", "marble.jpg"));
         gl::Texture_2d tex_floor =

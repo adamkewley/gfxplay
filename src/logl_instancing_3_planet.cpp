@@ -12,27 +12,27 @@ struct Instanced_model_program final {
         gl::CompileVertexShaderFile(gfxplay::resource_path("instanced_model_loading.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("instanced_model_loading.frag")));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormals = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-    static constexpr gl::Attribute_mat4 aInstanceMatrix = gl::Attribute_mat4::at_location(3);
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormals{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
+    static constexpr gl::Attribute_mat4 aInstanceMatrix{3};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat3 uNormalMatrix{p, "normalMatrix"};
 
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 
-    gl::Uniform_vec3 uDirLightDirection = gl::GetUniformLocation(p, "light.direction");
-    gl::Uniform_vec3 uDirLightAmbient = gl::GetUniformLocation(p, "light.ambient");
-    gl::Uniform_vec3 uDirLightDiffuse = gl::GetUniformLocation(p, "light.diffuse");
-    gl::Uniform_vec3 uDirLightSpecular = gl::GetUniformLocation(p, "light.specular");
+    gl::Uniform_vec3 uDirLightDirection{p, "light.direction"};
+    gl::Uniform_vec3 uDirLightAmbient{p, "light.ambient"};
+    gl::Uniform_vec3 uDirLightDiffuse{p, "light.diffuse"};
+    gl::Uniform_vec3 uDirLightSpecular{p, "light.specular"};
 
     static constexpr size_t maxDiffuseTextures = 4;
-    gl::Uniform_int uDiffuseTextures = gl::GetUniformLocation(p, "diffuseTextures");
-    gl::Uniform_int uActiveDiffuseTextures = gl::GetUniformLocation(p, "activeDiffuseTextures");
+    gl::Uniform_int uDiffuseTextures{p, "diffuseTextures"};
+    gl::Uniform_int uActiveDiffuseTextures{p, "activeDiffuseTextures"};
     static constexpr size_t maxSpecularTextures = 4;
-    gl::Uniform_int uSpecularTextures = gl::GetUniformLocation(p, "specularTextures");
-    gl::Uniform_int uActiveSpecularTextures = gl::GetUniformLocation(p, "activeSpecularTextures");
+    gl::Uniform_int uSpecularTextures{p, "specularTextures"};
+    gl::Uniform_int uActiveSpecularTextures{p, "activeSpecularTextures"};
 };
 
 using model::Mesh_tex;

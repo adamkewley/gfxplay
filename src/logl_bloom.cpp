@@ -9,18 +9,18 @@ struct Thresholding_shader final {
         gl::CompileVertexShaderResource("bloom.vert"),
         gl::CompileFragmentShaderResource("bloom.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
 
-    gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
-    gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
-    gl::Uniform_mat4 uProjMtx = gl::GetUniformLocation(prog, "uProjMtx");
-    gl::Uniform_mat3 uNormalMtx = gl::GetUniformLocation(prog, "uNormalMtx");
+    gl::Uniform_mat4 uModelMtx{prog, "uModelMtx"};
+    gl::Uniform_mat4 uViewMtx{prog, "uViewMtx"};
+    gl::Uniform_mat4 uProjMtx{prog, "uProjMtx"};
+    gl::Uniform_mat3 uNormalMtx{prog, "uNormalMtx"};
 
-    gl::Uniform_vec3 uLightPositions = gl::GetUniformLocation(prog, "uLightPositions");
-    gl::Uniform_vec3 uLightColors = gl::GetUniformLocation(prog, "uLightColors");
-    gl::Uniform_sampler2d uDiffuseTex = gl::GetUniformLocation(prog, "uDiffuseTex");
+    gl::Uniform_vec3 uLightPositions{prog, "uLightPositions"};
+    gl::Uniform_vec3 uLightColor{prog, "uLightColors"};
+    gl::Uniform_sampler2d uDiffuseTex{prog, "uDiffuseTex"};
 };
 
 template<typename Vbo>
@@ -48,14 +48,11 @@ struct Thresholding_lightbox_shader final {
         gl::CompileVertexShaderResource("bloom.vert"),
         gl::CompileFragmentShaderResource("lightbox.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    // note: aNormal from vert shader ignored
-    // note: aTexCoords from vert shader ignored
-
-    gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
-    gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
-    gl::Uniform_mat4 uProjMtx = gl::GetUniformLocation(prog, "uProjMtx");
-    gl::Uniform_vec3 uLightColor = gl::GetUniformLocation(prog, "uLightColor");
+    static constexpr gl::Attribute_vec3 aPos{0};
+    gl::Uniform_mat4 uModelMtx{prog, "uModelMtx"};
+    gl::Uniform_mat4 uViewMtx{prog, "uViewMtx"};
+    gl::Uniform_mat4 uProjMtx{prog, "uProjMtx"};
+    gl::Uniform_vec3 uLightColor{prog, "uLightColor"};
 };
 
 template<typename Vbo>
@@ -78,11 +75,11 @@ struct Blur_shader final {
         gl::CompileVertexShaderResource("blur.vert"),
         gl::CompileFragmentShaderResource("blur.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoords{1};
 
-    gl::Uniform_sampler2d uImage = gl::GetUniformLocation(prog, "image");
-    gl::Uniform_bool uHorizontal = gl::GetUniformLocation(prog, "horizontal");
+    gl::Uniform_sampler2d uImage{prog, "image"};
+    gl::Uniform_bool uHorizontal{prog, "horizontal"};
 };
 
 template<typename Vbo>
@@ -108,13 +105,13 @@ struct Bloom_shader final {
         gl::CompileVertexShaderResource("bloom_final.vert"),
         gl::CompileFragmentShaderResource("bloom_final.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoords{1};
 
-    gl::Uniform_sampler2d uSceneTex = gl::GetUniformLocation(prog, "scene");
-    gl::Uniform_sampler2d uBlurTex = gl::GetUniformLocation(prog, "bloomBlur");
-    gl::Uniform_bool uBloom = gl::GetUniformLocation(prog, "bloom");
-    gl::Uniform_float uExposure = gl::GetUniformLocation(prog, "exposure");
+    gl::Uniform_sampler2d uSceneTex{prog, "scene"};
+    gl::Uniform_sampler2d uBlurTex{prog, "bloomBlur"};
+    gl::Uniform_bool uBloom{prog, "bloom"};
+    gl::Uniform_float uExposure{prog, "exposure"};
 };
 
 template<typename Vbo>
@@ -207,9 +204,9 @@ struct Renderer final {
     // returns fully-initialized HDR-ready texture that can be used by shaders
     // as a render target
     static gl::Texture_2d init_hdr_tex() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
@@ -224,32 +221,32 @@ struct Renderer final {
     gl::Texture_2d hdr_color0_tex = init_hdr_tex();
     gl::Texture_2d hdr_color1_tex = init_hdr_tex();
     gl::Render_buffer depth_rbo = []() {
-        gl::Render_buffer rbo = gl::GenRenderBuffer();
+        gl::Render_buffer rbo;
         gl::BindRenderBuffer(rbo);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, ui::window_width, ui::window_height);
         return rbo;
     }();
     gl::Frame_buffer hdr_mrt_fbo = [this]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_color0_tex, 0);
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, hdr_color1_tex, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_color0_tex.raw_handle(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, hdr_color1_tex.raw_handle(), 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo.raw_handle());
         unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         glDrawBuffers(2, attachments);
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         return fbo;
     }();
 
     // blur FBOs:
     static gl::Frame_buffer init_pingpong_fbo(gl::Texture_2d& tex) {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex.raw_handle(), 0);
         // no need for depth buffer: this is effectively just blurring a 2D image
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         return fbo;
     }
     gl::Texture_2d blur_ping_tex = init_hdr_tex();
@@ -287,7 +284,7 @@ struct Renderer final {
         // - thresholded HDR color (GL_COLOR_ATTACHMENT1) only contains
         //   fragments in the scene that exceed some brightness threshold
         {
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, hdr_mrt_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, hdr_mrt_fbo);
             gl::UseProgram(ts.prog);
             gl::BindVertexArray(ts_cube_vao);
 
@@ -297,7 +294,7 @@ struct Renderer final {
             gl::Uniform(ts.uViewMtx, s.camera.view_mtx());
             gl::Uniform(ts.uProjMtx, s.camera.persp_mtx());
             gl::Uniform(ts.uLightPositions, light_positions.size(), light_positions.data());
-            gl::Uniform(ts.uLightColors, light_colors.size(), light_colors.data());
+            gl::Uniform(ts.uLightColor, light_colors.size(), light_colors.data());
 
             // draw floor
             gl::ActiveTexture(GL_TEXTURE0);
@@ -334,7 +331,7 @@ struct Renderer final {
 
             gl::BindVertexArray();
             gl::UseProgram();
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         }
 
         // step2: blur the thresholded render
@@ -352,7 +349,7 @@ struct Renderer final {
             bool first = true;
             for (int i = 0; i < 2; ++i) {
                 // ping
-                gl::BindFrameBuffer(GL_FRAMEBUFFER, blur_ping_fbo);
+                gl::BindFramebuffer(GL_FRAMEBUFFER, blur_ping_fbo);
                 gl::Uniform(bs.uHorizontal, true);
                 gl::ActiveTexture(GL_TEXTURE0);
                 gl::BindTexture(first ? hdr_color0_tex : blur_pong_tex);
@@ -360,7 +357,7 @@ struct Renderer final {
                 gl::DrawArrays(GL_TRIANGLES, 0, debug_quad_vbo.sizei());
 
                 // pong
-                gl::BindFrameBuffer(GL_FRAMEBUFFER, blur_pong_fbo);
+                gl::BindFramebuffer(GL_FRAMEBUFFER, blur_pong_fbo);
                 gl::Uniform(bs.uHorizontal, false);
                 gl::ActiveTexture(GL_TEXTURE0);
                 gl::BindTexture(blur_ping_tex);
@@ -369,7 +366,7 @@ struct Renderer final {
 
                 first = false;
             }
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
             // assuming passes >0, blur_pong_tex now contains a blurred texture
 

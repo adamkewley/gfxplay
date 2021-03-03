@@ -158,7 +158,7 @@ gl::Geometry_shader gl::CompileGeometryShaderResource(char const* resource) {
 }
 
 gl::Texture_2d gl::load_tex(std::filesystem::path const& path, Tex_flags flags) {
-    auto t = gl::GenTexture2d();
+    gl::Texture_2d t;
 
     if (flags & TexFlag_Flip_Pixels_Vertically) {
         stbi_set_flip_vertically_on_load(true);
@@ -185,10 +185,10 @@ gl::Texture_2d gl::load_tex(std::filesystem::path const& path, Tex_flags flags) 
         throw std::runtime_error{std::move(msg).str()};
     }
 
-    gl::BindTexture(t.type, t);
-    gl::TexImage2D(t.type,
+    gl::BindTexture(t);
+    glTexImage2D(t.type,
                  0,
-                 internalFormat,
+                 static_cast<GLint>(internalFormat),
                  img.width,
                  img.height,
                  0,
@@ -229,7 +229,7 @@ gl::Texture_cubemap gl::read_cubemap(
         std::filesystem::path const& path_neg_z) {
     stbi_set_flip_vertically_on_load(false);
 
-    gl::Texture_cubemap rv = gl::GenTextureCubemap();
+    gl::Texture_cubemap rv;
     gl::BindTexture(rv);
 
     load_cubemap_surface(path_pos_x, GL_TEXTURE_CUBE_MAP_POSITIVE_X);

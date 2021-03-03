@@ -74,16 +74,16 @@ void main()
         gl::Texture_2d container2_spec = gl::load_tex(gfxplay::resource_path("container2_specular.png"));
         gl::Texture_2d container2_emission = gl::load_tex(gfxplay::resource_path("matrix.jpg"));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-        gl::Uniform_mat4 uModel = gl::GetUniformLocation(color_prog, "model");
-        gl::Uniform_mat4 uView = gl::GetUniformLocation(color_prog, "view");
-        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(color_prog, "projection");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec3 aNormal{1};
+        static constexpr gl::Attribute_vec2 aTexCoords{2};
+        gl::Uniform_mat4 uModel{color_prog, "model"};
+        gl::Uniform_mat4 uView{color_prog, "view"};
+        gl::Uniform_mat4 uProjection{color_prog, "projection"};
 
-        gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Uniform_mat4 uModelLightProg{light_prog, "model"};
+        gl::Uniform_mat4 uViewLightProg{light_prog, "view"};
+        gl::Uniform_mat4 uProjectionLightProg{light_prog, "projection"};
         gl::Array_buffer<float> ab = {
             // positions          // normals           // texture coords
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,

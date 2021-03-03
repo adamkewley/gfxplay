@@ -2,9 +2,11 @@
 
 #include <GL/glew.h>
 #include <cassert>
+
 #include <stdexcept>
 #include <type_traits>
 #include <initializer_list>
+#include <limits>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -194,47 +196,61 @@ namespace gl {
         };
     }
 
-    class Shader_location {
-        GLint value;
+    template<typename TGlsl>
+    class Shader_symbol {
+        GLint location;
     public:
-        static constexpr GLint senteniel = -1;
-
-        constexpr Shader_location(GLint _value) noexcept : value{_value} {
-        }
-
-        operator bool () const noexcept {
-            return value != senteniel;
+        constexpr Shader_symbol(GLint _location) noexcept : location{_location} {
         }
 
         [[nodiscard]] constexpr GLuint get() const noexcept {
-            return static_cast<GLuint>(value);
+            return static_cast<GLuint>(location);
+        }
+
+        [[nodiscard]] constexpr GLint geti() const noexcept {
+            return static_cast<GLint>(location);
         }
     };
 
-    class Attribute_location : public Shader_location {};
-    class Uniform_location : public Shader_location {};
+    template<typename TGlsl>
+    class Uniform_ : public Shader_symbol<TGlsl> {
+    public:
+        constexpr Uniform_(GLint _location) noexcept :
+            Shader_symbol<TGlsl>{_location} {
+        }
+
+        Uniform_(Program const& p, GLchar const* name) :
+            Uniform_{GetUniformLocation(p, name)} {
+        }
+    };
+
+    using Uniform_float = Uniform_<glsl::float_>;
+    using Uniform_int = Uniform_<glsl::int_>;
+    using Uniform_mat4 = Uniform_<glsl::mat4>;
+    using Uniform_mat3 = Uniform_<glsl::mat3>;
+    using Uniform_vec4 = Uniform_<glsl::vec4>;
+    using Uniform_vec3 = Uniform_<glsl::vec3>;
+    using Uniform_vec2 = Uniform_<glsl::vec2>;
+    using Uniform_bool = Uniform_int;
+    using Uniform_sampler2d = Uniform_int;
+    using Uniform_samplerCube = Uniform_int;
+
+    inline void Uniform(Uniform_float& u, GLfloat value) noexcept {
+        glUniform1f(u.geti(), value);
+    }
+
+    inline void Uniform(Uniform_int& u, GLint value) noexcept {
+        glUniform1i(u.geti(), value);
+    }
 
     template<typename TGlsl>
-    class Attribute final {
-        Attribute_location location;
+    class Attribute : public Shader_symbol<TGlsl> {
     public:
-        [[nodiscard]] static constexpr Attribute at_location(GLint loc) noexcept {
-            return Attribute{Attribute_location{loc}};
+        constexpr Attribute(GLint  _location) noexcept : Shader_symbol<TGlsl>{_location} {
         }
 
-        [[nodiscard]] static Attribute with_name(Program const& p, GLchar const* name) {
-            return Attribute{Attribute_location{GetAttribLocation(p, name)}};
-        }
-
-        constexpr Attribute(Shader_location _location) noexcept : location{_location} {
-        }
-
-        [[nodiscard]] constexpr GLuint get() const noexcept {
-            return location.get();
-        }
-
-        operator Attribute_location () const noexcept {
-            return location;
+        Attribute(Program const& p, GLchar const* name) :
+            Attribute{GetAttribLocation(p, name)} {
         }
     };
 
@@ -478,33 +494,30 @@ namespace gl {
 
     // RAII wrapper for glGenTextures/glDeleteTextures
     //     https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glDeleteTextures.xml
-    struct Texture_handle {
-        friend Texture_handle GenTextures();
-
+    class Texture_handle {
         GLuint handle;
+    public:
+        static constexpr GLuint senteniel = static_cast<GLuint>(-1);
 
-    protected:
         Texture_handle() {
             glGenTextures(1, &handle);
         }
-    public:
         Texture_handle(Texture_handle const&) = delete;
         Texture_handle(Texture_handle&& tmp) : handle{tmp.handle} {
-            tmp.handle = static_cast<GLuint>(-1);
+            tmp.handle = senteniel;
         }
         Texture_handle& operator=(Texture_handle const&) = delete;
         Texture_handle& operator=(Texture_handle&&) = delete;
         ~Texture_handle() noexcept {
-            if (handle != static_cast<GLuint>(-1)) {
+            if (handle != senteniel) {
                 glDeleteTextures(1, &handle);
             }
         }
-    };
 
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGenTextures.xhtml
-    inline Texture_handle GenTextures() {
-        return Texture_handle{};
-    }
+        [[nodiscard]] constexpr GLuint raw_handle() const noexcept {
+            return handle;
+        }
+    };
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glActiveTexture.xhtml
     inline void ActiveTexture(GLenum texture) {
@@ -513,7 +526,7 @@ namespace gl {
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
     inline void BindTexture(GLenum target, Texture_handle const& texture) {
-        glBindTexture(target, texture.handle);
+        glBindTexture(target, texture.raw_handle());
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTexture.xhtml
@@ -521,100 +534,80 @@ namespace gl {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
-    inline void TexImage2D(
-            GLenum target,
-            GLint level,
-            GLint internalformat,
-            GLsizei width,
-            GLsizei height,
-            GLint border,
-            GLenum format,
-            GLenum type,
-            const void * data) {
-        glTexImage2D(target, level, internalformat, width, height, border, format, type, data);
+    template<GLenum TextureType>
+    class Texture {
+        Texture_handle handle;
+    public:
+        static constexpr GLenum type = TextureType;
+
+        [[nodiscard]] constexpr GLuint raw_handle() const noexcept {
+            return handle.raw_handle();
+        }
+
+        constexpr operator Texture_handle const&() const noexcept {
+            return handle;
+        }
+    };
+
+    using Texture_2d = Texture<GL_TEXTURE_2D>;
+    using Texture_cubemap = Texture<GL_TEXTURE_CUBE_MAP>;
+    using Texture_2d_multisample = Texture<GL_TEXTURE_2D_MULTISAMPLE>;
+
+    template<typename Texture>
+    inline void BindTexture(Texture const& t) noexcept {
+        glBindTexture(t.type, t.raw_handle());
     }
 
-    // RAII wrapper for glDeleteFrameBuffers
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteFramebuffers.xhtml
-    struct Frame_buffer final {
+    class Frame_buffer final {
         GLuint handle;
-
-    private:
-        friend Frame_buffer GenFrameBuffer();
-        Frame_buffer(GLuint _handle) : handle{_handle} {
-        }
     public:
+        static constexpr GLuint senteniel = static_cast<GLuint>(-1);
+
+        Frame_buffer() {
+            glGenFramebuffers(1, &handle);
+        }
         Frame_buffer(Frame_buffer const&) = delete;
         Frame_buffer(Frame_buffer&& tmp) : handle{tmp.handle} {
-            tmp.handle = static_cast<GLuint>(-1);
+            tmp.handle = senteniel;
         }
         Frame_buffer& operator=(Frame_buffer const&) = delete;
         Frame_buffer& operator=(Frame_buffer&&) = delete;
         ~Frame_buffer() noexcept {
-            if (handle != static_cast<GLuint>(-1)) {
+            if (handle != senteniel) {
                 glDeleteFramebuffers(1, &handle);
             }
         }
+
+        [[nodiscard]] constexpr GLuint raw_handle() const noexcept {
+            return handle;
+        }
     };
 
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGenFramebuffers.xhtml
-    inline Frame_buffer GenFrameBuffer() {
-        GLuint handle;
-        glGenFramebuffers(1, &handle);
-        return Frame_buffer{handle};
-    }
-
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
-    inline void BindFrameBuffer(GLenum target, GLuint handle) {
-        glBindFramebuffer(target, handle);
+    inline void BindFramebuffer(GLenum target, Frame_buffer const& fb) {
+        glBindFramebuffer(target, fb.raw_handle());
     }
 
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindFramebuffer.xhtml
-    inline void BindFrameBuffer(GLenum target, Frame_buffer const& fb) {
-        glBindFramebuffer(target, fb.handle);
-    }
-
-    static constexpr GLuint window_fbo = 0;
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glFramebufferTexture2D.xml
-    inline void FramebufferTexture2D(
-            GLenum target,
-            GLenum attachment,
-            GLenum textarget,
-            GLuint texture,
-            GLint level) {
-        glFramebufferTexture2D(target, attachment, textarget, texture, level);
-    }
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBlitFramebuffer.xhtml
-    inline void BlitFramebuffer(
-            GLint srcX0,
-            GLint srcY0,
-            GLint srcX1,
-            GLint srcY1,
-            GLint dstX0,
-            GLint dstY0,
-            GLint dstX1,
-            GLint dstY1,
-            GLbitfield mask,
-            GLenum filter) {
-        glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+    struct Window_fbo final {};
+    static constexpr Window_fbo window_fbo{};
+    inline void BindFramebuffer(GLenum target, Window_fbo) noexcept {
+        glBindFramebuffer(target, 0);
     }
 
     // RAII wrapper for glDeleteRenderBuffers
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteRenderbuffers.xhtml
-    struct Render_buffer final {
+    class Render_buffer final {
         GLuint handle;
-
-    private:
-        friend Render_buffer GenRenderBuffer();
-        Render_buffer(GLuint _handle) : handle{_handle} {
-        }
     public:
+        static constexpr GLuint senteniel = 0;
+
+        Render_buffer() {
+            glGenRenderbuffers(1, &handle);
+            assert(handle != 0 && "OpenGL spec: The value zero is reserved, but there is no default renderbuffer object. Instead, renderbuffer set to zero effectively unbinds any renderbuffer object previously bound");
+        }
         Render_buffer(Render_buffer const&) = delete;
         Render_buffer(Render_buffer&& tmp) : handle{tmp.handle} {
-            tmp.handle = 0;
+            tmp.handle = senteniel;
         }
         Render_buffer& operator=(Render_buffer const&) = delete;
         Render_buffer& operator=(Render_buffer&& tmp) {
@@ -625,27 +618,19 @@ namespace gl {
         }
 
         ~Render_buffer() noexcept {
-            if (handle != 0) {
+            if (handle != senteniel) {
                 glDeleteRenderbuffers(1, &handle);
             }
         }
 
-        operator GLuint() const noexcept {
+        [[nodiscard]] constexpr GLuint raw_handle() const noexcept {
             return handle;
         }
     };
 
-    // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glGenRenderbuffers.xml
-    inline Render_buffer GenRenderBuffer() {
-        GLuint handle;
-        glGenRenderbuffers(1, &handle);
-        assert(handle != 0 && "OpenGL spec: The value zero is reserved, but there is no default renderbuffer object. Instead, renderbuffer set to zero effectively unbinds any renderbuffer object previously bound");
-        return Render_buffer{handle};
-    }
-
     // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glBindRenderbuffer.xml
     inline void BindRenderBuffer(Render_buffer& rb) {
-        glBindRenderbuffer(GL_RENDERBUFFER, rb.handle);
+        glBindRenderbuffer(GL_RENDERBUFFER, rb.raw_handle());
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glBindRenderbuffer.xml
@@ -669,7 +654,8 @@ namespace gl {
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glVertexAttribDivisor.xhtml
-    inline void VertexAttribDivisor(Attribute_location loc, GLuint divisor) noexcept {
+    template<typename Attribute>
+    inline void VertexAttribDivisor(Attribute loc, GLuint divisor) noexcept {
         glVertexAttribDivisor(loc.get(), divisor);
     }
 
@@ -696,8 +682,9 @@ namespace gl {
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
-    inline void TextureParameteri(GLuint texture, GLenum pname, GLint param) {
-        glTextureParameteri(texture, pname, param);
+    template<typename Texture>
+    inline void TextureParameteri(Texture const& texture, GLenum pname, GLint param) {
+        glTextureParameteri(texture.raw_handle(), pname, param);
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glRenderbufferStorage.xhtml

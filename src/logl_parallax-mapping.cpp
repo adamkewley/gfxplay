@@ -53,23 +53,23 @@ struct Parallax_texture_shader final {
         gl::CompileVertexShaderResource("parallax_shader.vert"),
         gl::CompileFragmentShaderResource("parallax_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-    static constexpr gl::Attribute_vec3 aTangent = gl::Attribute_vec3::at_location(3);
-    static constexpr gl::Attribute_vec3 aBitangent = gl::Attribute_vec3::at_location(4);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
+    static constexpr gl::Attribute_vec3 aTangent{3};
+    static constexpr gl::Attribute_vec3 aBitangent{4};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat4 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat4 uNormalMatrix{p, "normalMatrix"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 
-    gl::Uniform_sampler2d uDiffuseTex = gl::GetUniformLocation(p, "DiffuseTex");
-    gl::Uniform_sampler2d uNormalTex = gl::GetUniformLocation(p, "NormalTex");
-    gl::Uniform_sampler2d uDepthTex = gl::GetUniformLocation(p, "DepthTex");
-    gl::Uniform_float uHeightScale = gl::GetUniformLocation(p, "HeightScale");
+    gl::Uniform_sampler2d uDiffuseTex{p, "DiffuseTex"};
+    gl::Uniform_sampler2d uNormalTex{p, "NormalTex"};
+    gl::Uniform_sampler2d uDepthTex{p, "DepthTex"};
+    gl::Uniform_float uHeightScale{p, "HeightScale"};
 };
 
 template<typename T>

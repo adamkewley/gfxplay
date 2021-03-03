@@ -33,9 +33,9 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
-        static constexpr gl::Attribute_vec2 aOffset = gl::Attribute_vec2::at_location(2);
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec3 aColor{1};
+        static constexpr gl::Attribute_vec2 aOffset{2};
 
         gl::Array_buffer<float> quad_vbo = {
             // positions     // colors

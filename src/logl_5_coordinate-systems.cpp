@@ -48,13 +48,13 @@ void main() {
         ));
         gl::Texture_2d wall = gl::load_tex(gfxplay::resource_path("wall.jpg"));
         gl::Texture_2d face = gl::load_tex(gfxplay::resource_path("awesomeface.png"));
-        gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "uModel");
-        gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "uView");
-        gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "uProjection");
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
-        gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Uniform_mat4 uModel{prog, "uModel"};
+        gl::Uniform_mat4 uView{prog, "uView"};
+        gl::Uniform_mat4 uProjection{prog, "uProjection"};
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec2 aTexCoord{1};
+        gl::Uniform_int uSampler0{prog, "uSampler0"};
+        gl::Uniform_int uSampler1{prog, "uSampler1"};
 
         gl::Array_buffer<float> ab = {
             -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,

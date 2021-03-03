@@ -11,6 +11,8 @@
 
 #include <stdexcept>
 #include <filesystem>
+#include <array>
+#include <vector>
 
 
 // gl extensions: useful extension/helper methods over base OpenGL API
@@ -39,193 +41,56 @@
 }
 
 namespace gl {
-    // type-safe wrapper around GL_TEXTURE_2D
-    class Texture_2d final : public Texture_handle {
-        friend Texture_2d GenTexture2d();
-
-        Texture_2d() : Texture_handle{} {}
-    public:
-        static constexpr GLenum type = GL_TEXTURE_2D;
-
-        // HACK: these should be overloaded properly
-        operator GLuint () const noexcept {
-            return handle;
-        }
-    };
-
-    // typed GL_TEXTURE_2D equivalent to GenTexture
-    inline Texture_2d GenTexture2d() {
-        return Texture_2d{};
-    }
-
-    // convenience wrapper for glBindTexture
-    inline void BindTexture(Texture_2d const& texture) {
-        BindTexture(texture.type, texture);
-    }
-
-    // type-safe wrapper around GL_TEXTURE_CUBE_MAP
-    class Texture_cubemap final : public Texture_handle {
-        friend Texture_cubemap GenTextureCubemap();
-
-        Texture_cubemap() : Texture_handle{} {}
-    public:
-        static constexpr GLenum type = GL_TEXTURE_CUBE_MAP;
-
-        // HACK: these should be overloaded properly
-        operator GLuint () const noexcept {
-            return handle;
-        }
-    };
-
-    // typed GL_TEXTURE_CUBE_MAP equivalent to GenTexture
-    inline Texture_cubemap GenTextureCubemap() {
-        return Texture_cubemap{};
-    }
-
-    inline void BindTexture(Texture_cubemap const& texture) {
-        BindTexture(texture.type, texture);
-    }
-
-    class Texture_2d_multisample final : public Texture_handle {
-        friend Texture_2d_multisample GenTexture2dMultisample();
-
-        Texture_2d_multisample() : Texture_handle{} {}
-    public:
-        static constexpr GLenum type = GL_TEXTURE_2D_MULTISAMPLE;
-
-        // HACK: these should be overloaded properly
-        operator GLuint () const noexcept {
-            return handle;
-        }
-    };
-
-    inline Texture_2d_multisample GenTexture2dMultisample() {
-        return Texture_2d_multisample{};
-    }
-
-    inline void BindTexture(Texture_2d_multisample const& texture) {
-        BindTexture(texture.type, texture);
-    }
-
-
-    // UNIFORMS:
-
-    // type-safe wrapper for glUniform1f
-    struct Uniform_float final {
-        GLint handle;
-        Uniform_float(GLint _handle) : handle{_handle} {}
-    };
-
-    // type-safe wrapper for glUniform1i
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_int final {
-        GLint handle;
-        Uniform_int(GLint _handle) : handle{_handle} {}
-    };
-
-    using Uniform_sampler2d = Uniform_int;
-    using Uniform_samplerCube = Uniform_int;
-
-    // type-safe wrapper for glUniformMatrix4fv
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_mat4 final {
-        GLint handle;
-        Uniform_mat4(GLint _handle) : handle{_handle} {}
-    };
-
-    // type-safe wrapper for glUniformMatrix3fv
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_mat3 final {
-        GLint handle;
-        Uniform_mat3(GLint _handle) : handle{_handle} {}
-    };
-
-    // type-safe wrapper for UniformVec4f
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_vec4 final {
-        GLint handle;
-        Uniform_vec4(GLint _handle) : handle{_handle} {}
-    };
-
-    // type-safe wrapper for UniformVec3f
-    //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    struct Uniform_vec3 final {
-        GLint handle;
-        Uniform_vec3(GLint _handle) : handle{_handle} {}
-    };
-
-    struct Uniform_vec2f final {
-        GLint handle;
-        Uniform_vec2f(GLint _handle) : handle{_handle} {}
-    };
-
-    using Uniform_bool = Uniform_int;
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_float& u, GLfloat value) {
-        glUniform1f(u.handle, value);
-    }
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_mat4& u, GLfloat const* value) {
-        glUniformMatrix4fv(u.handle, 1, false, value);
-    }
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
-    inline void Uniform(Uniform_int& u, GLint value) {
-        glUniform1i(u.handle, value);
-    }
-
-    inline void Uniform(Uniform_int& u, GLsizei n, GLint const* vs) {
-        glUniform1iv(u.handle, n, vs);
+    inline void Uniform(Uniform_int const& u, GLsizei n, GLint const* data) {
+        glUniform1iv(u.geti(), n, data);
     }
 
     // set uniforms directly from GLM types
-    inline void Uniform(Uniform_mat3& u, glm::mat3 const& mat) {
-        glUniformMatrix3fv(u.handle, 1, false, glm::value_ptr(mat));
+    inline void Uniform(Uniform_mat3& u, glm::mat3 const& mat) noexcept {
+        glUniformMatrix3fv(u.geti(), 1, false, glm::value_ptr(mat));
     }
 
-    inline void Uniform(Uniform_vec4& u, glm::vec4 const& v) {
-        glUniform4fv(u.handle, 1, glm::value_ptr(v));
+    inline void Uniform(Uniform_vec4& u, glm::vec4 const& v) noexcept {
+        glUniform4fv(u.geti(), 1, glm::value_ptr(v));
     }
 
-    inline void Uniform(Uniform_vec3& u, glm::vec3 const& v) {
-        glUniform3fv(u.handle, 1, glm::value_ptr(v));
+    inline void Uniform(Uniform_vec3& u, glm::vec3 const& v) noexcept {
+        glUniform3fv(u.geti(), 1, glm::value_ptr(v));
     }
 
-    inline void Uniform(Uniform_vec3& u, float x, float y, float z) {
-        glUniform3f(u.handle, x, y, z);
+    inline void Uniform(Uniform_vec3& u, float x, float y, float z) noexcept {
+        glUniform3f(u.geti(), x, y, z);
     }
 
-    inline void Uniform(Uniform_vec3& u, GLsizei n, glm::vec3 const* vs) {
+    inline void Uniform(Uniform_vec3& u, GLsizei n, glm::vec3 const* vs) noexcept {
         static_assert(sizeof(glm::vec3) == 3*sizeof(GLfloat));
-        glUniform3fv(u.handle, n, glm::value_ptr(*vs));
+        glUniform3fv(u.geti(), n, glm::value_ptr(*vs));
     }
 
-    inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) {
-        glUniformMatrix4fv(u.handle, 1, false, glm::value_ptr(mat));
+    inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) noexcept {
+        glUniformMatrix4fv(u.geti(), 1, false, glm::value_ptr(mat));
     }
 
-    inline void Uniform(Uniform_mat4& u, GLsizei n, glm::mat4 const* first) {
+    inline void Uniform(Uniform_mat4& u, GLsizei n, glm::mat4 const* first) noexcept {
         static_assert(sizeof(glm::mat4) == 16*sizeof(GLfloat));
-        glUniformMatrix4fv(u.handle, n, false, glm::value_ptr(*first));
+        glUniformMatrix4fv(u.geti(), n, false, glm::value_ptr(*first));
     }
+
 
     struct Uniform_identity_val_tag {};
-
     inline Uniform_identity_val_tag identity_val;
 
-    inline void Uniform(Uniform_mat4& u, Uniform_identity_val_tag) {
+    inline void Uniform(Uniform_mat4& u, Uniform_identity_val_tag) noexcept {
         Uniform(u, glm::identity<glm::mat4>());
     }
 
-    inline void Uniform(Uniform_vec2f& u, glm::vec2 const& v) {
-        glUniform2fv(u.handle, 1, glm::value_ptr(v));
+    inline void Uniform(Uniform_vec2& u, glm::vec2 const& v) noexcept {
+        glUniform2fv(u.geti(), 1, glm::value_ptr(v));
     }
 
-    inline void Uniform(Uniform_vec2f& u, GLsizei n, glm::vec2 const* vs) {
+    inline void Uniform(Uniform_vec2& u, GLsizei n, glm::vec2 const* vs) noexcept {
         static_assert(sizeof(glm::vec2) == 2*sizeof(GLfloat));
-        glUniform2fv(u.handle, n, glm::value_ptr(*vs));
+        glUniform2fv(u.geti(), n, glm::value_ptr(*vs));
     }
 
     // COMPILE + LINK PROGRAMS:

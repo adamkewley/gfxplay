@@ -139,34 +139,34 @@ void main() {
         gl::Texture_2d container2_spec = gl::load_tex(gfxplay::resource_path("container2_specular.png"));
         gl::Texture_2d container2_emission = gl::load_tex(gfxplay::resource_path("matrix.jpg"));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-        gl::Uniform_mat4 uModelColorProg = gl::GetUniformLocation(color_prog, "model");
-        gl::Uniform_mat4 uViewColorProg = gl::GetUniformLocation(color_prog, "view");
-        gl::Uniform_mat4 uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
-        gl::Uniform_vec3 uViewPosColorProg = gl::GetUniformLocation(color_prog, "viewPos");
-        gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(color_prog, "normalMatrix");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec3 aNormal{1};
+        static constexpr gl::Attribute_vec2 aTexCoords{2};
+        gl::Uniform_mat4 uModelColorProg{color_prog, "model"};
+        gl::Uniform_mat4 uViewColorProg{color_prog, "view"};
+        gl::Uniform_mat4 uProjectionColorProg{color_prog, "projection"};
+        gl::Uniform_vec3 uViewPosColorProg{color_prog, "viewPos"};
+        gl::Uniform_mat3 uNormalMatrix{color_prog, "normalMatrix"};
 
-        gl::Uniform_int uMaterialDiffuse = gl::GetUniformLocation(color_prog, "material.diffuse");
-        gl::Uniform_int uMaterialSpecular = gl::GetUniformLocation(color_prog, "material.specular");
-        gl::Uniform_int uMaterialEmission = gl::GetUniformLocation(color_prog, "material.emission");
-        gl::Uniform_float uMaterialShininess = gl::GetUniformLocation(color_prog, "material.shininess");
+        gl::Uniform_int uMaterialDiffuse{color_prog, "material.diffuse"};
+        gl::Uniform_int uMaterialSpecular{color_prog, "material.specular"};
+        gl::Uniform_int uMaterialEmission{color_prog, "material.emission"};
+        gl::Uniform_float uMaterialShininess{color_prog, "material.shininess"};
 
-        gl::Uniform_vec3 uLightPosition = gl::GetUniformLocation(color_prog, "light.position");
-        gl::Uniform_vec3 uLightDirection = gl::GetUniformLocation(color_prog, "light.direction");
-        gl::Uniform_float uLightCutOff = gl::GetUniformLocation(color_prog, "light.cutOff");
-        gl::Uniform_float uLightOuterCutOff = gl::GetUniformLocation(color_prog, "light.outerCutOff");
-        gl::Uniform_vec3 uLightAmbient = gl::GetUniformLocation(color_prog, "light.ambient");
-        gl::Uniform_vec3 uLightDiffuse = gl::GetUniformLocation(color_prog, "light.diffuse");
-        gl::Uniform_vec3 uLightSpecular = gl::GetUniformLocation(color_prog, "light.specular");
-        gl::Uniform_float uLightConstant = gl::GetUniformLocation(color_prog, "light.constant");
-        gl::Uniform_float uLightLinear = gl::GetUniformLocation(color_prog, "light.linear");
-        gl::Uniform_float uLightQuadratic = gl::GetUniformLocation(color_prog, "light.quadratic");
+        gl::Uniform_vec3 uLightPosition{color_prog, "light.position"};
+        gl::Uniform_vec3 uLightDirection{color_prog, "light.direction"};
+        gl::Uniform_float uLightCutOff{color_prog, "light.cutOff"};
+        gl::Uniform_float uLightOuterCutOff{color_prog, "light.outerCutOff"};
+        gl::Uniform_vec3 uLightAmbient{color_prog, "light.ambient"};
+        gl::Uniform_vec3 uLightDiffuse{color_prog, "light.diffuse"};
+        gl::Uniform_vec3 uLightSpecular{color_prog, "light.specular"};
+        gl::Uniform_float uLightConstant{color_prog, "light.constant"};
+        gl::Uniform_float uLightLinear{color_prog, "light.linear"};
+        gl::Uniform_float uLightQuadratic{color_prog, "light.quadratic"};
 
-        gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
-        gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
-        gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
+        gl::Uniform_mat4 uModelLightProg{light_prog, "model"};
+        gl::Uniform_mat4 uViewLightProg{light_prog, "view"};
+        gl::Uniform_mat4 uProjectionLightProg{light_prog, "projection"};
 
         gl::Array_buffer<float> ab = {
             // positions          // normals           // texture coords
@@ -243,23 +243,18 @@ void main() {
             gl::Uniform(uProjectionColorProg, projection);
             gl::Uniform(uViewPosColorProg, as.pos);
 
-            {
-                gl::Uniform(uMaterialDiffuse, 0);
-                glActiveTexture(GL_TEXTURE0);
-                gl::BindTexture(container2_tex.type, container2_tex);
-            }
+            glActiveTexture(GL_TEXTURE0);
+            gl::BindTexture(container2_tex);
+            gl::Uniform(uMaterialDiffuse, gl::texture_index<GL_TEXTURE0>());
 
-            {
-                gl::Uniform(uMaterialSpecular, 1);
-                glActiveTexture(GL_TEXTURE1);
-                gl::BindTexture(container2_spec.type, container2_spec);
-            }
+            glActiveTexture(GL_TEXTURE1);
+            gl::BindTexture(container2_spec);
+            gl::Uniform(uMaterialSpecular, gl::texture_index<GL_TEXTURE1>());
 
-            {
-                gl::Uniform(uMaterialEmission, 2);
-                glActiveTexture(GL_TEXTURE2);
-                gl::BindTexture(container2_emission.type, container2_emission);
-            }
+            glActiveTexture(GL_TEXTURE2);
+            gl::BindTexture(container2_emission);
+            gl::Uniform(uMaterialEmission, gl::texture_index<GL_TEXTURE2>());
+
             gl::Uniform(uMaterialShininess, 32.0f);
 
             gl::Uniform(uLightPosition, as.pos);

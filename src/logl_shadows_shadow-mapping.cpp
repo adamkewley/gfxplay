@@ -6,30 +6,30 @@ struct Depthmap_shader final {
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.frag")));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aPos{0};
 
-    gl::Uniform_mat4 uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
+    gl::Uniform_mat4 uLightSpaceMatrix{p, "lightSpaceMatrix"};
+    gl::Uniform_mat4 uModel{p, "model"};
 };
 
 struct Shadowmap_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps.frag")));
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoord{2};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    //gl::Uniform_mat3f uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
-    gl::Uniform_mat4 uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    //gl::Uniform_mat3f uNormalMatrix{p, "normalMatrix"};
+    gl::Uniform_mat4 uLightSpaceMatrix{p, "lightSpaceMatrix"};
 
-    gl::Uniform_sampler2d uTexture = gl::GetUniformLocation(p, "diffuseTexture");
-    gl::Uniform_sampler2d uShadowMap = gl::GetUniformLocation(p, "shadowMap");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_sampler2d uTexture{p, "diffuseTexture"};
+    gl::Uniform_sampler2d uShadowMap{p, "shadowMap"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 };
 
 // debugging: basic texture shader /w no lighting calcs
@@ -39,12 +39,12 @@ struct Basic_texture_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.frag")));
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoord{1};
 
-    gl::Uniform_sampler2d texture = gl::GetUniformLocation(p, "tex");
-    //gl::Uniform_1f uNear_plane = gl::GetUniformLocation(p, "near_plane");
-    //gl::Uniform_1f uFar_plane = gl::GetUniformLocation(p, "far_plane");
+    gl::Uniform_sampler2d texture{p, "tex"};
+    //gl::Uniform_1f uNear_plane{p, "near_plane"};
+    //gl::Uniform_1f uFar_plane{p, "far_plane"};
 };
 
 struct Mesh_el final {
@@ -214,7 +214,7 @@ struct App final {
     static constexpr GLsizei shadow_height = 1024;
 
     gl::Texture_2d depth_map = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
 
         gl::BindTexture(t);
         glTexImage2D(
@@ -240,12 +240,12 @@ struct App final {
 
     // an FBO that renders to the depth map
     gl::Frame_buffer depth_fbo = [&]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map, 0);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map.raw_handle(), 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         return fbo;
     }();
 
@@ -274,7 +274,7 @@ struct App final {
             gl::UseProgram(dm_shader.p);
 
             gl::Viewport(0, 0, shadow_width, shadow_height);
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, depth_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
             gl::Clear(GL_DEPTH_BUFFER_BIT);
 
             gl::Uniform(dm_shader.uLightSpaceMatrix, lightSpaceMatrix);
@@ -297,7 +297,7 @@ struct App final {
             gl::BindVertexArray();
             glCullFace(GL_BACK);
 
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
             auto [width, height] = sdl::GetWindowSize(w.window);
             gl::Viewport(0, 0, width, height);
         }

@@ -6,19 +6,19 @@ struct Blinn_phong_program final {
         gl::CompileFragmentShaderFile(gfxplay::resource_path("blinn_phong.frag")));
 
     // vertex shader attrs/uniforms
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormals = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormals{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat3 uNormalMatrix{p, "normalMatrix"};
 
     // frag shader attrs/uniforms
-    gl::Uniform_int uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
-    gl::Uniform_int uBlinn = gl::GetUniformLocation(p, "blinn");
+    gl::Uniform_int uTexture1{p, "texture1"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
+    gl::Uniform_int uBlinn{p, "blinn"};
 };
 
 struct Whole_app final {

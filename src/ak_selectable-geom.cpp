@@ -27,18 +27,18 @@ struct Blinn_phong_textured_shader final {
         gl::CompileVertexShaderResource("selectable.vert"),
         gl::CompileFragmentShaderResource("selectable.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat3 uNormalMatrix{p, "normalMatrix"};
 
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_sampler2d uTexture1{p, "texture1"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 };
 
 static gl::Vertex_array create_vao(
@@ -65,14 +65,13 @@ struct Plain_texture_shader final {
         gl::CompileVertexShaderResource("plain_texture_shader.vert"),
         gl::CompileFragmentShaderResource("plain_texture_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTextureCoord = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTextureCoord{1};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_sampler2d uTexture1{p, "texture1"};
 };
 
 static gl::Vertex_array create_vao(
@@ -98,13 +97,12 @@ struct Uniform_color_shader final {
         gl::CompileVertexShaderResource("uniform_color_shader.vert"),
         gl::CompileFragmentShaderResource("uniform_color_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aPos{0};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-
-    gl::Uniform_vec3 uColor = gl::GetUniformLocation(p, "color");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_vec3 uColor{p, "color"};
 };
 
 static gl::Vertex_array create_vao(
@@ -143,12 +141,12 @@ struct Attribute_color_shader final {
         gl::CompileVertexShaderResource("attribute_color_shader.vert"),
         gl::CompileFragmentShaderResource("attribute_color_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aColor{1};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
 };
 
 static gl::Vertex_array create_vao(
@@ -441,27 +439,27 @@ struct Screen final {
     static constexpr GLsizei quad_width = 1024;
     static constexpr GLsizei quad_height = 768;
     gl::Texture_2d quad_texture = []() {
-        gl::Texture_2d t = gl::GenTexture2d();
+        gl::Texture_2d t;
         gl::BindTexture(t);
-        gl::TexImage2D(t.type, 0, GL_RGB, quad_width, quad_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(t, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(t, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexImage2D(t.type, 0, GL_RGB, quad_width, quad_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTextureParameteri(t.raw_handle(), GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(t.raw_handle(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(t.raw_handle(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTextureParameteri(t.raw_handle(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         static constexpr float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-        glTextureParameterfv(t, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTextureParameterfv(t.raw_handle(), GL_TEXTURE_BORDER_COLOR, borderColor);
         gl::BindTexture();
         return t;
     }();
-    gl::Render_buffer depthbuf = gl::GenRenderBuffer();
+    gl::Render_buffer depthbuf;
     gl::Frame_buffer quad_fbo = [&]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         // attach FBO color to texture
-        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quad_texture.type, quad_texture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quad_texture.type, quad_texture.raw_handle(), 0);
 
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
 
         return fbo;
     }();
@@ -540,11 +538,11 @@ struct Screen final {
 
             // DEBUG: blit the object ID render to a texture
             {
-                gl::BindFrameBuffer(GL_READ_FRAMEBUFFER, gl::window_fbo);
-                gl::BindFrameBuffer(GL_DRAW_FRAMEBUFFER, quad_fbo);
+                gl::BindFramebuffer(GL_READ_FRAMEBUFFER, gl::window_fbo);
+                gl::BindFramebuffer(GL_DRAW_FRAMEBUFFER, quad_fbo);
                 auto [ww, wh] = sdl::GetWindowSize(w.window);
-                gl::BlitFramebuffer(0, 0, ww, wh, 0, 0, quad_width, quad_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-                gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+                glBlitFramebuffer(0, 0, ww, wh, 0, 0, quad_width, quad_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
             }
 
             // clear the rendered data: it's served its purpose

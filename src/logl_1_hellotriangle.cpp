@@ -22,7 +22,7 @@ void main() {
 }
 )"
         ));
-        gl::Attribute_vec3 aPos = gl::Attribute_vec3::with_name(prog, "aPos");
+        gl::Attribute_vec3 aPos{prog, "aPos"};
 
         gl::Array_buffer<glm::vec3> vbo = {
             { 0.5f,  0.5f, 0.0f},  // top right

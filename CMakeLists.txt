@@ -75,7 +75,7 @@ target_compile_options(gfxplaycore PUBLIC
         -Wno-multichar
         -Wnormalized
         -Wredundant-decls
-        -Winline
+        #-Winline
         -Wint-in-bool-context
         -Wvla
         -Wdisabled-optimization

@@ -34,11 +34,11 @@ void main() {
         ));
         gl::Texture_2d wall = gl::load_tex(gfxplay::resource_path("wall.jpg"));
         gl::Texture_2d face = gl::load_tex(gfxplay::resource_path("awesomeface.png"));
-        gl::Uniform_mat4 uTransform = gl::GetUniformLocation(prog, "uTransform");
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
-        gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
-        gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
+        gl::Uniform_mat4 uTransform{prog, "uTransform"};
+        static constexpr gl::Attribute_vec3 aPos{0};
+        static constexpr gl::Attribute_vec2 aTexCoord{1};
+        gl::Uniform_int uSampler0{prog, "uSampler0"};
+        gl::Uniform_int uSampler1{prog, "uSampler1"};
 
         gl::Array_buffer<float> ab = {
             // positions          // colors           // texture coords
@@ -72,12 +72,12 @@ void main() {
             gl::Uniform(uTransform, trans);
 
             glActiveTexture(GL_TEXTURE0);
-            gl::BindTexture(wall.type, wall);
-            gl::Uniform(uSampler0, 0);
+            gl::BindTexture(wall);
+            gl::Uniform(uSampler0, gl::texture_index<GL_TEXTURE0>());
 
             glActiveTexture(GL_TEXTURE1);
-            gl::BindTexture(face.type, face);
-            gl::Uniform(uSampler1, 1);
+            gl::BindTexture(face);
+            gl::Uniform(uSampler1, gl::texture_index<GL_TEXTURE1>());
 
             gl::BindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);

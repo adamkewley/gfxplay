@@ -29,18 +29,18 @@ struct Blinn_phong_textured_shader final {
         gl::CompileVertexShaderResource("selectable.vert"),
         gl::CompileFragmentShaderResource("selectable.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat3 uNormalMatrix{p, "normalMatrix"};
 
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_sampler2d uTexture1{p, "texture1"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 };
 
 template<typename Vbo>
@@ -68,15 +68,15 @@ struct Plain_texture_shader final {
         gl::CompileVertexShaderResource("plain_texture_shader.vert"),
         gl::CompileFragmentShaderResource("plain_texture_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec2 aTextureCoord = gl::Attribute_vec2::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTextureCoord{1};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
 
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_mat4 uSamplerMultiplier = gl::GetUniformLocation(p, "uSamplerMultiplier");
+    gl::Uniform_sampler2d uTexture1{p, "texture1"};
+    gl::Uniform_mat4 uSamplerMultiplier{p, "uSamplerMultiplier"};
 };
 
 static gl::Vertex_array create_vao(
@@ -102,13 +102,12 @@ struct Uniform_color_shader final {
         gl::CompileVertexShaderResource("uniform_color_shader.vert"),
         gl::CompileFragmentShaderResource("uniform_color_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aPos{0};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-
-    gl::Uniform_vec3 uColor = gl::GetUniformLocation(p, "color");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_vec3 uColor{p, "color"};
 };
 
 static gl::Vertex_array create_vao(
@@ -147,12 +146,12 @@ struct Attribute_color_shader final {
         gl::CompileVertexShaderResource("attribute_color_shader.vert"),
         gl::CompileFragmentShaderResource("attribute_color_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aColor{1};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
 };
 
 static gl::Vertex_array create_vao(

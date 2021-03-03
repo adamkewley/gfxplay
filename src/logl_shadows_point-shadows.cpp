@@ -13,12 +13,12 @@ struct Depthmap_shader final {
         gl::CompileFragmentShaderResource("point_shadows_depthmap.frag"),
         gl::CompileGeometryShaderResource("point_shadows_depthmap.geom"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aPos{0};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uShadowMatrices = gl::GetUniformLocation(p, "shadowMatrices");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_float uFar_plane = gl::GetUniformLocation(p, "far_plane");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uShadowMatrices{p, "shadowMatrices"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_float uFar_plane{p, "far_plane"};
 };
 
 static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer<Shaded_textured_vert>& vbo) {
@@ -36,19 +36,19 @@ struct Blinn_phong_cubemap_shadowmap final {
         gl::CompileVertexShaderResource("point_shadows.vert"),
         gl::CompileFragmentShaderResource("point_shadows.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoord{2};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
-    gl::Uniform_sampler2d uDiffuseTexture = gl::GetUniformLocation(p, "diffuseTexture");
-    gl::Uniform_samplerCube uDepthMap = gl::GetUniformLocation(p, "depthMap");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
-    gl::Uniform_float uFar_plane = gl::GetUniformLocation(p, "far_plane");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat3 uNormalMatrix{p, "normalMatrix"};
+    gl::Uniform_sampler2d uDiffuseTexture{p, "diffuseTexture"};
+    gl::Uniform_samplerCube uDepthMap{p, "depthMap"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
+    gl::Uniform_float uFar_plane{p, "far_plane"};
 };
 
 static gl::Vertex_array create_vao(
@@ -175,11 +175,11 @@ struct Screen final {
     };
 
     gl::Texture_cubemap depth_cubemap = []() {
-        gl::Texture_cubemap t = gl::GenTextureCubemap();
+        gl::Texture_cubemap t;
         gl::BindTexture(t);
         for (GLenum face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; face <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; ++face) {
             // allocate cubemap face data (undefined until populated)
-            gl::TexImage2D(face, 0, GL_DEPTH_COMPONENT, shadow_width, shadow_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexImage2D(face, 0, GL_DEPTH_COMPONENT, shadow_width, shadow_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         }
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -190,12 +190,12 @@ struct Screen final {
     }();
 
     gl::Frame_buffer depth_map_fbo = [&]() {
-        gl::Frame_buffer fbo = gl::GenFrameBuffer();
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, fbo);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_cubemap.handle, 0);
+        gl::Frame_buffer fbo;
+        gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_cubemap.raw_handle(), 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
-        gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+        gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
         return fbo;
     }();
 
@@ -206,7 +206,7 @@ struct Screen final {
         // step 1: render scene from light's PoV to populate the depthmap
         {
             gl::Viewport(0, 0, shadow_width, shadow_height);
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, depth_map_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo);
             gl::Clear(GL_DEPTH_BUFFER_BIT);
 
             gl::UseProgram(dm_shader.p);
@@ -229,7 +229,7 @@ struct Screen final {
             }
             gl::BindVertexArray();
 
-            gl::BindFrameBuffer(GL_FRAMEBUFFER, gl::window_fbo);
+            gl::BindFramebuffer(GL_FRAMEBUFFER, gl::window_fbo);
             gl::Viewport(0, 0, sw, sh);
         }
 

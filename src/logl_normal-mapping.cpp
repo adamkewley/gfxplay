@@ -53,21 +53,21 @@ struct Parallax_texture_shader final {
         gl::CompileVertexShaderResource("bumpmap_shader.vert"),
         gl::CompileFragmentShaderResource("bumpmap_shader.frag"));
 
-    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
-    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
-    static constexpr gl::Attribute_vec3 aTangent = gl::Attribute_vec3::at_location(3);
-    static constexpr gl::Attribute_vec3 aBitangent = gl::Attribute_vec3::at_location(4);
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec3 aNormal{1};
+    static constexpr gl::Attribute_vec2 aTexCoords{2};
+    static constexpr gl::Attribute_vec3 aTangent{3};
+    static constexpr gl::Attribute_vec3 aBitangent{4};
 
-    gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
-    gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
-    gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
-    gl::Uniform_mat4 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
+    gl::Uniform_mat4 uModel{p, "model"};
+    gl::Uniform_mat4 uView{p, "view"};
+    gl::Uniform_mat4 uProjection{p, "projection"};
+    gl::Uniform_mat4 uNormalMatrix{p, "normalMatrix"};
 
-    gl::Uniform_sampler2d uTexture1 = gl::GetUniformLocation(p, "texture1");
-    gl::Uniform_sampler2d uNormalMap = gl::GetUniformLocation(p, "normalMap");
-    gl::Uniform_vec3 uLightPos = gl::GetUniformLocation(p, "lightPos");
-    gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(p, "viewPos");
+    gl::Uniform_sampler2d uTexture1{p, "texture1"};
+    gl::Uniform_sampler2d uNormalMap{p, "normalMap"};
+    gl::Uniform_vec3 uLightPos{p, "lightPos"};
+    gl::Uniform_vec3 uViewPos{p, "viewPos"};
 };
 
 template<typename T>

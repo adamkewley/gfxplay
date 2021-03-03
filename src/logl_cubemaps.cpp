@@ -106,9 +106,9 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
-        gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        gl::Uniform_mat4 projection{prog, "projection"};
+        gl::Uniform_mat4 view{prog, "view"};
 
         gl::Array_buffer<float> cube_ab{cube_verts};
 
@@ -165,9 +165,9 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
-        gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
-        gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
+        static constexpr gl::Attribute_vec3 aPos{0};
+        gl::Uniform_mat4 projection{prog, "projection"};
+        gl::Uniform_mat4 view{prog, "view"};
 
         gl::Array_buffer<float> cube_ab{cube_verts};
 
