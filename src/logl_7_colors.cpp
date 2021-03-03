@@ -63,8 +63,8 @@ void main()
 
     struct Gl_State final {
         gl::Program color_prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(vertex_shader_src),
-            gl::CompileFragmentShader(R"(
+            gl::Vertex_shader::from_source(vertex_shader_src),
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -79,8 +79,8 @@ void main()
 )"
         ));
         gl::Program light_prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(vertex_shader_src),
-            gl::CompileFragmentShader(R"(
+            gl::Vertex_shader::from_source(vertex_shader_src),
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -91,7 +91,7 @@ void main()
 }
 )"
         ));
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
         gl::Uniform_mat4 uModelColorProg = gl::GetUniformLocation(color_prog, "model");
         gl::Uniform_mat4 uViewColorProg = gl::GetUniformLocation(color_prog, "view");
         gl::Uniform_mat4 uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
@@ -100,73 +100,62 @@ void main()
         gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
         gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
         gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
-        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            float vertices[] = {
-                -0.5f, -0.5f, -0.5f,
-                 0.5f, -0.5f, -0.5f,
-                 0.5f,  0.5f, -0.5f,
-                 0.5f,  0.5f, -0.5f,
-                -0.5f,  0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
+        gl::Array_buffer<float> ab = {
+            -0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
 
-                -0.5f, -0.5f,  0.5f,
-                 0.5f, -0.5f,  0.5f,
-                 0.5f,  0.5f,  0.5f,
-                 0.5f,  0.5f,  0.5f,
-                -0.5f,  0.5f,  0.5f,
-                -0.5f, -0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,
 
-                -0.5f,  0.5f,  0.5f,
-                -0.5f,  0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f,  0.5f,
-                -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+            -0.5f, -0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
 
-                 0.5f,  0.5f,  0.5f,
-                 0.5f,  0.5f, -0.5f,
-                 0.5f, -0.5f, -0.5f,
-                 0.5f, -0.5f, -0.5f,
-                 0.5f, -0.5f,  0.5f,
-                 0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
 
-                -0.5f, -0.5f, -0.5f,
-                 0.5f, -0.5f, -0.5f,
-                 0.5f, -0.5f,  0.5f,
-                 0.5f, -0.5f,  0.5f,
-                -0.5f, -0.5f,  0.5f,
-                -0.5f, -0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,
+            -0.5f, -0.5f, -0.5f,
 
-                -0.5f,  0.5f, -0.5f,
-                 0.5f,  0.5f, -0.5f,
-                 0.5f,  0.5f,  0.5f,
-                 0.5f,  0.5f,  0.5f,
-                -0.5f,  0.5f,  0.5f,
-                -0.5f,  0.5f, -0.5f
-            };
+            -0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f, -0.5f
+        };
 
-            // color cube binding
-            gl::BindVertexArray(color_cube_vao);
-            {
-                gl::BindBuffer(ab.type, ab);
-                gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        gl::Vertex_array color_cube_vao = [this]() {
+            gl::BindBuffer(ab);
+            gl::VertexAttribPointer(aPos, false, 3*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+        };
 
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-            }
-
-            gl::BindVertexArray(light_vao);
-            {
-                gl::BindBuffer(ab.type, ab);
-
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-            }
-        }
+        gl::Vertex_array light_vao = [this]() {
+            gl::BindBuffer(ab);
+            gl::VertexAttribPointer(aPos, false, 3*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+        };
 
         void draw(App_State const& as) {
             glm::mat4 projection =

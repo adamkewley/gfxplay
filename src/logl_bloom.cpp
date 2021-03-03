@@ -9,9 +9,9 @@ struct Thresholding_shader final {
         gl::CompileVertexShaderResource("bloom.vert"),
         gl::CompileFragmentShaderResource("bloom.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
     gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
@@ -27,15 +27,15 @@ template<typename Vbo>
 static gl::Vertex_array create_vao(Thresholding_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(T), offsetof(T, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
     gl::BindVertexArray();
 
@@ -48,7 +48,7 @@ struct Thresholding_lightbox_shader final {
         gl::CompileVertexShaderResource("bloom.vert"),
         gl::CompileFragmentShaderResource("lightbox.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
     // note: aNormal from vert shader ignored
     // note: aTexCoords from vert shader ignored
 
@@ -62,11 +62,11 @@ template<typename Vbo>
 static gl::Vertex_array create_vao(Thresholding_lightbox_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
     gl::BindVertexArray();
 
@@ -78,8 +78,8 @@ struct Blur_shader final {
         gl::CompileVertexShaderResource("blur.vert"),
         gl::CompileFragmentShaderResource("blur.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_sampler2d uImage = gl::GetUniformLocation(prog, "image");
     gl::Uniform_bool uHorizontal = gl::GetUniformLocation(prog, "horizontal");
@@ -89,13 +89,13 @@ template<typename Vbo>
 static gl::Vertex_array create_vao(Blur_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
     gl::BindVertexArray();
 
@@ -108,8 +108,8 @@ struct Bloom_shader final {
         gl::CompileVertexShaderResource("bloom_final.vert"),
         gl::CompileFragmentShaderResource("bloom_final.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_sampler2d uSceneTex = gl::GetUniformLocation(prog, "scene");
     gl::Uniform_sampler2d uBlurTex = gl::GetUniformLocation(prog, "bloomBlur");
@@ -121,13 +121,13 @@ template<typename Vbo>
 static gl::Vertex_array create_vao(Bloom_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
     gl::BindVertexArray();
 
@@ -258,12 +258,12 @@ struct Renderer final {
     gl::Frame_buffer blur_pong_fbo = init_pingpong_fbo(blur_pong_tex);
 
     // cube data
-    gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo{
+    gl::Array_buffer<Shaded_textured_vert> cube_vbo{
         shaded_textured_cube_verts
     };
 
     // quad data
-    gl::Sized_array_buffer<Shaded_textured_vert> debug_quad_vbo{
+    gl::Array_buffer<Shaded_textured_vert> debug_quad_vbo{
         shaded_textured_quad_verts
     };
 

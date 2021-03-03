@@ -37,8 +37,8 @@ namespace model {
     };
 
     struct Mesh final {
-        gl::Array_buffer vbo;
-        gl::Element_array_buffer ebo;
+        gl::Array_buffer<Mesh_vert> vbo;
+        gl::Element_array_buffer<unsigned> ebo;
         size_t num_indices;
         std::vector<std::shared_ptr<Mesh_tex>> textures;
     };
@@ -90,7 +90,7 @@ namespace model {
 
     static Mesh load_mesh(path const& dir, aiScene const& scene, aiMesh const& mesh) {
         // load verts into an OpenGL VBO
-        gl::Array_buffer vbo = [&mesh]() {
+        gl::Array_buffer<Mesh_vert> vbo = [&mesh]() {
             bool has_tex_coords = mesh.mTextureCoords[0] != nullptr;
 
             std::vector<Mesh_vert> dest_verts;
@@ -118,15 +118,12 @@ namespace model {
                 }
             }
 
-            gl::Array_buffer rv = gl::GenArrayBuffer();
-            gl::BindBuffer(rv);
-            gl::BufferData(rv.type, dest_verts.size() * sizeof(Mesh_vert), dest_verts.data(), GL_STATIC_DRAW);
-            return rv;
+            return gl::Array_buffer<Mesh_vert>{dest_verts};
         }();
 
         // load indices into an OpenGL EBO
         size_t num_indices = 1337;
-        gl::Element_array_buffer ebo = [&mesh, &num_indices]() {
+        gl::Element_array_buffer<unsigned> ebo = [&mesh, &num_indices]() {
             std::vector<unsigned> indices;
 
             for (size_t i = 0; i < mesh.mNumFaces; ++i) {
@@ -137,10 +134,7 @@ namespace model {
             }
             num_indices = indices.size();
 
-            gl::Element_array_buffer rv = gl::GenElementArrayBuffer();
-            gl::BindBuffer(rv);
-            gl::BufferData(rv.type, indices.size() * sizeof(unsigned), indices.data(), GL_STATIC_DRAW);
-            return rv;
+            return gl::Element_array_buffer<unsigned>{indices};
         }();
 
         // load textures into a std::vector for later binding

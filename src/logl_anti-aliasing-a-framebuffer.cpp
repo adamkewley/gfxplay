@@ -9,7 +9,7 @@ namespace {
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_12.frag")));
         gl::Program light_prog = gl::CreateProgramFrom(
             vertex_shader,
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -23,9 +23,9 @@ void main() {
         gl::Texture_2d container2_spec = gl::load_tex(gfxplay::resource_path("container2_specular.png"));
         gl::Texture_2d container2_emission = gl::load_tex(gfxplay::resource_path("matrix.jpg"));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(color_prog, "model");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(color_prog, "view");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(color_prog, "projection");
@@ -44,12 +44,72 @@ void main() {
         gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
         gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
         gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
-        gl::Vertex_array light_vao = gl::GenVertexArrays();
+
+        gl::Array_buffer<float> ab = {
+            // positions          // normals           // texture coords
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+        };
+
+        gl::Vertex_array color_cube_vao = [this]() {
+            gl::BindBuffer(ab);
+            gl::VertexAttribPointer(aPos, false, 8*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+            gl::VertexAttribPointer(aNormal, false, 8*sizeof(GLfloat), 3 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(aNormal);
+            gl::VertexAttribPointer(aTexCoords, false, 8*sizeof(GLfloat), 6 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(aTexCoords);
+        };
+
+        gl::Vertex_array light_vao = [this]() {
+            gl::BindBuffer(ab);
+            gl::VertexAttribPointer(aPos, false, 8*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+            gl::VertexAttribPointer(aNormal, false, 8*sizeof(GLfloat), 3 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(aNormal);
+        };
 
         gl::Program quad_prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 layout (location = 0) in vec2 aPosition;
@@ -64,102 +124,28 @@ void main() {
 )"),
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_framebuffers.frag"))
         );
-        static constexpr gl::Attribute quadProg_aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute quadProg_texCoords = gl::AttributeAtLocation(1);
-        gl::Array_buffer quadProg_ab = gl::GenArrayBuffer();
-        gl::Vertex_array quadProg_vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            static const float vertices[] = {
-                // positions          // normals           // texture coords
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+        static constexpr gl::Attribute_vec3 quadProg_aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec2 quadProg_texCoords = gl::Attribute_vec2::at_location(1);
 
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+        gl::Array_buffer<float> quadProg_ab = {
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
 
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+            -1.0f,  1.0f,  0.0f, 1.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f, 1.0f
+        };
 
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
-            };
-
-            gl::BindBuffer(ab);
-            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            gl::BindVertexArray(color_cube_vao);
-            {
-                gl::BindBuffer(ab);
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(aNormal);
-                gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(aTexCoords);
-            }
-
-            gl::BindVertexArray(light_vao);
-            {
-                gl::BindBuffer(ab);
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(aNormal);
-            }
-
-            static const float quadVertices[] = {
-                // positions   // texCoords
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f,  0.0f, 0.0f,
-                 1.0f, -1.0f,  1.0f, 0.0f,
-
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                 1.0f, -1.0f,  1.0f, 0.0f,
-                 1.0f,  1.0f,  1.0f, 1.0f
-            };
+        gl::Vertex_array quadProg_vao = [this]() {
             gl::BindBuffer(quadProg_ab);
-            gl::BufferData(quadProg_ab.type, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-            gl::BindVertexArray(quadProg_vao);
-            {
-                gl::BindBuffer(quadProg_ab);
-                gl::VertexAttribPointer(quadProg_aPos, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(quadProg_aPos);
-                gl::VertexAttribPointer(quadProg_texCoords, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(quadProg_texCoords);
-            }
-        }
+            gl::VertexAttribPointer(quadProg_aPos, false, 4*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(quadProg_aPos);
+            gl::VertexAttribPointer(quadProg_texCoords, false, 4*sizeof(GLfloat), 2 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(quadProg_texCoords);
+        };
 
         gl::Texture_2d_multisample fbotex = gl::GenTexture2dMultisample();
         gl::Render_buffer depthbuf = gl::GenRenderBuffer();

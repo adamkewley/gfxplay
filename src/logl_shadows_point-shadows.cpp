@@ -13,7 +13,7 @@ struct Depthmap_shader final {
         gl::CompileFragmentShaderResource("point_shadows_depthmap.frag"),
         gl::CompileGeometryShaderResource("point_shadows_depthmap.geom"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uShadowMatrices = gl::GetUniformLocation(p, "shadowMatrices");
@@ -21,11 +21,11 @@ struct Depthmap_shader final {
     gl::Uniform_float uFar_plane = gl::GetUniformLocation(p, "far_plane");
 };
 
-static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
-    gl::Vertex_array vao = gl::GenVertexArrays();
+static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer<Shaded_textured_vert>& vbo) {
+    gl::Vertex_array vao;
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
     gl::BindBuffer();
     return vao;
@@ -36,9 +36,9 @@ struct Blinn_phong_cubemap_shadowmap final {
         gl::CompileVertexShaderResource("point_shadows.vert"),
         gl::CompileFragmentShaderResource("point_shadows.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -53,17 +53,17 @@ struct Blinn_phong_cubemap_shadowmap final {
 
 static gl::Vertex_array create_vao(
         Blinn_phong_cubemap_shadowmap& s,
-        gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
-    gl::Vertex_array vao = gl::GenVertexArrays();
+        gl::Array_buffer<Shaded_textured_vert>& vbo) {
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
 
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
+    gl::VertexAttribPointer(s.aTexCoord, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, uv));
     gl::EnableVertexAttribArray(s.aTexCoord);
 
     gl::BindVertexArray();
@@ -139,17 +139,17 @@ struct Screen final {
 
 
     // standard quad
-    gl::Sized_array_buffer<Shaded_textured_vert> quad_vbo{
+    gl::Array_buffer<Shaded_textured_vert> quad_vbo{
         shaded_textured_quad_verts
     };
 
-    gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo{
+    gl::Array_buffer<Shaded_textured_vert> cube_vbo{
         shaded_textured_cube_verts
     };
 
     // cube that has norms that point inwards, so it can be used as
     // a skybox
-    gl::Sized_array_buffer<Shaded_textured_vert> inner_cube_vbo = []() {
+    gl::Array_buffer<Shaded_textured_vert> inner_cube_vbo = []() {
         auto copy = shaded_textured_cube_verts;
 
         // invert norms because they should point inwards
@@ -157,7 +157,7 @@ struct Screen final {
             v.norm = -v.norm;
         }
 
-        return gl::Sized_array_buffer<Shaded_textured_vert>(copy);
+        return gl::Array_buffer<Shaded_textured_vert>(copy);
     }();
 
     Depthmap_shader dm_shader;

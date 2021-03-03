@@ -231,6 +231,15 @@ if(GFXPLAY_USE_ASSIMP)
     # HACK: see: https://gitlab.kitware.com/cmake/cmake/-/issues/15052
     file(MAKE_DIRECTORY ${SOURCE_DIR}/include)
 
+    add_library(gfxplay-assimp SHARED IMPORTED)
+    add_dependencies(gfxplay-assimp assimp-project)
+    set_target_properties(gfxplay-assimp PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}/include;${BINARY_DIR}/include"
+    )
+    set_target_properties(gfxplay-assimp PROPERTIES
+        IMPORTED_LOCATION ${BINARY_DIR}/code/libassimp.so
+    )
+
     unset(SOURCE_DIR)
     unset(BINARY_DIR)
 endif()

@@ -41,33 +41,12 @@ namespace stbi {
     };
 }
 
-gl::Vertex_shader gl::CompileVertexShader(char const* src) {
-    auto s = gl::CreateVertexShader();
-    ShaderSource(s, src);
-    CompileShader(s);
-    return s;
-}
-
-gl::Fragment_shader gl::CompileFragmentShader(char const* src) {
-    auto s = gl::CreateFragmentShader();
-    ShaderSource(s, src);
-    CompileShader(s);
-    return s;
-}
-
-gl::Geometry_shader gl::CompileGeometryShader(char const* src) {
-    auto s = gl::CreateGeometryShader();
-    ShaderSource(s, src);
-    CompileShader(s);
-    return s;
-}
-
 // convenience helper
 gl::Program gl::CreateProgramFrom(Vertex_shader const& vs,
                                   Fragment_shader const& fs) {
-    auto p = CreateProgram();
-    AttachShader(p, vs);
-    AttachShader(p, fs);
+    gl::Program p;
+    glAttachShader(p.get(), vs.get());
+    glAttachShader(p.get(), fs.get());
     LinkProgram(p);
     return p;
 }
@@ -75,10 +54,10 @@ gl::Program gl::CreateProgramFrom(Vertex_shader const& vs,
 gl::Program gl::CreateProgramFrom(Vertex_shader const& vs,
                                   Fragment_shader const& fs,
                                   Geometry_shader const& gs) {
-    auto p = CreateProgram();
-    AttachShader(p, vs);
-    AttachShader(p, gs);
-    AttachShader(p, fs);
+    gl::Program p;
+    glAttachShader(p.get(), vs.get());
+    glAttachShader(p.get(), gs.get());
+    glAttachShader(p.get(), fs.get());
     LinkProgram(p);
     return p;
 }
@@ -132,7 +111,7 @@ void gl::assert_no_errors(char const* label) {
 
 gl::Vertex_shader gl::CompileVertexShaderFile(std::filesystem::path const& path) {
     try {
-        return CompileVertexShader(slurp_file(path).c_str());
+        return Vertex_shader::from_source(slurp_file(path).c_str());
     } catch (std::exception const& e) {
         std::stringstream ss;
         ss << path;
@@ -148,7 +127,7 @@ gl::Vertex_shader gl::CompileVertexShaderResource(char const* resource) {
 
 gl::Fragment_shader gl::CompileFragmentShaderFile(std::filesystem::path const& path) {
     try {
-        return CompileFragmentShader(slurp_file(path).c_str());
+        return Fragment_shader::from_source(slurp_file(path).c_str());
     } catch (std::exception const& e) {
         std::stringstream ss;
         ss << path;
@@ -164,7 +143,7 @@ gl::Fragment_shader gl::CompileFragmentShaderResource(char const* resource) {
 
 gl::Geometry_shader gl::CompileGeometryShaderFile(std::filesystem::path const& path) {
     try {
-        return CompileGeometryShader(slurp_file(path).c_str());
+        return Geometry_shader::from_source(slurp_file(path).c_str());
     } catch (std::exception const& e) {
         std::stringstream ss;
         ss << path;

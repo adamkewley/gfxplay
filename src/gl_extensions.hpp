@@ -39,82 +39,6 @@
 }
 
 namespace gl {
-    [[nodiscard]] constexpr Attribute AttributeAtLocation(GLuint loc) noexcept {
-        return Attribute{loc};
-    }
-
-    // thin wrapper for GL_ARRAY_BUFFER
-    class Array_buffer final : public Buffer_handle {
-        friend Array_buffer GenArrayBuffer();
-
-        Array_buffer() : Buffer_handle{} {}
-    public:
-        static constexpr GLenum type = GL_ARRAY_BUFFER;
-    };
-
-    // typed GL_ARRAY_BUFFER equivalent to GenBuffers
-    inline Array_buffer GenArrayBuffer() {
-        return Array_buffer{};
-    }
-
-    inline void BindBuffer(Array_buffer& buffer) {
-        BindBuffer(buffer.type, buffer);
-    }
-
-    // thin wrapper for GL_ELEMENT_ARRAY_BUFFER
-    class Element_array_buffer final : public Buffer_handle {
-        friend Element_array_buffer GenElementArrayBuffer();
-
-        Element_array_buffer() : Buffer_handle{} {}
-    public:
-        static constexpr GLenum type = GL_ELEMENT_ARRAY_BUFFER;
-    };
-
-    // typed GL_ELEMENT_ARRAY_BUFFER equivalent to GenBuffers
-    inline Element_array_buffer GenElementArrayBuffer() {
-        return Element_array_buffer{};
-    }
-
-    inline void BindBuffer(Element_array_buffer& buffer) {
-        BindBuffer(buffer.type, buffer);
-    }
-
-    // thin wrapper for GL_VERTEX_SHADER
-    class Vertex_shader final : public Shader_handle {
-        friend Vertex_shader CreateVertexShader();
-
-        Vertex_shader() : Shader_handle{GL_VERTEX_SHADER} {}
-    };
-
-    // typed GL_VERTEX_SHADER equivalent to CreateShader
-    inline Vertex_shader CreateVertexShader() {
-        return Vertex_shader{};
-    }
-
-    // thin wrapper for GL_FRAGMENT_SHADER
-    struct Fragment_shader final : public Shader_handle {
-        friend Fragment_shader CreateFragmentShader();
-
-        Fragment_shader() : Shader_handle{GL_FRAGMENT_SHADER} {}
-    };
-
-    // typed GL_FRAGMENT_SHADER equivalent to CreateShader
-    inline Fragment_shader CreateFragmentShader() {
-        return Fragment_shader{};
-    }
-
-    // thin wrapper for GL_GEOMETRY_SHADER
-    class Geometry_shader final : public Shader_handle {
-        friend Geometry_shader CreateGeometryShader();
-
-        Geometry_shader() : Shader_handle{GL_GEOMETRY_SHADER} {}
-    };
-
-    // typed GL_GEOMETRY_SHADER equivalent to CreateShader
-    inline Geometry_shader CreateGeometryShader() {
-        return Geometry_shader{};
-    }
-
     // type-safe wrapper around GL_TEXTURE_2D
     class Texture_2d final : public Texture_handle {
         friend Texture_2d GenTexture2d();
@@ -306,13 +230,10 @@ namespace gl {
 
     // COMPILE + LINK PROGRAMS:
 
-    Vertex_shader CompileVertexShader(char const* src);
     Vertex_shader CompileVertexShaderFile(std::filesystem::path const&);
     Vertex_shader CompileVertexShaderResource(char const* resource_id);
-    Fragment_shader CompileFragmentShader(char const* src);
     Fragment_shader CompileFragmentShaderFile(std::filesystem::path const&);
     Fragment_shader CompileFragmentShaderResource(char const* resource_id);
-    Geometry_shader CompileGeometryShader(char const* src);
     Geometry_shader CompileGeometryShaderFile(std::filesystem::path const&);
     Geometry_shader CompileGeometryShaderResource(char const* resource_id);
 
@@ -360,47 +281,6 @@ namespace gl {
         static_assert(GL_TEXTURE0 <= E and E <= GL_TEXTURE30);
         return E - GL_TEXTURE0;
     }
-
-    template<typename T>
-    class Sized_array_buffer final {
-        size_t _size = 0;
-        gl::Array_buffer _vbo = gl::GenArrayBuffer();
-
-    public:
-        using value_type = T;
-
-        template<typename Collection>
-        Sized_array_buffer(Collection const& c) :
-            Sized_array_buffer{c.begin(), c.end()} {
-        }
-
-        Sized_array_buffer(std::initializer_list<T> const& els) :
-            Sized_array_buffer{els.begin(), els.end()} {
-        }
-
-        Sized_array_buffer(T const* begin, T const* end) :
-            _size{static_cast<size_t>(std::distance(begin, end))} {
-
-            gl::BindBuffer(_vbo);
-            gl::BufferData(_vbo.type, static_cast<long>(_size * sizeof(T)), begin, GL_STATIC_DRAW);
-        }
-
-        operator gl::Array_buffer&() noexcept {
-            return _vbo;
-        }
-
-        operator gl::Array_buffer const&() const noexcept {
-            return _vbo;
-        }
-
-        size_t size() const noexcept {
-            return _size;
-        }
-
-        GLsizei sizei() const noexcept {
-            return static_cast<GLsizei>(_size);
-        }
-    };
 
     template<typename... T>
     inline void DrawBuffers(T... vs) {

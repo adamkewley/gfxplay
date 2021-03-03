@@ -6,7 +6,7 @@ struct Depthmap_shader final {
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_depth-maps.frag")));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
 
     gl::Uniform_mat4 uLightSpaceMatrix = gl::GetUniformLocation(p, "lightSpaceMatrix");
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
@@ -16,9 +16,9 @@ struct Shadowmap_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps.frag")));
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -39,8 +39,8 @@ struct Basic_texture_shader final {
     gl::Program p = gl::CreateProgramFrom(
         gl::CompileVertexShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.vert")),
         gl::CompileFragmentShaderFile(gfxplay::resource_path("shadows_shadow-maps_basic-tex.frag")));
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_sampler2d texture = gl::GetUniformLocation(p, "tex");
     //gl::Uniform_1f uNear_plane = gl::GetUniformLocation(p, "near_plane");
@@ -66,12 +66,7 @@ struct Plane final {
         {{ 25.0f, -0.5f, -25.0f}, {0.0f, 1.0f, 0.0f}, {25.0f, 25.0f}},
     }};
 
-    gl::Array_buffer vbo = []() {
-        gl::Array_buffer rv = gl::GenArrayBuffer();
-        gl::BindBuffer(rv);
-        gl::BufferData(rv.type, sizeof(data), data.data(), GL_STATIC_DRAW);
-        return rv;
-    }();
+    gl::Array_buffer<Mesh_el> vbo{data};
 };
 
 struct Cube final {
@@ -120,41 +115,32 @@ struct Cube final {
         {{-1.0f,  1.0f,  1.0f}, {0.0f,  1.0f,  0.0f}, {0.0f, 0.0f}}  // bottom-left
     }};
 
-    gl::Array_buffer vbo = []() {
-        gl::Array_buffer rv = gl::GenArrayBuffer();
-        gl::BindBuffer(rv);
-        gl::BufferData(rv.type, sizeof(data), data.data(), GL_STATIC_DRAW);
-        return rv;
-    }();
+    gl::Array_buffer<Mesh_el> vbo{data};
 };
 
-static gl::Vertex_array create_vao(Shadowmap_shader& s, gl::Array_buffer& vbo) {
-    gl::Vertex_array vao = gl::GenVertexArrays();
+static gl::Vertex_array create_vao(Shadowmap_shader& s, gl::Array_buffer<Mesh_el>& vbo) {
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_el), reinterpret_cast<void*>(offsetof(Mesh_el, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Mesh_el), offsetof(Mesh_el, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_el), reinterpret_cast<void*>(offsetof(Mesh_el, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(Mesh_el), offsetof(Mesh_el, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_el), reinterpret_cast<void*>(offsetof(Mesh_el, uv)));
+    gl::VertexAttribPointer(s.aTexCoord, false, sizeof(Mesh_el), offsetof(Mesh_el, uv));
     gl::EnableVertexAttribArray(s.aTexCoord);
-
     gl::BindVertexArray();
 
     return vao;
 }
 
-static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer& vbo) {
-    gl::Vertex_array vao = gl::GenVertexArrays();
+static gl::Vertex_array create_vao(Depthmap_shader& s, gl::Array_buffer<Mesh_el>& vbo) {
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_el), reinterpret_cast<void*>(offsetof(Mesh_el, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Mesh_el), offsetof(Mesh_el, pos));
     gl::EnableVertexAttribArray(s.aPos);
-
     gl::BindVertexArray();
 
     return vao;
@@ -214,24 +200,15 @@ struct App final {
     }};
 
     // quad for debug vbo
-    gl::Array_buffer quad_vbo = []() {
-        gl::Array_buffer vbo = gl::GenArrayBuffer();
-        gl::BindBuffer(vbo);
-        gl::BufferData(vbo.type, sizeof(quad_data), quad_data.data(), GL_STATIC_DRAW);
-        return vbo;
-    }();
+    gl::Array_buffer<Quad_el> quad_vbo{quad_data};
 
     gl::Vertex_array quad_vao = [&]() {
-        gl::Vertex_array vao = gl::GenVertexArrays();
-        gl::BindVertexArray(vao);
         gl::BindBuffer(quad_vbo);
-        gl::VertexAttribPointer(quad_shader.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Quad_el), reinterpret_cast<void*>(offsetof(Quad_el, pos)));
+        gl::VertexAttribPointer(quad_shader.aPos, false, sizeof(Quad_el), offsetof(Quad_el, pos));
         gl::EnableVertexAttribArray(quad_shader.aPos);
-        gl::VertexAttribPointer(quad_shader.aTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Quad_el), reinterpret_cast<void*>(offsetof(Quad_el, uv)));
+        gl::VertexAttribPointer(quad_shader.aTexCoord, false, sizeof(Quad_el), offsetof(Quad_el, uv));
         gl::EnableVertexAttribArray(quad_shader.aTexCoord);
-        gl::BindVertexArray();
-        return vao;
-    }();
+    };
 
     static constexpr GLsizei shadow_width = 1024;
     static constexpr GLsizei shadow_height = 1024;

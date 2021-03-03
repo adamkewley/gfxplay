@@ -3,7 +3,7 @@
 namespace {
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 uniform mat4 uTransform;
@@ -19,7 +19,7 @@ void main() {
     TexCoord = aTexCoord;
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 uniform sampler2D uSampler0;
@@ -35,44 +35,32 @@ void main() {
         gl::Texture_2d wall = gl::load_tex(gfxplay::resource_path("wall.jpg"));
         gl::Texture_2d face = gl::load_tex(gfxplay::resource_path("awesomeface.png"));
         gl::Uniform_mat4 uTransform = gl::GetUniformLocation(prog, "uTransform");
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
         gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
-        gl::Vertex_array vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            static constexpr float vertices[] = {
-                // positions          // colors           // texture coords
-                 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-                 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-                -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-                -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
-            };
+        gl::Array_buffer<float> ab = {
+            // positions          // colors           // texture coords
+             0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+             0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
+        };
 
-            static constexpr unsigned int indices[] = {
-                0, 1, 3,   // first triangle
-                1, 2, 3    // second triangle
-            };
+        gl::Element_array_buffer<GLuint> ebo = {
+            0, 1, 3,   // first triangle
+            1, 2, 3    // second triangle
+        };
 
-            gl::BindVertexArray(vao);
-
+        gl::Vertex_array vao = [this]() {
             gl::BindBuffer(ab);
-            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), nullptr);
+            gl::VertexAttribPointer(aPos, false, 8*sizeof(GLfloat), 0);
             gl::EnableVertexAttribArray(aPos);
-
-            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (void*)(6* sizeof(float)));
+            gl::VertexAttribPointer(aTexCoord, false, 8*sizeof(GLfloat), 6* sizeof(float));
             gl::EnableVertexAttribArray(aTexCoord);
-
             gl::BindBuffer(ebo);
-            gl::BufferData(ebo.type, sizeof(indices), indices, GL_STATIC_DRAW);
-
-            gl::BindVertexArray();
-        }
+        };
 
         void draw() {
             gl::UseProgram(prog);

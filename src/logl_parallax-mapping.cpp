@@ -53,11 +53,11 @@ struct Parallax_texture_shader final {
         gl::CompileVertexShaderResource("parallax_shader.vert"),
         gl::CompileFragmentShaderResource("parallax_shader.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
-    static constexpr gl::Attribute aTangent = gl::AttributeAtLocation(3);
-    static constexpr gl::Attribute aBitangent = gl::AttributeAtLocation(4);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_vec3 aTangent = gl::Attribute_vec3::at_location(3);
+    static constexpr gl::Attribute_vec3 aBitangent = gl::Attribute_vec3::at_location(4);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -73,23 +73,22 @@ struct Parallax_texture_shader final {
 };
 
 template<typename T>
-static gl::Vertex_array create_vao(Parallax_texture_shader& s, gl::Sized_array_buffer<T>& vbo) {
+static gl::Vertex_array create_vao(Parallax_texture_shader& s, gl::Array_buffer<T>& vbo) {
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
-
+    gl::Vertex_array vao;
     gl::BindVertexArray(vao);
 
     gl::BindBuffer(vbo);
 
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(T), offsetof(T, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
-    gl::VertexAttribPointer(s.aTangent, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, tangent)));
+    gl::VertexAttribPointer(s.aTangent, false, sizeof(T), offsetof(T, tangent));
     gl::EnableVertexAttribArray(s.aTangent);
-    gl::VertexAttribPointer(s.aBitangent, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, bitangent)));
+    gl::VertexAttribPointer(s.aBitangent, false, sizeof(T), offsetof(T, bitangent));
     gl::EnableVertexAttribArray(s.aBitangent);
 
     gl::BindVertexArray();
@@ -98,7 +97,7 @@ static gl::Vertex_array create_vao(Parallax_texture_shader& s, gl::Sized_array_b
 }
 
 struct Renderer final {
-    gl::Sized_array_buffer<Tangentspace_vert> quad_vbo =
+    gl::Array_buffer<Tangentspace_vert> quad_vbo =
         compute_tangents_and_bitangents(shaded_textured_quad_verts);
 
     Parallax_texture_shader bs;
@@ -146,7 +145,7 @@ struct Renderer final {
     }
 
     void draw(ui::Window_state& w, ui::Game_state& s) {
-        gl::UseProgram(bs.p);
+        glUseProgram(bs.p.get());
 
         gl::Uniform(bs.uModel, model_mtx);
         gl::Uniform(bs.uView, s.camera.view_mtx());

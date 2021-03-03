@@ -278,19 +278,19 @@ if (GFXPLAY_USE_ASSIMP)
         src/logl_13_model-loading.cpp
         src/logl_model.hpp
     )
-    target_link_libraries(logl_13_model-loading common assimp)
+    target_link_libraries(logl_13_model-loading gfxplaycore gfxplay-assimp)
 
     # https://learnopengl.com/Advanced-OpenGL/Instancing
     add_executable(logl_instancing_3_planet
         src/logl_instancing_3_planet.cpp
     )
-    target_link_libraries(logl_instancing_3_planet common assimp)
+    target_link_libraries(logl_instancing_3_planet gfxplaycore gfxplay-assimp)
 
     # https://learnopengl.com/Advanced-Lighting/Deferred-Shading
     add_executable(logl_deferred-shading
         src/logl_deferred-shading.cpp
     )
-    target_link_libraries(logl_deferred-shading common assimp)
+    target_link_libraries(logl_deferred-shading gfxplaycore gfxplay-assimp)
 endif()
 
 if (GFXPLAY_USE_CAIRO)

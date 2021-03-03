@@ -8,9 +8,9 @@ struct Multilight_textured_shader final {
         gl::CompileVertexShaderResource("multilight.vert"),
         gl::CompileFragmentShaderResource("multilight.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
     gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
@@ -26,15 +26,15 @@ template<typename Vbo>
 gl::Vertex_array create_vao(Multilight_textured_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(T), offsetof(T, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
     gl::BindVertexArray();
 
@@ -47,8 +47,8 @@ struct Hdr_shader final {
         gl::CompileVertexShaderResource("hdr.vert"),
         gl::CompileFragmentShaderResource("hdr.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_sampler2d hdrBuffer = gl::GetUniformLocation(prog, "hdrBuffer");
     gl::Uniform_bool hdr = gl::GetUniformLocation(prog, "hdr");
@@ -59,13 +59,13 @@ template<typename Vbo>
 gl::Vertex_array create_vao(Hdr_shader& s, Vbo& vbo) {
     using T = typename Vbo::value_type;
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(T), offsetof(T, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(T), offsetof(T, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
     gl::BindVertexArray();
 
@@ -73,16 +73,16 @@ gl::Vertex_array create_vao(Hdr_shader& s, Vbo& vbo) {
 }
 
 struct Renderer final {
-    gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo = []() {
+    gl::Array_buffer<Shaded_textured_vert> cube_vbo = []() {
         auto copy = shaded_textured_cube_verts;
         // invert normals: we're inside the cube
         for (Shaded_textured_vert& v : copy) {
             v.norm = -v.norm;
         }
-        return gl::Sized_array_buffer<Shaded_textured_vert>{copy};
+        return gl::Array_buffer<Shaded_textured_vert>{copy};
     }();
 
-    gl::Sized_array_buffer<Shaded_textured_vert> quad_vbo{
+    gl::Array_buffer<Shaded_textured_vert> quad_vbo{
         shaded_textured_quad_verts
     };
 

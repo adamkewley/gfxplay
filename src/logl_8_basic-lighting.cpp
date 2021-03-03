@@ -34,7 +34,7 @@ namespace {
     };
 
     struct Gl_State final {
-        gl::Vertex_shader vert_shader = gl::CompileVertexShader(R"(
+        gl::Vertex_shader vert_shader = gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
@@ -55,7 +55,7 @@ void main() {
 })");
         gl::Program color_prog = gl::CreateProgramFrom(
             vert_shader,
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 in vec3 Normal;
@@ -91,7 +91,7 @@ void main() {
         ));
         gl::Program light_prog = gl::CreateProgramFrom(
             vert_shader,
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -100,8 +100,8 @@ void main() {
     FragColor = vec4(1.0); // set all 4 vector values to 1.0
 })"
         ));
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
         gl::Uniform_mat4 uModelColorProg = gl::GetUniformLocation(color_prog, "model");
         gl::Uniform_mat4 uViewColorProg = gl::GetUniformLocation(color_prog, "view");
         gl::Uniform_mat4 uProjectionColorProg = gl::GetUniformLocation(color_prog, "projection");
@@ -113,76 +113,66 @@ void main() {
         gl::Uniform_mat4 uModelLightProg = gl::GetUniformLocation(light_prog, "model");
         gl::Uniform_mat4 uViewLightProg = gl::GetUniformLocation(light_prog, "view");
         gl::Uniform_mat4 uProjectionLightProg = gl::GetUniformLocation(light_prog, "projection");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Vertex_array color_cube_vao = gl::GenVertexArrays();
-        gl::Vertex_array light_vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            float vertices[] = {
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        gl::Array_buffer<float> ab = {
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
 
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-            };
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+        };
 
+        gl::Vertex_array color_cube_vao = [&ab = this->ab]() {
             gl::BindBuffer(ab);
-            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            gl::VertexAttribPointer(aPos, false, 6*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+            gl::VertexAttribPointer(aNormal, false, 6*sizeof(GLfloat), 3 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(aNormal);
+        };
 
-            gl::BindVertexArray(color_cube_vao);
-            {
-                gl::BindBuffer(ab);
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(aNormal);
-            }
-
-            gl::BindVertexArray(light_vao);
-            {
-                gl::BindBuffer(ab);
-                gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), nullptr);
-                gl::EnableVertexAttribArray(aPos);
-                gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-                gl::EnableVertexAttribArray(aNormal);
-            }
-        }
+        gl::Vertex_array light_vao = [&ab = this->ab]() {
+            gl::BindBuffer(ab);
+            gl::VertexAttribPointer(aPos, false, 6*sizeof(GLfloat), 0);
+            gl::EnableVertexAttribArray(aPos);
+            gl::VertexAttribPointer(aNormal, false, 6*sizeof(GLfloat), 3 * sizeof(GLfloat));
+            gl::EnableVertexAttribArray(aNormal);
+        };
 
         void draw(App_State const& as) {
             auto ticks = util::now().count() / 200.0f;

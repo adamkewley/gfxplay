@@ -16,7 +16,7 @@ namespace {
 
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 uniform mat4 uModel;
@@ -33,7 +33,7 @@ void main() {
     gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
     TexCoord = aTexCoord;
 })"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 uniform sampler2D uSampler0;
@@ -51,72 +51,62 @@ void main() {
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "uModel");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "uView");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "uProjection");
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aTexCoord = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec2 aTexCoord = gl::Attribute_vec2::at_location(1);
         gl::Uniform_int uSampler0 = gl::GetUniformLocation(prog, "uSampler0");
         gl::Uniform_int uSampler1 = gl::GetUniformLocation(prog, "uSampler1");
-        gl::Array_buffer ab = gl::GenArrayBuffer();
-        gl::Element_array_buffer ebo = gl::GenElementArrayBuffer();
-        gl::Vertex_array vao = gl::GenVertexArrays();
 
-        Gl_State() {
-            float vertices[] = {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        gl::Array_buffer<float> ab = {
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-            };
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+        };
 
-            gl::BindVertexArray(vao);
-
+        gl::Vertex_array vao = [this]() {
             gl::BindBuffer(ab);
-            gl::BufferData(ab.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), nullptr);
+            gl::VertexAttribPointer(aPos, false, 5*sizeof(GLfloat), 0);
             gl::EnableVertexAttribArray(aPos);
-
-            gl::VertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(3* sizeof(float)));
+            gl::VertexAttribPointer(aTexCoord, false, 5*sizeof(GLfloat), 3* sizeof(float));
             gl::EnableVertexAttribArray(aTexCoord);
-
-            gl::BindVertexArray();
-        }
+        };
 
         void draw() {
             glm::mat4 model = glm::mat4(1.0f);

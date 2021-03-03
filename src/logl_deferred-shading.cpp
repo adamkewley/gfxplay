@@ -12,9 +12,9 @@ struct Gbuffer_shader final {
         gl::CompileVertexShaderResource("deferred1.vert"),
         gl::CompileFragmentShaderResource("deferred1.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal  = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal  = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModelMtx = gl::GetUniformLocation(prog, "uModelMtx");
     gl::Uniform_mat4 uViewMtx = gl::GetUniformLocation(prog, "uViewMtx");
@@ -24,19 +24,19 @@ struct Gbuffer_shader final {
     gl::Uniform_sampler2d uSpecularTex = gl::GetUniformLocation(prog, "uSpecularTex");
 
     template<typename Vbo, typename T = typename Vbo::value_type>
-    static gl::Vertex_array create_vao(Vbo& vbo, gl::Element_array_buffer* ebo = nullptr) {
-        gl::Vertex_array vao = gl::GenVertexArrays();
+    static gl::Vertex_array create_vao(Vbo& vbo, gl::Element_array_buffer<unsigned>* ebo = nullptr) {
+        gl::Vertex_array vao;
 
         gl::BindVertexArray(vao);
         if (ebo) {
             gl::BindBuffer(*ebo);
         }
         gl::BindBuffer(vbo);
-        gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
         gl::EnableVertexAttribArray(aPos);
-        gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, norm)));
+        gl::VertexAttribPointer(aNormal, false, sizeof(T), offsetof(T, norm));
         gl::EnableVertexAttribArray(aNormal);
-        gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+        gl::VertexAttribPointer(aTexCoords, false, sizeof(T), offsetof(T, uv));
         gl::EnableVertexAttribArray(aTexCoords);
         gl::BindVertexArray();
 
@@ -50,8 +50,8 @@ struct Deferred2_shader final {
         gl::CompileVertexShaderResource("deferred2.vert"),
         gl::CompileFragmentShaderResource("deferred2.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_sampler2d gPosition = gl::GetUniformLocation(prog, "gPosition");
     gl::Uniform_sampler2d gNormal = gl::GetUniformLocation(prog, "gNormal");
@@ -62,13 +62,13 @@ struct Deferred2_shader final {
 
     template<typename Vbo, typename T = typename Vbo::value_type>
     static gl::Vertex_array create_vao(Vbo& vbo) {
-        gl::Vertex_array vao = gl::GenVertexArrays();
+        gl::Vertex_array vao;
 
         gl::BindVertexArray(vao);
         gl::BindBuffer(vbo);
-        gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, pos)));
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
         gl::EnableVertexAttribArray(aPos);
-        gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(T), reinterpret_cast<void*>(offsetof(T, uv)));
+        gl::VertexAttribPointer(aTexCoords, false, sizeof(T), offsetof(T, uv));
         gl::EnableVertexAttribArray(aTexCoords);
         gl::BindVertexArray();
 
@@ -94,18 +94,18 @@ static std::array<Light, N> generate_lights() {
 
 struct Renderer final {
     gl::Texture_2d container_diff{
-        gl::load_tex(RESOURCES_DIR "textures/container2.png", gl::TexFlag_SRGB)
+        gl::load_tex(gfxplay::resource_path("textures/container2.png").c_str(), gl::TexFlag_SRGB)
     };
 
     gl::Texture_2d container_spec{
-        gl::load_tex(RESOURCES_DIR "textures/container2_specular.png")
+        gl::load_tex(gfxplay::resource_path("textures/container2_specular.png").c_str())
     };
 
-    gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo{
+    gl::Array_buffer<Shaded_textured_vert> cube_vbo{
         shaded_textured_cube_verts
     };
 
-    gl::Sized_array_buffer<Shaded_textured_vert> quad_vbo{
+    gl::Array_buffer<Shaded_textured_vert> quad_vbo{
         shaded_textured_quad_verts
     };
 
@@ -165,11 +165,11 @@ struct Renderer final {
     Gbuffer_shader gbs;
     gl::Vertex_array gbs_cube_vao = Gbuffer_shader::create_vao(cube_vbo);
 
-    std::shared_ptr<model::Model> backpack = model::load_model_cached(RESOURCES_DIR "backpack/backpack.obj");
+    std::shared_ptr<model::Model> backpack = model::load_model_cached(gfxplay::resource_path("backpack/backpack.obj").c_str());
     std::vector<gl::Vertex_array> backpack_vaos = [this]() {
         std::vector<gl::Vertex_array> rv;
         for (model::Mesh& mesh : backpack->meshes) {
-            rv.push_back(Gbuffer_shader::create_vao<gl::Array_buffer, model::Mesh_vert>(mesh.vbo, &mesh.ebo));
+            rv.push_back(Gbuffer_shader::create_vao<gl::Array_buffer<model::Mesh_vert>, model::Mesh_vert>(mesh.vbo, &mesh.ebo));
         }
         return rv;
     }();

@@ -4,12 +4,12 @@
 namespace {
     struct Model_program final {
         gl::Program p = gl::CreateProgramFrom(
-            gl::CompileVertexShaderFile(RESOURCES_DIR "model_loading.vert"),
-            gl::CompileFragmentShaderFile(RESOURCES_DIR "model_loading.frag"));
+            gl::CompileVertexShaderFile(gfxplay::resource_path("model_loading.vert")),
+            gl::CompileFragmentShaderFile(gfxplay::resource_path("model_loading.frag")));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
-        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aNormals = gl::Attribute_vec3::at_location(1);
+        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
@@ -37,20 +37,17 @@ namespace {
     using model::Tex_type;
 
     gl::Vertex_array create_vao(Model_program& p, Mesh& m) {
-        gl::Vertex_array vao = gl::GenVertexArrays();
+        gl::Vertex_array vao;
 
         gl::BindVertexArray(vao);
-
         gl::BindBuffer(m.ebo);
-
         gl::BindBuffer(m.vbo);
-        gl::VertexAttribPointer(p.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)0);
+        gl::VertexAttribPointer(p.aPos, false, sizeof(Mesh_vert), 0);
         gl::EnableVertexAttribArray(p.aPos);
-        gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, norm));
+        gl::VertexAttribPointer(p.aNormals, false, sizeof(Mesh_vert), offsetof(Mesh_vert, norm));
         gl::EnableVertexAttribArray(p.aNormals);
-        gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), (void*)offsetof(Mesh_vert, uv));
+        gl::VertexAttribPointer(p.aTexCoords, false, sizeof(Mesh_vert), offsetof(Mesh_vert, uv));
         gl::EnableVertexAttribArray(p.aTexCoords);
-
         gl::BindVertexArray();
 
         return vao;
@@ -149,7 +146,7 @@ int main(int, char**) {
 
     // Extra GL setup
     auto prog = Model_program{};
-    std::shared_ptr<Model> model = model::load_model_cached(RESOURCES_DIR "backpack/backpack.obj");
+    std::shared_ptr<Model> model = model::load_model_cached(gfxplay::resource_path("backpack/backpack.obj").c_str());
     Compiled_model cmodel{prog, std::move(model)};
     glEnable(GL_FRAMEBUFFER_SRGB);
 

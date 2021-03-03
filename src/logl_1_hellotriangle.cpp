@@ -1,11 +1,9 @@
 #include "logl_common.hpp"
 
-#include <array>
-
 namespace {
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 in vec3 aPos;
@@ -14,7 +12,7 @@ void main() {
     gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -24,54 +22,30 @@ void main() {
 }
 )"
         ));
-        gl::Attribute aPos = gl::GetAttribLocation(prog, "aPos");
+        gl::Attribute_vec3 aPos = gl::Attribute_vec3::with_name(prog, "aPos");
 
-        // a rectangle consists of four vertices
-        static constexpr std::array<glm::vec3, 4> rect_verts = {{
+        gl::Array_buffer<glm::vec3> vbo = {
             { 0.5f,  0.5f, 0.0f},  // top right
             { 0.5f, -0.5f, 0.0f},  // bottom right
             {-0.5f, -0.5f, 0.0f},  // bottom left
-            {-0.5f,  0.5f, 0.0f},   // top left
-        }};
-        static_assert(sizeof(glm::vec3) == 3*sizeof(float));
-
-        gl::Array_buffer vbo = []() {
-            gl::Array_buffer rv = gl::GenArrayBuffer();
-            gl::BindBuffer(rv);
-            gl::BufferData(rv.type, sizeof(rect_verts), rect_verts.data(), GL_STATIC_DRAW);
-            return rv;
-        }();
-
-        // a rectangle is drawn by drawing two triangle primatives that use a
-        // combination of the rectangle's vertices
-        static constexpr std::array<unsigned, 6> rect_els = {
-            0, 1, 3,
-            1, 2, 3,
+            {-0.5f,  0.5f, 0.0f},  // top left
         };
 
-        gl::Element_array_buffer ebo = []() {
-            gl::Element_array_buffer rv = gl::GenElementArrayBuffer();
-            gl::BindBuffer(rv);
-            gl::BufferData(rv.type, sizeof(rect_els), rect_els.data(), GL_STATIC_DRAW);
-            return rv;
-        }();
+        gl::Element_array_buffer<unsigned> ebo = {
+            0, 1, 3,
+            1, 2, 3
+        };
 
         gl::Vertex_array vao = [this]() {
-            gl::Vertex_array rv = gl::GenVertexArrays();
-
-            gl::BindVertexArray(rv);
             gl::BindBuffer(vbo);
             gl::BindBuffer(ebo);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+            gl::VertexAttribPointer(aPos, false, sizeof(glm::vec3), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::BindVertexArray();
-
-            return rv;
-        }();
+        };
 
         void draw() {
             gl::BindVertexArray(vao);
-            gl::DrawElements(GL_TRIANGLES, rect_els.size(), GL_UNSIGNED_INT, nullptr);
+            gl::DrawElements(GL_TRIANGLES, ebo.sizei(), GL_UNSIGNED_INT, nullptr);
             gl::BindVertexArray();
         }
     };

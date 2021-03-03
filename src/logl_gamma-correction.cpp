@@ -6,9 +6,9 @@ struct Blinn_phong_program final {
         gl::CompileFragmentShaderFile(gfxplay::resource_path("blinn_phong.frag")));
 
     // vertex shader attrs/uniforms
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormals = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
     gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
@@ -24,41 +24,26 @@ struct Blinn_phong_program final {
 struct Whole_app final {
     Blinn_phong_program prog;
 
-    gl::Array_buffer vbo = []() {
-        static float planeVertices[] = {
-            // positions            // normals         // texcoords
-             10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-            -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-            -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+    gl::Array_buffer<float> vbo = {
+        // positions            // normals         // texcoords
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
 
-             10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-            -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
-             10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
-        };
-
-        gl::Array_buffer rv = gl::GenArrayBuffer();
-        gl::BindBuffer(rv);
-        gl::BufferData(rv.type, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-        return rv;
-    }();
+         10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+        -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+         10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+    };
 
     gl::Vertex_array vao = [this]() {
-        gl::Vertex_array rv = gl::GenVertexArrays();
-
-        gl::BindVertexArray(rv);
-
         gl::BindBuffer(vbo);
-        gl::VertexAttribPointer(prog.aPos, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), reinterpret_cast<void*>(0));
+        gl::VertexAttribPointer(prog.aPos, false, 8*sizeof(float), 0);
         gl::EnableVertexAttribArray(prog.aPos);
-        gl::VertexAttribPointer(prog.aNormals, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), reinterpret_cast<void*>(3*sizeof(float)));
+        gl::VertexAttribPointer(prog.aNormals, false, 8*sizeof(float), 3*sizeof(float));
         gl::EnableVertexAttribArray(prog.aNormals);
-        gl::VertexAttribPointer(prog.aTexCoords, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), reinterpret_cast<void*>(6*sizeof(float)));
+        gl::VertexAttribPointer(prog.aTexCoords, false, 8*sizeof(float), 6*sizeof(float));
         gl::EnableVertexAttribArray(prog.aTexCoords);
-
-        gl::BindVertexArray();
-
-        return rv;
-    }();
+    };
 
     gl::Texture_2d floor =
         gl::load_tex(gfxplay::resource_path("textures", "wood.png"), gl::TexFlag_SRGB);

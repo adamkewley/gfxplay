@@ -64,7 +64,7 @@ namespace {
         std::shared_ptr<gl::Texture_cubemap> cubemap = load_cubemap();
 
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
@@ -99,7 +99,7 @@ void main() {
     gl_Position = pos.xyww;
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -114,26 +114,17 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
         gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
         gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
 
-        gl::Array_buffer cube_ab = []() {
-            auto buf = gl::GenArrayBuffer();
-            gl::BindBuffer(buf);
-            gl::BufferData(buf.type, sizeof(cube_verts), cube_verts, GL_STATIC_DRAW);
-            return buf;
-        }();
+        gl::Array_buffer<float> cube_ab{cube_verts};
 
         gl::Vertex_array vao = [&]() {
-            auto rv = gl::GenVertexArrays();
-            gl::BindVertexArray(rv);
             gl::BindBuffer(cube_ab);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
+            gl::VertexAttribPointer(aPos, false, 6*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::BindVertexArray();
-            return rv;
-        }();
+        };
 
         void draw(ui::Game_state const& g) {
             glDepthFunc(GL_LEQUAL);  // for the optimization (see shader)
@@ -161,7 +152,7 @@ void main() {
         std::shared_ptr<gl::Texture_cubemap> cubemap = load_cubemap();
 
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 out vec3 FragPos;
@@ -179,7 +170,7 @@ void main() {
     Normal = aNormal;
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -201,31 +192,22 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
         gl::Uniform_mat4 projection = gl::GetUniformLocation(prog, "projection");
         gl::Uniform_mat4 view = gl::GetUniformLocation(prog, "view");
         gl::Uniform_int uSkyboxSampler = gl::GetUniformLocation(prog, "skybox");
         gl::Uniform_vec3 uViewPos = gl::GetUniformLocation(prog, "viewPos");
 
-        gl::Array_buffer cube_ab = []() {
-            auto buf = gl::GenArrayBuffer();
-            gl::BindBuffer(buf);
-            gl::BufferData(buf.type, sizeof(cube_verts), cube_verts, GL_STATIC_DRAW);
-            return buf;
-        }();
+        gl::Array_buffer<float> cube_ab{cube_verts};
 
         gl::Vertex_array vao = [this]() {
-            gl::Vertex_array rv = gl::GenVertexArrays();
-            gl::BindVertexArray(rv);
             gl::BindBuffer(cube_ab);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, false, 6*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aNormal, false, 6*sizeof(float), 3*sizeof(float));
             gl::EnableVertexAttribArray(aNormal);
-            gl::BindVertexArray();
-            return rv;
-        }();
+        };
 
         void draw(ui::Game_state const& g) {
             gl::UseProgram(prog);

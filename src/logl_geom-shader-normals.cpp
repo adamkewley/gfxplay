@@ -43,8 +43,8 @@ namespace {
         gl::Program prog = gl::CreateProgramFrom(
             gl::CompileVertexShaderFile(gfxplay::resource_path("logl_blending.vert")),
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_blending.frag")));
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(1);
         gl::Uniform_mat4 uModel = gl::GetUniformLocation(prog, "model");
         gl::Uniform_mat4 uView = gl::GetUniformLocation(prog, "view");
         gl::Uniform_mat4 uProjection = gl::GetUniformLocation(prog, "projection");
@@ -54,125 +54,95 @@ namespace {
                 gl::load_tex(gfxplay::resource_path("textures", "metal.png"));
         gl::Texture_2d tex_grass =
                 gl::load_tex(gfxplay::resource_path("textures", "window.png"));
-        gl::Array_buffer cube_vbo = []() {
-            static const float cubeVertices[] = {
-                // back face
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-                // front face
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
-                // left face
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-                // right face
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-                 0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-                // bottom face
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-                 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-                // top face
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f  // top-left
-            };
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-            return vbo;
-        }();
+        gl::Array_buffer<float> cube_vbo = {
+            // back face
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
+             0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
+            // front face
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+             0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+             0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
+            // left face
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
+            // right face
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+             0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
+             0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
+             0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
+            // bottom face
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
+             0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
+             0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
+            // top face
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+             0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+             0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f  // top-left
+        };
 
         gl::Vertex_array cube_vao = [&]() {
-            gl::Vertex_array vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
             gl::BindBuffer(cube_vbo);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, false, 5*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, false, 5*sizeof(float), 3*sizeof(float));
             gl::EnableVertexAttribArray(aTexCoords);
-            gl::BindVertexArray();
-            return vao;
-        }();
+        };
 
-        gl::Array_buffer plane_vbo = []() {
-            static const float planeVertices[] = {
-                // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
-                 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-                -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-                -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+        gl::Array_buffer<float> plane_vbo = {
+            // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+             5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+            -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+            -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
 
-                 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-                -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-                 5.0f, -0.5f, -5.0f,  2.0f, 2.0f,
-            };
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-            return vbo;
-        }();
+             5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+            -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+             5.0f, -0.5f, -5.0f,  2.0f, 2.0f,
+        };
 
         gl::Vertex_array plane_vao = [&]() {
-            gl::Vertex_array vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
             gl::BindBuffer(plane_vbo);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, false, 5*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, false, 5*sizeof(float), 3*sizeof(float));
             gl::EnableVertexAttribArray(aTexCoords);
-            gl::BindVertexArray();
-            return vao;
-        }();
+        };
 
-        gl::Array_buffer transparent_vbo = []() {
-            static const float transparentVertices[] = {
-                // positions         // texture Coords
-                0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
-                0.0f, -0.5f,  0.0f,  0.0f,  0.0f,
-                1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
+        gl::Array_buffer<float> transparent_vbo = {
+            // positions         // texture Coords
+            0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
 
-                0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
-                1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
-                1.0f,  0.5f,  0.0f,  1.0f,  1.0f,
-            };
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
-            return vbo;
-        }();
+            0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  1.0f,
+        };
 
         gl::Vertex_array transparent_vao = [&]() {
-            gl::Vertex_array vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
+            gl::VertexAttribPointer(aPos, false, 5*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aTexCoords, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(aTexCoords, false, 5*sizeof(float), 3*sizeof(float));
             gl::EnableVertexAttribArray(aTexCoords);
-            gl::BindVertexArray();
-            return vao;
-        }();
+        };
 
         std::array<glm::vec3, 5> vegetation = {
             glm::vec3(-1.5f, 0.0f, -0.48f),
@@ -186,71 +156,63 @@ namespace {
             gl::CompileVertexShaderFile(gfxplay::resource_path("logl_geom_normals.vert")),
             gl::CompileFragmentShaderFile(gfxplay::resource_path("logl_geom_normals.frag")),
             gl::CompileGeometryShaderFile(gfxplay::resource_path("logl_geom_normals.geom")));
-        static constexpr gl::Attribute normals_aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute normals_aNormal = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 normals_aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 normals_aNormal = gl::Attribute_vec3::at_location(1);
         gl::Uniform_mat4 normals_uModel = gl::GetUniformLocation(normals_prog, "model");
         gl::Uniform_mat4 normals_uView = gl::GetUniformLocation(normals_prog, "view");
         gl::Uniform_mat4 normals_uProjection = gl::GetUniformLocation(normals_prog, "projection");
-        gl::Array_buffer normals_vbo = []() {
-            static const float vertices[] = {
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        gl::Array_buffer<float> normals_vbo = {
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
 
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-            };
-            auto vbo = gl::GenArrayBuffer();
-            gl::BindBuffer(vbo);
-            gl::BufferData(vbo.type, sizeof(vertices), vertices, GL_STATIC_DRAW);
-            return vbo;
-        }();
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+        };
+
         gl::Vertex_array normals_vao = [&]() {
-            gl::Vertex_array vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
             gl::BindBuffer(normals_vbo);
-            gl::VertexAttribPointer(normals_aPos, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
+            gl::VertexAttribPointer(normals_aPos, false, 6*sizeof(float), 0);
             gl::EnableVertexAttribArray(normals_aPos);
-            gl::VertexAttribPointer(normals_aNormal, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+            gl::VertexAttribPointer(normals_aNormal, false, 6*sizeof(float), 3*sizeof(float));
             gl::EnableVertexAttribArray(normals_aNormal);
-            gl::BindVertexArray();
-            return vao;
-        }();
+        };
 
         void draw(App_State const& as) {
             gl::UseProgram(prog);

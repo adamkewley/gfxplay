@@ -5,7 +5,7 @@
 namespace {
     struct Instanced_quad_prog final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec3 aColor;
@@ -20,7 +20,7 @@ void main() {
     fColor = aColor;
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -33,39 +33,28 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
         gl::Uniform_vec2f uOffsets = gl::GetUniformLocation(prog, "offsets[0]");
 
-        gl::Array_buffer quad_vbo = []() {
-            static constexpr float quad[] = {
-                // positions     // colors
-                -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-                 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-                -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+        gl::Array_buffer<float> quad_vbo = {
+            // positions     // colors
+            -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+             0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+            -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
 
-                -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-                 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-                 0.05f,  0.05f,  0.0f, 1.0f, 1.0f,
-            };
-
-            auto buf = gl::GenArrayBuffer();
-            gl::BindBuffer(buf);
-            gl::BufferData(buf.type, sizeof(quad), quad, GL_STATIC_DRAW);
-            return buf;
-        }();
+            -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+             0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+             0.05f,  0.05f,  0.0f, 1.0f, 1.0f,
+        };
 
         gl::Vertex_array quad_vao = [&]() {
-            auto vao = gl::GenVertexArrays();
-            gl::BindVertexArray(vao);
             gl::BindBuffer(quad_vbo);
-            gl::VertexAttribPointer(aPos, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), nullptr);
+            gl::VertexAttribPointer(aPos, false, 5*sizeof(float), 0);
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+            gl::VertexAttribPointer(aColor, false, 5*sizeof(float), 2*sizeof(float));
             gl::EnableVertexAttribArray(aColor);
-            gl::BindVertexArray();
-            return vao;
-        }();
+        };
 
         void draw(ui::Game_state const& g) {
             std::array<glm::vec2, 100> translations;

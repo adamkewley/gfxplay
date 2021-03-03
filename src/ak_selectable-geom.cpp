@@ -27,9 +27,9 @@ struct Blinn_phong_textured_shader final {
         gl::CompileVertexShaderResource("selectable.vert"),
         gl::CompileFragmentShaderResource("selectable.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormal = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormal = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -43,19 +43,17 @@ struct Blinn_phong_textured_shader final {
 
 static gl::Vertex_array create_vao(
         Blinn_phong_textured_shader& s,
-        gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
-    gl::Vertex_array vao = gl::GenVertexArrays();
+        gl::Array_buffer<Shaded_textured_vert>& vbo) {
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, norm)));
+    gl::VertexAttribPointer(s.aNormal, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, norm));
     gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
+    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, uv));
     gl::EnableVertexAttribArray(s.aTexCoords);
-
     gl::BindVertexArray();
 
     return vao;
@@ -67,8 +65,8 @@ struct Plain_texture_shader final {
         gl::CompileVertexShaderResource("plain_texture_shader.vert"),
         gl::CompileFragmentShaderResource("plain_texture_shader.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aTextureCoord = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec2 aTextureCoord = gl::Attribute_vec2::at_location(1);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -79,18 +77,16 @@ struct Plain_texture_shader final {
 
 static gl::Vertex_array create_vao(
         Plain_texture_shader& s,
-        gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
+        gl::Array_buffer<Shaded_textured_vert>& vbo) {
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aTextureCoord, 2, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, uv)));
+    gl::VertexAttribPointer(s.aTextureCoord, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, uv));
     gl::EnableVertexAttribArray(s.aTextureCoord);
-
     gl::BindVertexArray();
 
     return vao;
@@ -102,7 +98,7 @@ struct Uniform_color_shader final {
         gl::CompileVertexShaderResource("uniform_color_shader.vert"),
         gl::CompileFragmentShaderResource("uniform_color_shader.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -113,16 +109,14 @@ struct Uniform_color_shader final {
 
 static gl::Vertex_array create_vao(
         Uniform_color_shader& s,
-        gl::Sized_array_buffer<Shaded_textured_vert>& vbo) {
+        gl::Array_buffer<Shaded_textured_vert>& vbo) {
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Shaded_textured_vert), reinterpret_cast<void*>(offsetof(Shaded_textured_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-
     gl::BindVertexArray();
 
     return vao;
@@ -130,16 +124,14 @@ static gl::Vertex_array create_vao(
 
 static gl::Vertex_array create_vao(
         Uniform_color_shader& s,
-        gl::Sized_array_buffer<Plain_vert>& vbo) {
+        gl::Array_buffer<Plain_vert>& vbo) {
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Plain_vert), reinterpret_cast<void*>(offsetof(Plain_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Plain_vert), offsetof(Plain_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-
     gl::BindVertexArray();
 
     return vao;
@@ -151,8 +143,8 @@ struct Attribute_color_shader final {
         gl::CompileVertexShaderResource("attribute_color_shader.vert"),
         gl::CompileFragmentShaderResource("attribute_color_shader.frag"));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
 
     gl::Uniform_mat4 uModel = gl::GetUniformLocation(p, "model");
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
@@ -161,18 +153,16 @@ struct Attribute_color_shader final {
 
 static gl::Vertex_array create_vao(
         Attribute_color_shader& s,
-        gl::Sized_array_buffer<Colored_vert>& vbo) {
+        gl::Array_buffer<Colored_vert>& vbo) {
 
-    gl::Vertex_array vao = gl::GenVertexArrays();
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
-
     gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, pos)));
+    gl::VertexAttribPointer(s.aPos, false, sizeof(Colored_vert), offsetof(Colored_vert, pos));
     gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Colored_vert), reinterpret_cast<void*>(offsetof(Colored_vert, color)));
+    gl::VertexAttribPointer(s.aColor, false, sizeof(Colored_vert), offsetof(Colored_vert, color));
     gl::EnableVertexAttribArray(s.aColor);
-
     gl::BindVertexArray();
 
     return vao;
@@ -383,17 +373,17 @@ struct Game_state_new final {
 
 struct Screen final {    
     // standard cube
-    gl::Sized_array_buffer<Shaded_textured_vert> cube_vbo{
+    gl::Array_buffer<Shaded_textured_vert> cube_vbo{
         shaded_textured_cube_verts
     };
 
     // standard quad
-    gl::Sized_array_buffer<Shaded_textured_vert> quad_vbo{
+    gl::Array_buffer<Shaded_textured_vert> quad_vbo{
         shaded_textured_quad_verts
     };
 
     // floor: standard quad with texture repeating 25x times
-    gl::Sized_array_buffer<Shaded_textured_vert> floor_vbo = []() {
+    gl::Array_buffer<Shaded_textured_vert> floor_vbo = []() {
         auto quad_copy = shaded_textured_quad_verts;
 
         // repeating floor texture
@@ -402,10 +392,10 @@ struct Screen final {
             p.uv[1] *= 25.0;
         }
 
-        return gl::Sized_array_buffer<Shaded_textured_vert>{quad_copy};
+        return gl::Array_buffer<Shaded_textured_vert>{quad_copy};
     }();
 
-    gl::Sized_array_buffer<Colored_vert> axes_vbo{colored_axes_verts};
+    gl::Array_buffer<Colored_vert> axes_vbo{colored_axes_verts};
 
     Blinn_phong_textured_shader bps_shader;
     gl::Vertex_array bps_cube_vao = create_vao(bps_shader, cube_vbo);

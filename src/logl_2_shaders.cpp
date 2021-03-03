@@ -5,7 +5,7 @@
 namespace {
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
-            gl::CompileVertexShader(R"(
+            gl::Vertex_shader::from_source(R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;   // the position variable has attribute position 0
@@ -18,7 +18,7 @@ void main() {
   ourColor = aColor; // set ourColor to the input color we got from the vertex data
 }
 )"),
-            gl::CompileFragmentShader(R"(
+            gl::Fragment_shader::from_source(R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -30,8 +30,8 @@ void main() {
 )"
         ));
 
-        static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-        static constexpr gl::Attribute aColor = gl::AttributeAtLocation(1);
+        static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+        static constexpr gl::Attribute_vec3 aColor = gl::Attribute_vec3::at_location(1);
 
         struct Vert final {
             glm::vec3 pos;
@@ -39,36 +39,25 @@ void main() {
         };
         static_assert(sizeof(Vert) == 6*sizeof(float));
 
-        static constexpr std::array<Vert, 3> triangle = {{
+        gl::Array_buffer<Vert> vbo = {
             // positions           // colors
             {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
             {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
             {{ 0.0f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-        }};
+        };
 
-        gl::Array_buffer vbo = []() {
-            gl::Array_buffer rv = gl::GenArrayBuffer();
-            gl::BindBuffer(rv);
-            gl::BufferData(rv.type, sizeof(triangle), triangle.data(), GL_STATIC_DRAW);
-            return rv;
-        }();
-
-        gl::Vertex_array vao = [this]() {
-            gl::Vertex_array rv = gl::GenVertexArrays();
-            gl::BindVertexArray(rv);
+        gl::Vertex_array vao = [&vbo = this->vbo]() {
             gl::BindBuffer(vbo);
-            gl::VertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), reinterpret_cast<void*>(offsetof(Vert, pos)));
+            gl::VertexAttribPointer(aPos, false, sizeof(Vert), offsetof(Vert, pos));
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aColor, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), reinterpret_cast<void*>(offsetof(Vert, color)));
+            gl::VertexAttribPointer(aColor, false, sizeof(Vert), offsetof(Vert, color));
             gl::EnableVertexAttribArray(aColor);
-            gl::BindVertexArray();
-            return rv;
-        }();
+        };
 
         void draw() {
             gl::UseProgram(prog);
             gl::BindVertexArray(vao);
-            gl::DrawArrays(GL_TRIANGLES, 0, triangle.size());
+            gl::DrawArrays(GL_TRIANGLES, 0, vbo.sizei());
             gl::BindVertexArray();
         }
     };

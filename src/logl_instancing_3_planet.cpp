@@ -1,38 +1,6 @@
 #include "logl_common.hpp"
 #include "logl_model.hpp"
 
-// thin abstraction over a write-only OpenGL array-buffer with known (by the
-// CPU) size
-template<typename T>
-class Sized_array_buffer {
-    gl::Array_buffer vbo = gl::GenArrayBuffer();
-    size_t _size;
-
-public:
-    Sized_array_buffer(std::initializer_list<T> const& els) :
-        Sized_array_buffer{els.begin(), els.end()} {
-    }
-
-    Sized_array_buffer(T const* begin, T const* end) :
-        _size{static_cast<size_t>(std::distance(begin, end))} {
-
-        gl::BindBuffer(vbo);
-        gl::BufferData(vbo.type, static_cast<long>(_size * sizeof(T)), begin, GL_STATIC_DRAW);
-    }
-
-    operator gl::Array_buffer const& () const noexcept {
-        return vbo;
-    }
-
-    operator gl::Array_buffer& () noexcept {
-        return vbo;
-    }
-
-    size_t size() const noexcept {
-        return _size;
-    }
-};
-
 // A program that performs instanced rendering
 //
 // differences from normal rendering:
@@ -41,13 +9,13 @@ public:
 //   multiple instances can be passed in one attribute
 struct Instanced_model_program final {
     gl::Program p = gl::CreateProgramFrom(
-        gl::CompileVertexShaderFile(RESOURCES_DIR "instanced_model_loading.vert"),
-        gl::CompileFragmentShaderFile(RESOURCES_DIR "instanced_model_loading.frag"));
+        gl::CompileVertexShaderFile(gfxplay::resource_path("instanced_model_loading.vert")),
+        gl::CompileFragmentShaderFile(gfxplay::resource_path("instanced_model_loading.frag")));
 
-    static constexpr gl::Attribute aPos = gl::AttributeAtLocation(0);
-    static constexpr gl::Attribute aNormals = gl::AttributeAtLocation(1);
-    static constexpr gl::Attribute aTexCoords = gl::AttributeAtLocation(2);
-    static constexpr gl::Attribute aInstanceMatrix = gl::AttributeAtLocation(3);
+    static constexpr gl::Attribute_vec3 aPos = gl::Attribute_vec3::at_location(0);
+    static constexpr gl::Attribute_vec3 aNormals = gl::Attribute_vec3::at_location(1);
+    static constexpr gl::Attribute_vec2 aTexCoords = gl::Attribute_vec2::at_location(2);
+    static constexpr gl::Attribute_mat4 aInstanceMatrix = gl::Attribute_mat4::at_location(3);
     gl::Uniform_mat4 uView = gl::GetUniformLocation(p, "view");
     gl::Uniform_mat4 uProjection = gl::GetUniformLocation(p, "projection");
     gl::Uniform_mat3 uNormalMatrix = gl::GetUniformLocation(p, "normalMatrix");
@@ -75,8 +43,8 @@ using model::Tex_type;
 
 static gl::Vertex_array create_vao(Instanced_model_program& p,
                                    Mesh& m,
-                                   Sized_array_buffer<glm::mat4>& ims) {
-    auto vao = gl::GenVertexArrays();
+                                   gl::Array_buffer<glm::mat4>& ims) {
+    gl::Vertex_array vao;
 
     gl::BindVertexArray(vao);
 
@@ -84,33 +52,18 @@ static gl::Vertex_array create_vao(Instanced_model_program& p,
 
     // set up vertex attribs
     gl::BindBuffer(m.vbo);
-    gl::VertexAttribPointer(p.aPos, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, pos)));
+    gl::VertexAttribPointer(p.aPos, false, sizeof(Mesh_vert), offsetof(Mesh_vert, pos));
     gl::EnableVertexAttribArray(p.aPos);
-    gl::VertexAttribPointer(p.aNormals, 3, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, norm)));
+    gl::VertexAttribPointer(p.aNormals, false, sizeof(Mesh_vert), offsetof(Mesh_vert, norm));
     gl::EnableVertexAttribArray(p.aNormals);
-    gl::VertexAttribPointer(p.aTexCoords, 2, GL_FLOAT, GL_FALSE, sizeof(Mesh_vert), reinterpret_cast<void*>(offsetof(Mesh_vert, uv)));
+    gl::VertexAttribPointer(p.aTexCoords, false, sizeof(Mesh_vert), offsetof(Mesh_vert, uv));
     gl::EnableVertexAttribArray(p.aTexCoords);
 
     // set up instance attribs
     gl::BindBuffer(ims);
-    for (unsigned i = 0; i < 4; ++i) {
-        // HACK: from LearnOpenGL: mat4's must be set in this way because
-        //       of OpenGL not allowing more than 4 or so floats to be set
-        //       in a single call
-        //
-        // see:  https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/10.3.asteroids_instanced/asteroids_instanced.cpp
-        auto handle = p.aInstanceMatrix.handle + i;
-        glVertexAttribPointer(
-            handle,
-            4,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(glm::mat4),
-            reinterpret_cast<void*>(i * sizeof(glm::vec4)));
-        glEnableVertexAttribArray(handle);
-        glVertexAttribDivisor(p.aInstanceMatrix.handle + i, 1);
-    }
-
+    gl::VertexAttribPointer(p.aInstanceMatrix, false, sizeof(glm::mat4), 0);
+    gl::EnableVertexAttribArray(p.aInstanceMatrix);
+    gl::VertexAttribDivisor(p.aInstanceMatrix, 1);
     gl::BindVertexArray();
 
     return vao;
@@ -118,12 +71,12 @@ static gl::Vertex_array create_vao(Instanced_model_program& p,
 
 struct Compiled_model final {
     std::shared_ptr<Model> model;
-    Sized_array_buffer<glm::mat4> instance_matrices;
+    gl::Array_buffer<glm::mat4> instance_matrices;
     std::vector<gl::Vertex_array> vaos;
 
     Compiled_model(Instanced_model_program& p,
                    std::shared_ptr<Model> m,
-                   Sized_array_buffer<glm::mat4> ims) :
+                   gl::Array_buffer<glm::mat4> ims) :
         model{std::move(m)},
         instance_matrices{std::move(ims)} {
 
@@ -167,8 +120,8 @@ static Compiled_model load_asteroids(Instanced_model_program& p) {
 
     return Compiled_model{
         p,
-        model::load_model_cached(RESOURCES_DIR "rock/rock.obj"),
-        Sized_array_buffer<glm::mat4>(roids.begin(), roids.end())
+        model::load_model_cached(gfxplay::resource_path("rock/rock.obj").c_str()),
+        gl::Array_buffer<glm::mat4>(roids)
     };
 }
 
@@ -176,7 +129,7 @@ static Compiled_model load_asteroids(Instanced_model_program& p) {
 static void draw(Instanced_model_program& p,
                  Mesh& m,
                  gl::Vertex_array& vao,
-                 Sized_array_buffer<glm::mat4>& ims,
+                 gl::Array_buffer<glm::mat4>& ims,
                  ui::Game_state& gs) {
     gl::UseProgram(p.p);
 
@@ -266,8 +219,8 @@ int main(int, char**) {
 
     Compiled_model planet{
         prog,
-        model::load_model_cached(RESOURCES_DIR "planet/planet.obj"),
-        Sized_array_buffer<glm::mat4>{model}
+        model::load_model_cached(gfxplay::resource_path("planet/planet.obj").c_str()),
+        gl::Array_buffer<glm::mat4>{model}
     };
 
     Compiled_model asteroids = load_asteroids(prog);
