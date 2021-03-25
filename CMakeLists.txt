@@ -261,12 +261,6 @@ add_executable(logl_bloom
 )
 target_link_libraries(logl_bloom gfxplaycore)
 
-# https://learnopengl.com/Advanced-Lighting/SSAO
-add_executable(logl_ssao
-    src/logl_ssao.cpp
-)
-target_link_libraries(logl_ssao gfxplaycore)
-
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)
 target_link_libraries(ak_selectable-geom gfxplaycore)
@@ -291,6 +285,12 @@ if (GFXPLAY_USE_ASSIMP)
         src/logl_deferred-shading.cpp
     )
     target_link_libraries(logl_deferred-shading gfxplaycore gfxplay-assimp)
+
+    # https://learnopengl.com/Advanced-Lighting/SSAO
+    add_executable(logl_ssao
+        src/logl_ssao.cpp
+    )
+    target_link_libraries(logl_ssao gfxplaycore gfxplay-assimp)
 endif()
 
 if (GFXPLAY_USE_CAIRO)

@@ -71,16 +71,16 @@ void main() {
             trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
             gl::Uniform(uTransform, trans);
 
-            glActiveTexture(GL_TEXTURE0);
+            gl::ActiveTexture(GL_TEXTURE0);
             gl::BindTexture(wall);
             gl::Uniform(uSampler0, gl::texture_index<GL_TEXTURE0>());
 
-            glActiveTexture(GL_TEXTURE1);
+            gl::ActiveTexture(GL_TEXTURE1);
             gl::BindTexture(face);
             gl::Uniform(uSampler1, gl::texture_index<GL_TEXTURE1>());
 
             gl::BindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+            gl::DrawElements(GL_TRIANGLES, ebo.sizei(), gl::index_type(ebo), nullptr);
             gl::BindVertexArray();
 
             gl::UseProgram();

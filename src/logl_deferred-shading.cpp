@@ -149,10 +149,10 @@ struct Renderer final {
     gl::Frame_buffer gbuffer_fbo = [this]() {
         gl::Frame_buffer fbo;
         gl::BindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition_tex.raw_handle(), 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal_tex.raw_handle(), 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec_tex.raw_handle(), 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gDepth_rbo.raw_handle());
+        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gPosition_tex, 0);
+        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, gNormal_tex, 0);
+        gl::FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, gAlbedoSpec_tex, 0);
+        gl::FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, gDepth_rbo);
         gl::DrawBuffers(GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2);
 
         gl::assert_current_fbo_complete();
@@ -166,6 +166,7 @@ struct Renderer final {
     gl::Vertex_array gbs_cube_vao = Gbuffer_shader::create_vao(cube_vbo);
 
     std::shared_ptr<model::Model> backpack = model::load_model_cached(gfxplay::resource_path("backpack/backpack.obj").c_str());
+
     std::vector<gl::Vertex_array> backpack_vaos = [this]() {
         std::vector<gl::Vertex_array> rv;
         for (model::Mesh& mesh : backpack->meshes) {

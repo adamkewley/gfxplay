@@ -243,6 +243,32 @@ namespace gl {
         glUniform1i(u.geti(), value);
     }
 
+    // a uniform that points to a statically-sized array of values in the shader
+    //
+    // This is just a uniform that points to the first element. This class is useful because
+    // it can be used to disambiguate overloads that assign containers of values to a uniform
+    // array
+    template<typename TGlsl, size_t N>
+    class Uniform_array final : public Uniform_<TGlsl> {
+    public:
+        constexpr Uniform_array(GLint _location) noexcept :
+            Uniform_<TGlsl>{_location} {
+        }
+
+        Uniform_array(Program const& p, GLchar const* name) :
+            Uniform_<TGlsl>{p, name} {
+        }
+
+        [[nodiscard]] constexpr size_t size() const noexcept {
+            return N;
+        }
+
+        [[nodiscard]] constexpr int sizei() const noexcept {
+            static_assert(N <= std::numeric_limits<int>::max());
+            return static_cast<int>(N);
+        }
+    };
+
     template<typename TGlsl>
     class Attribute : public Shader_symbol<TGlsl> {
     public:
@@ -594,6 +620,11 @@ namespace gl {
         glBindFramebuffer(target, 0);
     }
 
+    template<typename Texture>
+    inline void FramebufferTexture2D(GLenum target, GLenum attachment, Texture const& t, GLint level) noexcept {
+        glFramebufferTexture2D(target, attachment, t.type, t.raw_handle(), level);
+    }
+
     // RAII wrapper for glDeleteRenderBuffers
     //     https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDeleteRenderbuffers.xhtml
     class Render_buffer final {
@@ -638,6 +669,15 @@ namespace gl {
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 
+    inline void FramebufferRenderbuffer(GLenum target, GLenum attachment, Render_buffer const& rb) {
+        glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, rb.raw_handle());
+    }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glRenderbufferStorage.xhtml
+    inline void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {
+        glRenderbufferStorage(target, internalformat, width, height);
+    }
+
     // https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glClear.xhtml
     inline void Clear(GLbitfield mask) {
         glClear(mask);
@@ -672,23 +712,18 @@ namespace gl {
         glViewport(x, y, w, h);
     }
 
-    inline void FramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {
-        glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
-    }
-
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
     inline void TexParameteri(GLenum target, GLenum pname, GLint param) {
         glTexParameteri(target, pname, param);
+    }
+
+    inline void TexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels) {
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
     }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
     template<typename Texture>
     inline void TextureParameteri(Texture const& texture, GLenum pname, GLint param) {
         glTextureParameteri(texture.raw_handle(), pname, param);
-    }
-
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glRenderbufferStorage.xhtml
-    inline void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {
-        glRenderbufferStorage(target, internalformat, width, height);
     }
 }

@@ -39,25 +39,24 @@ struct Blinn_phong_textured_shader final {
     gl::Uniform_sampler2d uTexture1{p, "texture1"};
     gl::Uniform_vec3 uLightPos{p, "lightPos"};
     gl::Uniform_vec3 uViewPos{p, "viewPos"};
+
+    template<typename Vbo, typename T = typename Vbo::value_type>
+    static gl::Vertex_array vao(Vbo const& vbo) {
+        static_assert(std::is_standard_layout<T>::value);
+
+        gl::Vertex_array vao;
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(vbo);
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
+        gl::EnableVertexAttribArray(aPos);
+        gl::VertexAttribPointer(aNormal, false, sizeof(T), offsetof(T, norm));
+        gl::EnableVertexAttribArray(aNormal);
+        gl::VertexAttribPointer(aTexCoords, false, sizeof(T), offsetof(T, uv));
+        gl::EnableVertexAttribArray(aTexCoords);
+        gl::BindVertexArray();
+        return vao;
+    }
 };
-
-static gl::Vertex_array create_vao(
-        Blinn_phong_textured_shader& s,
-        gl::Array_buffer<Shaded_textured_vert>& vbo) {
-    gl::Vertex_array vao;
-
-    gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
-    gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aNormal, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, norm));
-    gl::EnableVertexAttribArray(s.aNormal);
-    gl::VertexAttribPointer(s.aTexCoords, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, uv));
-    gl::EnableVertexAttribArray(s.aTexCoords);
-    gl::BindVertexArray();
-
-    return vao;
-}
 
 // shader that renders geometry with basic texture mapping (no lighting etc.)
 struct Plain_texture_shader final {
@@ -72,24 +71,22 @@ struct Plain_texture_shader final {
     gl::Uniform_mat4 uView{p, "view"};
     gl::Uniform_mat4 uProjection{p, "projection"};
     gl::Uniform_sampler2d uTexture1{p, "texture1"};
+
+    template<typename Vbo, typename T = typename Vbo::value_type>
+    static gl::Vertex_array vao(Vbo const& vbo) {
+        static_assert(std::is_standard_layout<T>::value);
+
+        gl::Vertex_array vao;
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(vbo);
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
+        gl::EnableVertexAttribArray(aPos);
+        gl::VertexAttribPointer(aTextureCoord, false, sizeof(T), offsetof(T, uv));
+        gl::EnableVertexAttribArray(aTextureCoord);
+        gl::BindVertexArray();
+        return vao;
+    }
 };
-
-static gl::Vertex_array create_vao(
-        Plain_texture_shader& s,
-        gl::Array_buffer<Shaded_textured_vert>& vbo) {
-
-    gl::Vertex_array vao;
-
-    gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
-    gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aTextureCoord, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, uv));
-    gl::EnableVertexAttribArray(s.aTextureCoord);
-    gl::BindVertexArray();
-
-    return vao;
-}
 
 // shader that renders geometry with a solid, uniform-defined, color
 struct Uniform_color_shader final {
@@ -103,37 +100,20 @@ struct Uniform_color_shader final {
     gl::Uniform_mat4 uView{p, "view"};
     gl::Uniform_mat4 uProjection{p, "projection"};
     gl::Uniform_vec3 uColor{p, "color"};
+
+    template<typename Vbo, typename T = typename Vbo::value_type>
+    static gl::Vertex_array vao(Vbo const& vbo) {
+        static_assert(std::is_standard_layout<T>::value);
+
+        gl::Vertex_array vao;
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(vbo);
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
+        gl::EnableVertexAttribArray(aPos);
+        gl::BindVertexArray();
+        return vao;
+    }
 };
-
-static gl::Vertex_array create_vao(
-        Uniform_color_shader& s,
-        gl::Array_buffer<Shaded_textured_vert>& vbo) {
-
-    gl::Vertex_array vao;
-
-    gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, false, sizeof(Shaded_textured_vert), offsetof(Shaded_textured_vert, pos));
-    gl::EnableVertexAttribArray(s.aPos);
-    gl::BindVertexArray();
-
-    return vao;
-}
-
-static gl::Vertex_array create_vao(
-        Uniform_color_shader& s,
-        gl::Array_buffer<Plain_vert>& vbo) {
-
-    gl::Vertex_array vao;
-
-    gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, false, sizeof(Plain_vert), offsetof(Plain_vert, pos));
-    gl::EnableVertexAttribArray(s.aPos);
-    gl::BindVertexArray();
-
-    return vao;
-}
 
 // shader that renders geometry with an attribute-defined color
 struct Attribute_color_shader final {
@@ -147,24 +127,22 @@ struct Attribute_color_shader final {
     gl::Uniform_mat4 uModel{p, "model"};
     gl::Uniform_mat4 uView{p, "view"};
     gl::Uniform_mat4 uProjection{p, "projection"};
+
+    template<typename Vbo, typename T = typename Vbo::value_type>
+    static gl::Vertex_array vao(Vbo const& vbo) {
+        static_assert(std::is_standard_layout<T>::value);
+
+        gl::Vertex_array vao;
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(vbo);
+        gl::VertexAttribPointer(aPos, false, sizeof(T), offsetof(T, pos));
+        gl::EnableVertexAttribArray(aPos);
+        gl::VertexAttribPointer(aColor, false, sizeof(T), offsetof(T, color));
+        gl::EnableVertexAttribArray(aColor);
+        gl::BindVertexArray();
+        return vao;
+    }
 };
-
-static gl::Vertex_array create_vao(
-        Attribute_color_shader& s,
-        gl::Array_buffer<Colored_vert>& vbo) {
-
-    gl::Vertex_array vao;
-
-    gl::BindVertexArray(vao);
-    gl::BindBuffer(vbo);
-    gl::VertexAttribPointer(s.aPos, false, sizeof(Colored_vert), offsetof(Colored_vert, pos));
-    gl::EnableVertexAttribArray(s.aPos);
-    gl::VertexAttribPointer(s.aColor, false, sizeof(Colored_vert), offsetof(Colored_vert, color));
-    gl::EnableVertexAttribArray(s.aColor);
-    gl::BindVertexArray();
-
-    return vao;
-}
 
 // standard textured cube with dimensions [-1, +1] in xyz and uv coords of
 // (0, 0) bottom-left, (1, 1) top-right for each (quad) face
@@ -337,7 +315,6 @@ struct Game_state_new final {
                 break;
             }
         } else if (e.type == SDL_KEYDOWN or e.type == SDL_KEYUP) {
-            bool is_button_down = e.type == SDL_KEYDOWN ? true : false;
             switch (e.key.keysym.sym) {
             case SDLK_ESCAPE:
                 return ui::Handle_response::should_quit;
@@ -364,9 +341,6 @@ struct Game_state_new final {
 
         return ui::Handle_response::ok;
     }
-
-    void tick(std::chrono::milliseconds const& dt) {
-    }
 };
 
 struct Screen final {    
@@ -386,8 +360,8 @@ struct Screen final {
 
         // repeating floor texture
         for (auto &p : quad_copy) {
-            p.uv[0] *= 25.0;
-            p.uv[1] *= 25.0;
+            p.uv[0] *= 25.0f;
+            p.uv[1] *= 25.0f;
         }
 
         return gl::Array_buffer<Shaded_textured_vert>{quad_copy};
@@ -396,18 +370,18 @@ struct Screen final {
     gl::Array_buffer<Colored_vert> axes_vbo{colored_axes_verts};
 
     Blinn_phong_textured_shader bps_shader;
-    gl::Vertex_array bps_cube_vao = create_vao(bps_shader, cube_vbo);
-    gl::Vertex_array bps_floor_vao = create_vao(bps_shader, floor_vbo);
+    gl::Vertex_array bps_cube_vao = Blinn_phong_textured_shader::vao(cube_vbo);
+    gl::Vertex_array bps_floor_vao = Blinn_phong_textured_shader::vao(floor_vbo);
 
     Plain_texture_shader pts_shader;
-    gl::Vertex_array pts_quad_vao = create_vao(pts_shader, quad_vbo);
+    gl::Vertex_array pts_quad_vao = Plain_texture_shader::vao(quad_vbo);
 
     Uniform_color_shader ucs_shader;
-    gl::Vertex_array ucs_quad_vao = create_vao(ucs_shader, quad_vbo);
-    gl::Vertex_array ucs_cube_vao = create_vao(ucs_shader, cube_vbo);
+    gl::Vertex_array ucs_quad_vao = Uniform_color_shader::vao(quad_vbo);
+    gl::Vertex_array ucs_cube_vao = Uniform_color_shader::vao(cube_vbo);
 
     Attribute_color_shader acs_shader;
-    gl::Vertex_array acs_axes_vao = create_vao(acs_shader, axes_vbo);
+    gl::Vertex_array acs_axes_vao = Attribute_color_shader::vao(axes_vbo);
 
     static constexpr glm::vec3 light_pos = {-2.0f, 1.0f, -1.0f};
 
@@ -440,12 +414,13 @@ struct Screen final {
     static constexpr GLsizei quad_height = 768;
     gl::Texture_2d quad_texture = []() {
         gl::Texture_2d t;
-        gl::BindTexture(t);
+        gl::ActiveTexture(GL_TEXTURE0);
+        gl::BindTexture(t);        
         glTexImage2D(t.type, 0, GL_RGB, quad_width, quad_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTextureParameteri(t.raw_handle(), GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(t.raw_handle(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(t.raw_handle(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(t.raw_handle(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(t.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(t.type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(t.type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(t.type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         static constexpr float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
         glTextureParameterfv(t.raw_handle(), GL_TEXTURE_BORDER_COLOR, borderColor);
         gl::BindTexture();
@@ -699,20 +674,13 @@ int main(int, char**) {
     Screen r{};
     util::Software_throttle throttle{8ms};
 
-    auto t0 = util::now();
     while (true) {
-        auto t1 = util::now();
-        auto dt = t1 - t0;
-        t0 = t1;
-
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (st.handle(window, e) != ui::Handle_response::ok) {
                 return 0;
             }
         }
-
-        st.tick(dt);
 
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         r.draw(window, st);

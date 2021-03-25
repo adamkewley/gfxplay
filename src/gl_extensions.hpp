@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <array>
 #include <vector>
+#include <type_traits>
 
 
 // gl extensions: useful extension/helper methods over base OpenGL API
@@ -67,6 +68,12 @@ namespace gl {
         glUniform3fv(u.geti(), n, glm::value_ptr(*vs));
     }
 
+    template<typename Container, size_t N>
+    inline std::enable_if_t<std::is_same_v<glm::vec3, typename Container::value_type>, void> Uniform(Uniform_array<glsl::vec3, N>& u, Container& container) {
+        assert(container.size() == N);
+        glUniform3fv(u.geti(), static_cast<GLsizei>(container.size()), glm::value_ptr(*container.data()));
+    }
+
     inline void Uniform(Uniform_mat4& u, glm::mat4 const& mat) noexcept {
         glUniformMatrix4fv(u.geti(), 1, false, glm::value_ptr(mat));
     }
@@ -91,6 +98,11 @@ namespace gl {
     inline void Uniform(Uniform_vec2& u, GLsizei n, glm::vec2 const* vs) noexcept {
         static_assert(sizeof(glm::vec2) == 2*sizeof(GLfloat));
         glUniform2fv(u.geti(), n, glm::value_ptr(*vs));
+    }
+
+    template<typename Container, size_t N>
+    inline std::enable_if_t<std::is_same_v<glm::vec2, Container::value_type>, void> Uniform(Uniform_array<glsl::vec2, N>& u, Container const& container) {
+        glUniform2fv(u.geti(), static_cast<GLsizei>(container.size()), glm::value_ptr(container.data()));
     }
 
     // COMPILE + LINK PROGRAMS:
@@ -155,5 +167,26 @@ namespace gl {
 
     inline void assert_current_fbo_complete() {
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+
+    template<typename T>
+    inline constexpr GLenum index_type() {
+        static_assert(std::is_integral_v<T>, "element indices are integers");
+        static_assert(std::is_unsigned_v<T>, "element indices are unsigned data types (in the GL spec)");
+        static_assert(sizeof(T) <= 4);
+
+        switch (sizeof(T)) {
+        case 1:
+            return GL_UNSIGNED_BYTE;
+        case 2:
+            return GL_UNSIGNED_SHORT;
+        case 4:
+            return GL_UNSIGNED_INT;
+        }
+    }
+
+    template<typename T>
+    inline constexpr GLenum index_type(gl::Element_array_buffer<T> const&) {
+        return index_type<T>();
     }
 }

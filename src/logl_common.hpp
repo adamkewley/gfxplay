@@ -104,8 +104,8 @@ static void glOnDebugMessage(GLenum source,
 }
 
 namespace ui {
-    constexpr int window_width = 1024;
-    constexpr int window_height = 768;
+    constexpr int window_width = 800;
+    constexpr int window_height = 600;
 
     struct Window_state final {
         sdl::Context context = sdl::Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);

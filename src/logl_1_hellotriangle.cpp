@@ -22,6 +22,7 @@ void main() {
 }
 )"
         ));
+
         gl::Attribute_vec3 aPos{prog, "aPos"};
 
         gl::Array_buffer<glm::vec3> vbo = {
