@@ -40,7 +40,7 @@ void main() {
         gl::Vertex_array vao = [this]() {
             gl::BindBuffer(vbo);
             gl::BindBuffer(ebo);
-            gl::VertexAttribPointer(aPos, false, sizeof(glm::vec3), 0);
+            gl::VertexAttribPointer(aPos, false, sizeof(decltype(vbo)::value_type), 0);
             gl::EnableVertexAttribArray(aPos);
         };
 
