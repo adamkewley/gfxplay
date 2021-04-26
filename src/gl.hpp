@@ -30,6 +30,7 @@
 
 namespace gl {
 
+    // a moveable handle to an OpenGL shader
     class Shader_handle {
         static constexpr GLuint senteniel = 0;
         GLuint handle;
@@ -67,8 +68,11 @@ namespace gl {
         }
     };
 
+    // compile a shader from source
     void CompileFromSource(Shader_handle const&, const char* src);
 
+    // a shader of a particular type (e.g. GL_FRAGMENT_SHADER) that owns a
+    // shader handle
     template<GLuint ShaderType>
     class Shader {
         Shader_handle underlying_handle;
@@ -93,10 +97,12 @@ namespace gl {
         }
     };
 
+    // standard defs
     using Vertex_shader = Shader<GL_VERTEX_SHADER>;
     using Fragment_shader = Shader<GL_FRAGMENT_SHADER>;
     using Geometry_shader = Shader<GL_GEOMETRY_SHADER>;
 
+    // an OpenGL program (i.e. n shaders linked into one pipeline)
     class Program final {
         GLuint handle;
     public:
@@ -467,11 +473,40 @@ namespace gl {
     using Array_buffer = Buffer<T, GL_ARRAY_BUFFER, Usage>;
 
     template<typename T, GLenum Usage = GL_STATIC_DRAW>
-    using Element_array_buffer = Buffer<T, GL_ELEMENT_ARRAY_BUFFER, Usage>;
+    class Element_array_buffer : public Buffer<T, GL_ELEMENT_ARRAY_BUFFER, Usage> {
+        static_assert(std::is_unsigned_v<T>, "element indicies should be unsigned integers");
+        static_assert(sizeof(T) <= 4);
+
+        // delegate constructors to base class
+        using Buffer<T, GL_ELEMENT_ARRAY_BUFFER, Usage>::Buffer;
+    };
 
     template<typename Buffer>
     inline void BindBuffer(Buffer const& buf) noexcept {
         glBindBuffer(Buffer::buffer_type, buf.raw_handle());
+    }
+
+    template<typename T>
+    inline constexpr GLenum index_type() {
+        static_assert(std::is_integral_v<T>, "element indices are integers");
+        static_assert(std::is_unsigned_v<T>, "element indices are unsigned data types (in the GL spec)");
+        static_assert(sizeof(T) <= 4);
+
+        switch (sizeof(T)) {
+        case 1:
+            return GL_UNSIGNED_BYTE;
+        case 2:
+            return GL_UNSIGNED_SHORT;
+        case 4:
+            return GL_UNSIGNED_INT;
+        default:
+            return GL_UNSIGNED_INT;
+        }
+    }
+
+    template<typename T>
+    inline constexpr GLenum index_type(gl::Element_array_buffer<T> const&) {
+        return index_type<T>();
     }
 
     // RAII wrapper for glDeleteVertexArrays

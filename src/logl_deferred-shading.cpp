@@ -115,7 +115,7 @@ struct Renderer final {
     gl::Texture_2d gPosition_tex = []() {
         gl::Texture_2d t;
         gl::BindTexture(t);
-        glTexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        gl::TexImage2D(t.type, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;
@@ -124,7 +124,7 @@ struct Renderer final {
     gl::Texture_2d gNormal_tex = []() {
         gl::Texture_2d t;
         gl::BindTexture(t);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, ui::window_width, ui::window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;
@@ -133,7 +133,7 @@ struct Renderer final {
     gl::Texture_2d gAlbedoSpec_tex = []() {
         gl::Texture_2d t;
         gl::BindTexture(t);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ui::window_width, ui::window_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ui::window_width, ui::window_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         gl::TextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl::TextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return t;

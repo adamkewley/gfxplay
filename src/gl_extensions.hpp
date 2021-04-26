@@ -46,7 +46,6 @@ namespace gl {
         glUniform1iv(u.geti(), n, data);
     }
 
-    // set uniforms directly from GLM types
     inline void Uniform(Uniform_mat3& u, glm::mat3 const& mat) noexcept {
         glUniformMatrix3fv(u.geti(), 1, false, glm::value_ptr(mat));
     }
@@ -68,6 +67,7 @@ namespace gl {
         glUniform3fv(u.geti(), n, glm::value_ptr(*vs));
     }
 
+    // set a uniform array of vec3s from a userspace container type (e.g. vector<glm::vec3>)
     template<typename Container, size_t N>
     inline std::enable_if_t<std::is_same_v<glm::vec3, typename Container::value_type>, void> Uniform(Uniform_array<glsl::vec3, N>& u, Container& container) {
         assert(container.size() == N);
@@ -167,26 +167,5 @@ namespace gl {
 
     inline void assert_current_fbo_complete() {
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    }
-
-    template<typename T>
-    inline constexpr GLenum index_type() {
-        static_assert(std::is_integral_v<T>, "element indices are integers");
-        static_assert(std::is_unsigned_v<T>, "element indices are unsigned data types (in the GL spec)");
-        static_assert(sizeof(T) <= 4);
-
-        switch (sizeof(T)) {
-        case 1:
-            return GL_UNSIGNED_BYTE;
-        case 2:
-            return GL_UNSIGNED_SHORT;
-        case 4:
-            return GL_UNSIGNED_INT;
-        }
-    }
-
-    template<typename T>
-    inline constexpr GLenum index_type(gl::Element_array_buffer<T> const&) {
-        return index_type<T>();
     }
 }

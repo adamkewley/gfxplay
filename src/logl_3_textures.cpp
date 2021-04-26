@@ -85,7 +85,7 @@ void main() {
             gl::Uniform(uSampler1, gl::texture_index<GL_TEXTURE1>());
 
             gl::BindVertexArray(vao);
-            gl::DrawElements(GL_TRIANGLES, ebo.sizei(), GL_UNSIGNED_INT, nullptr);
+            gl::DrawElements(GL_TRIANGLES, ebo.sizei(), gl::index_type(ebo), nullptr);
             gl::BindVertexArray();
         }
     };

@@ -1,18 +1,18 @@
 #include "logl_common.hpp"
 
 namespace {
-    const glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f,  2.0f, -2.5f),
-        glm::vec3( 1.5f,  0.2f, -1.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
+    static constexpr std::array<glm::vec3, 10> cubePositions = {{
+        { 0.0f,  0.0f,  0.0f},
+        { 2.0f,  5.0f, -15.0f},
+        {-1.5f, -2.2f, -2.5f},
+        {-3.8f, -2.0f, -12.3f},
+        { 2.4f, -0.4f, -3.5f},
+        {-1.7f,  3.0f, -7.5f},
+        { 1.3f, -2.0f, -2.5f},
+        { 1.5f,  2.0f, -2.5f},
+        { 1.5f,  0.2f, -1.5f},
+        {-1.3f,  1.0f, -1.5f}
+    }};
 
     struct Gl_State final {
         gl::Program prog = gl::CreateProgramFrom(
@@ -56,55 +56,63 @@ void main() {
         gl::Uniform_int uSampler0{prog, "uSampler0"};
         gl::Uniform_int uSampler1{prog, "uSampler1"};
 
-        gl::Array_buffer<float> ab = {
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-             0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        struct Vbo_data final {
+            glm::vec3 pos;
+            glm::vec2 uv;
 
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            Vbo_data(glm::vec3 pos_, glm::vec2 uv_) : pos{pos_}, uv{uv_} {
+            }
+        };
 
-            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        gl::Array_buffer<Vbo_data> ab = {
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+           {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+           {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
 
-             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+           {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
+           {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
+           {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
+           {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
 
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+           {{-0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
+           {{-0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
 
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
+
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{ 0.5f, -0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
+           {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
+
+           {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+           {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
+           {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
+           {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}}
         };
 
         gl::Vertex_array vao = [this]() {
             gl::BindBuffer(ab);
-            gl::VertexAttribPointer(aPos, false, 5*sizeof(GLfloat), 0);
+            gl::VertexAttribPointer(aPos, false, sizeof(Vbo_data), offsetof(Vbo_data, pos));
             gl::EnableVertexAttribArray(aPos);
-            gl::VertexAttribPointer(aTexCoord, false, 5*sizeof(GLfloat), 3* sizeof(float));
+            gl::VertexAttribPointer(aTexCoord, false, sizeof(Vbo_data), offsetof(Vbo_data, uv));
             gl::EnableVertexAttribArray(aTexCoord);
         };
 
@@ -126,13 +134,13 @@ void main() {
             gl::Uniform(uView, view);
             gl::Uniform(uProjection, projection);
 
-            glActiveTexture(GL_TEXTURE0);
+            gl::ActiveTexture(GL_TEXTURE0);
             gl::BindTexture(wall);
-            gl::Uniform(uSampler0, 0);
+            gl::Uniform(uSampler0, gl::texture_index<GL_TEXTURE0>());
 
-            glActiveTexture(GL_TEXTURE1);
+            gl::ActiveTexture(GL_TEXTURE1);
             gl::BindTexture(face);
-            gl::Uniform(uSampler1, 1);
+            gl::Uniform(uSampler1, gl::texture_index<GL_TEXTURE1>());
 
             gl::BindVertexArray(vao);
             for(unsigned int i = 0; i < 10; i++) {
@@ -141,7 +149,7 @@ void main() {
                 float angle = 20.0f * i;
                 m = glm::rotate(m, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
                 gl::Uniform(uModel, m);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                gl::DrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
     };
