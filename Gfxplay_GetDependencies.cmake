@@ -215,21 +215,26 @@ endif()
 # TARGET: gfxplay-assimp
 if(GFXPLAY_USE_ASSIMP)
 
+    if(CMAKE_BUILD_TYPE MATCHES Debug)
+        set(ASSIMP_LIB_SUFFIX "d")
+    else()
+        set(ASSIMP_LIB_SUFFIX "")
+    endif()
+
     ExternalProject_Add(assimp-project
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/assimp
         CMAKE_CACHE_ARGS ${GFXPLAY_DEPENDENCY_CMAKE_ARGS}
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL TRUE
         UPDATE_DISCONNECTED ON
-        # HACK: this is specifically required by Ninja, because it
-        # needs to know the side-effects of external build steps
-        BUILD_BYPRODUCTS "TODO"
+        BUILD_BYPRODUCTS "assimp-project-prefix/src/assimp-project-build/code/libassimp${ASSIMP_LIB_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
     ExternalProject_Get_Property(assimp-project SOURCE_DIR)
     ExternalProject_Get_Property(assimp-project BINARY_DIR)
 
     # HACK: see: https://gitlab.kitware.com/cmake/cmake/-/issues/15052
-    file(MAKE_DIRECTORY ${SOURCE_DIR}/include)
+#    file(MAKE_DIRECTORY ${SOURCE_DIR}/include)
+    file(MAKE_DIRECTORY ${BINARY_DIR}/include)
 
     add_library(gfxplay-assimp SHARED IMPORTED)
     add_dependencies(gfxplay-assimp assimp-project)
@@ -237,7 +242,7 @@ if(GFXPLAY_USE_ASSIMP)
         INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}/include;${BINARY_DIR}/include"
     )
     set_target_properties(gfxplay-assimp PROPERTIES
-        IMPORTED_LOCATION ${BINARY_DIR}/code/libassimp.so
+        IMPORTED_LOCATION ${BINARY_DIR}/code/libassimp${ASSIMP_LIB_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}
     )
 
     unset(SOURCE_DIR)

@@ -44,6 +44,8 @@ add_library(gfxplaycore SHARED
     src/ak_common-shaders.hpp
     src/runtime_config.hpp
     src/runtime_config.cpp
+    src/app.hpp
+    src/app.cpp
 )
 target_link_libraries(gfxplaycore stdc++fs gfxplay-all-dependencies)
 target_include_directories(gfxplaycore PUBLIC
@@ -264,6 +266,12 @@ target_link_libraries(logl_bloom gfxplaycore)
 # personal experiment: selectable geometry
 add_executable(ak_selectable-geom src/ak_selectable-geom.cpp)
 target_link_libraries(ak_selectable-geom gfxplaycore)
+
+add_executable(ak_random-experiment src/ak_random-experiment.cpp)
+target_link_libraries(ak_random-experiment gfxplaycore)
+
+add_executable(ak_random-experiment2 src/ak_random-experiment2.cpp)
+target_link_libraries(ak_random-experiment2 gfxplaycore)
 
 if (GFXPLAY_USE_ASSIMP)
 

@@ -54,6 +54,10 @@ namespace gl {
         glUniform4fv(u.geti(), 1, glm::value_ptr(v));
     }
 
+    inline void Uniform(Uniform_vec4& u, float color[4]) noexcept {
+        glUniform4fv(u.geti(), 1, color);
+    }
+
     inline void Uniform(Uniform_vec3& u, glm::vec3 const& v) noexcept {
         glUniform3fv(u.geti(), 1, glm::value_ptr(v));
     }

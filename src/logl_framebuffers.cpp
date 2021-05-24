@@ -189,8 +189,8 @@ void main() {
             glTexImage2D(GL_TEXTURE_2D,
                          0,
                          GL_RGB,
-                         1024, // TODO: a robust solution would lookup screen size
-                         768,
+                         800, // TODO: a robust solution would lookup screen size
+                         600,
                          0,
                          GL_RGB,
                          GL_UNSIGNED_BYTE,
@@ -211,8 +211,8 @@ void main() {
             gl::BindRenderBuffer(depthbuf);
             glRenderbufferStorage(GL_RENDERBUFFER,
                                   GL_DEPTH24_STENCIL8,
-                                  1024,  // TODO
-                                  768);
+                                  800,  // TODO
+                                  600);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                       GL_DEPTH_STENCIL_ATTACHMENT,
                                       GL_RENDERBUFFER,

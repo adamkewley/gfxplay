@@ -100,7 +100,7 @@ struct Ssao_blur_shader final {
     gl::Uniform_sampler2d ssaoInput{p, "ssaoInput"};
 };
 
-[[nodiscard]] static constexpr float lerp(float a, float b, float f) noexcept {
+[[nodiscard]] static constexpr float lerpinternal(float a, float b, float f) noexcept {
     return a + f * (b - a);
 }
 
@@ -124,7 +124,7 @@ static std::array<glm::vec3, kernel_size> generate_sample_kernel() {
 
         // scale samples so that they're more aligned to center of kernel
         float scale = static_cast<float>(i++) / static_cast<float>(rv.size());
-        vec *= lerp(0.1f, 1.0f, scale * scale);
+        vec *= lerpinternal(0.1f, 1.0f, scale * scale);
     }
 
     return rv;
