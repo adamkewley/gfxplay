@@ -3,6 +3,7 @@
 #include <SDL_events.h>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec2.hpp>
 
 #include <iostream>
 #include <utility>
@@ -13,7 +14,9 @@
 #include <vector>
 #include <mutex>
 
-// basic logging support
+// logging support
+//
+// enables any part of the codebase to dispatch log messages to the application
 namespace gp::log {
 
     namespace level {
@@ -219,6 +222,8 @@ namespace gp::log {
 }
 
 // assertions support
+//
+// enables in-source logic checks /w relevant error messages, debugging, whatever
 namespace gp {
     [[noreturn]] void onAssertFailed(char const* failingSourceCode, char const* file, unsigned int line) noexcept;
 }
@@ -233,51 +238,181 @@ namespace gp {
 #define GP_ASSERT(expr)
 #endif
 
-// timing/updates
-namespace gp {
-    using dms = std::chrono::duration<double, std::milli>;
-
-    [[nodiscard]] constexpr dms operator""_dms(long double v) noexcept {
-        return dms{v};
-    }
-}
-#define GP_MS_PER_UPDATE 17
-#define GP_DMS_PER_UPDATE gp::dms{GP_MS_PER_UPDATE}
-
-// screen/layer support
+// screen support
+//
+// separates screen-level concerns (handle events, update, draw) from the
+// rest of the application's concerns (app init, gameloop maintenance, etc.)
+//
+// lifecycle:
+//
+// 1. (app receives screen)
+// 2. app calls onMount
+// 3. (screen is now part of app's gameloop)
+// 4. app calls onEvent until all events pumped
+// 5. app calls onUpdate with timedelta since last call to onUpdate
+// 6. app calls onDraw
+// 7a1. if no new screen, GOTO 4
+// 7b1. if new screen received, call onUnmount
+// 7b2. destroy old screen
+// 7b3. GOTO 2 with new screen
 namespace gp {
     class Screen {
     public:
-        virtual ~Screen() = default;
+        virtual ~Screen() noexcept = default;
 
         // called just before App starts using the screen
         virtual void onMount() {
-        }
-
-        // called just after App stops using the screen
-        virtual void onUnmount() {
         }
 
         virtual bool onEvent(SDL_Event const&) {
             return false;
         }
 
-        // called with an assumed fixed step of GP_MS_PER_UPDATE
+        // callers should use their own recording system (e.g. poller)
+        // internally to compute time delta as this method is entered
         virtual void onUpdate() {
         }
 
-        // provided a ratio of where this drawcall happens between two
-        // update steps
-        //
-        // e.g. 0.5 means it's midway between two update steps and that
-        //      it should (maybe) lerp/slerp from the current state
-        virtual void onDraw(double) = 0;
+        virtual void onDraw() = 0;
+
+        virtual void onUnmount() {
+        }
     };
 }
 
+// input polling support
+//
+// App automatically maintains these in the top-level gameloop so
+// that the rest of the system can just ask for these values whenever
+// they need them
+namespace gp {
+    struct Io final {
+        // drawable size of display
+        glm::ivec2 DisplaySize;
+
+        // number of ticks since the last call to update
+        uint64_t Ticks;
+
+        // ticks per per second
+        uint64_t TickFrequency;
+
+        // seconds since last update
+        float DeltaTime;
+
+        // current mouse position, in pixels, relative to top-left corner of screen
+        glm::vec2 MousePos;
+
+        // previous mouse position
+        glm::vec2 MousePosPrevious;
+
+        // mouse position delta from previous update
+        glm::vec2 MousePosDelta;
+
+        // mouse button states (0: left, 1: right, 2: middle)
+        bool MousePressed[3];
+
+        // keyboard keys that are currently pressed
+        bool KeysDown[512];
+        bool ShiftDown;
+        bool CtrlDown;
+        bool AltDown;
+
+        [[nodiscard]] constexpr float aspectRatio() const noexcept {
+            return static_cast<float>(DisplaySize.x) / static_cast<float>(DisplaySize.y);
+        }
+    };
+}
+
+// application support
+//
+// top-level appplication system that initializes all major subsytems
+// (e.g. video, windowing, OpenGL, input) and maintains the top-level
+// gameloop
+namespace gp {
+    class App final {
+    public:
+        struct Impl;
+
+    private:
+        Impl* impl;
+        static App* g_Current;
+        static Io* g_CurrentIO;
+
+    public:
+        [[nodiscard]] static App& cur() noexcept {
+            GP_ASSERT(g_Current != nullptr && "current application not set: have you initialized an application?");
+            return *g_Current;
+        }
+
+        [[nodiscard]] static Io& IO() noexcept {
+            GP_ASSERT(g_Current != nullptr && "current IO not set: have you initialized an application?");
+            return *g_CurrentIO;
+        }
+
+        App();
+        App(App const&) = delete;
+        App(App&&) = delete;
+        ~App() noexcept;
+
+        App& operator=(App const&) = delete;
+        App& operator=(App&&) = delete;
+
+        // enters gameloop with supplied screen
+        void show(std::unique_ptr<Screen>);
+
+        // raw handle to underlying window implementation
+        void* windowRAW() noexcept;
+
+        // raw handle to underlying OpenGL context for window
+        void* glRAW() noexcept;
+
+        // "grabs" the mouse in the screen, hiding it and making it "stick"
+        // to the inner area of the screen
+        //
+        // note: the mouse is still *somewhere* in the screen and can get
+        // stuck in (e.g.) the corner
+        void enableRelativeMouseMode() noexcept;
+
+        // sets mouse position somewhere in current window
+        void setMousePos(glm::ivec2) noexcept;
+
+        // requst the app quits
+        //
+        // the app will only check for this at the *start* of a frame
+        void requestQuit() noexcept;
+    };
+}
+
+// ImGui support
+//
+// enables support for ImGui UI rendering: handy for debugging a screen
+// as it is developed
+namespace gp {
+    // init ImGui context
+    void ImGuiInit();
+
+    // shutdown ImGui context
+    void ImGuiShutdown();
+
+    // returns true if ImGui has handled the event
+    bool ImGuiOnEvent(SDL_Event const&) noexcept;
+
+    // should be called at the start of `draw()`
+    void ImGuiNewFrame();
+
+    // should be called at the end of `draw()`
+    void ImGuiRender();
+}
+
+
 // scope guard support
 //
-// adds RAII-like behavior for arbitrary shutdown code
+// enables ad-hoc RAII behavior in source code without having to write
+// custom wrapper classes etc. - useful for little cleanup routines or
+// using C APIs. Example:
+//
+//     FILE* f = fopen("path");
+//     GP_SCOPEGUARD(fclose(f));
 namespace gp {
     template<typename Dtor>
     class ScopeGuard final {
@@ -294,104 +429,51 @@ namespace gp {
             dtor();
         }
     };
+
+    // example usage: `GP_SCOPEGUARD({ SomeDtor(); });`
+    #define GP_TOKENPASTE(x, y) x##y
+    #define GP_TOKENPASTE2(x, y) GP_TOKENPASTE(x, y)
+    #define GP_SCOPEGUARD(action) gp::ScopeGuard GP_TOKENPASTE2(guard_, __LINE__){[&]() action};
+    #define GP_SCOPEGUARD_IF(cond, action)                                                                              \
+        GP_SCOPEGUARD({                                                                                                 \
+            if (cond) {                                                                                                    \
+                action                                                                                                     \
+            }                                                                                                              \
+        }) \
+    }
 }
 
-// example usage: `GP_SCOPEGUARD({ SomeDtor(); });`
-#define GP_TOKENPASTE(x, y) x##y
-#define GP_TOKENPASTE2(x, y) GP_TOKENPASTE(x, y)
-#define GP_SCOPEGUARD(action) gp::ScopeGuard GP_TOKENPASTE2(guard_, __LINE__){[&]() action};
-#define GP_SCOPEGUARD_IF(cond, action)                                                                              \
-    GP_SCOPEGUARD({                                                                                                 \
-        if (cond) {                                                                                                    \
-            action                                                                                                     \
-        }                                                                                                              \
-    }) \
-}
-
-// application layer: sets up top-level systems (windowing, OpenGL, etc.)
-namespace gp {
-    struct WindowDimensions { int w; int h; };
-
-    class App final {
-    public:
-        struct Impl;
-
-    private:
-        Impl* impl;
-        static App* g_Current;
-
-    public:
-        [[nodiscard]] static App& cur() noexcept {
-            GP_ASSERT(g_Current != nullptr && "current application not set: have you initialized an application?");
-            return *g_Current;
-        }
-
-        [[nodiscard]] static WindowDimensions dims() noexcept {
-            return App::cur().windowDimensions();
-        }
-
-        [[nodiscard]] static float aspectRatio() noexcept {
-            auto [w, h] = dims();
-            return static_cast<float>(w) / static_cast<float>(h);
-        }
-
-        App();
-        App(App const&) = delete;
-        App(App&&) = delete;
-        ~App() noexcept;
-
-        App& operator=(App const&) = delete;
-        App& operator=(App&&) = delete;
-
-        void show(std::unique_ptr<Screen>);
-
-        // raw handle to underlying window implementation
-        void* windowRAW() noexcept;
-
-        // raw handle to underlying OpenGL context for window
-        void* glRAW() noexcept;
-
-        // get active window dimensions
-        [[nodiscard]] WindowDimensions windowDimensions() const noexcept;
-
-        // hide cursor
-        void hideCursor() noexcept;
-    };
-}
-
-// ImGui support
+// constants support
 //
-// note: it's up to each screen to init/teardown/feed ImGui because some screens
-//       may not want to use it
-namespace gp {
-    void ImGuiInit();
-    void ImGuiShutdown();
-    void ImGuiNewFrame();
-    void ImGuiRender();
-}
-
+// just some constants that are annoying to have to grab from somewhere
+// else
 namespace gp {
     static constexpr float pi_f = 3.14159265358979323846f;
 }
 
-// Camera support
+// camera support
 //
-// note: it's up to each screen to feed the camera correctly
+// cameras that can be updated over time and produce OpenGL-ready
+// view/projection transforms
 namespace gp {
 
-    // perspective camera with euler angles
+    // perspective camera with Euler angles
+    //
+    // it is up to the caller to "integrate" the camera's motion
     struct Euler_perspective_camera final {
         // position in world space
         glm::vec3 pos{0.0f, 0.0f, 0.0f};
 
-        // head tilting up/down
+        // head tilting up/down in radians
+        //
+        // the implementation should
         float pitch = 0.0f;
 
-        // spinning left/right
+        // spinning left/right in radians
         float yaw = -pi_f/2.0f;
 
-        // field of view, in degrees
-        float fov = 90.0;
+        // field of view, in radians
+        float fov = pi_f * 70.0f/180.f;
 
         // Z near clipping distance
         float znear = 0.1f;
@@ -399,28 +481,29 @@ namespace gp {
         // Z far clipping distance
         float zfar = 1000.0f;
 
-        // state typically retained between frames
-        bool moving_forward : 1 = false;
-        bool moving_backward : 1 = false;
-        bool moving_left : 1 = false;
-        bool moving_right : 1 = false;
-        bool moving_up : 1 = false;
-        bool moving_down : 1 = false;
+        [[nodiscard]] glm::vec3 front() const noexcept {
+            return glm::normalize(glm::vec3{
+                cosf(yaw) * cosf(pitch),
+                sinf(pitch),
+                sinf(yaw) * cosf(pitch),
+            });
+        }
 
-        [[nodiscard]] glm::vec3 front() const noexcept;
-        [[nodiscard]] glm::vec3 up() const noexcept;
-        [[nodiscard]] glm::vec3 right() const noexcept;
+        [[nodiscard]] glm::vec3 up() const noexcept {
+            return glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+
+        [[nodiscard]] glm::vec3 right() const noexcept {
+            return glm::normalize(glm::cross(front(), up()));
+        }
+
         [[nodiscard]] glm::mat4 viewMatrix() const noexcept;
+
         [[nodiscard]] glm::mat4 projectionMatrix(float aspectRatio) const noexcept;
 
-        // make user keyboard events affect camera state
-        bool onEvent(SDL_KeyboardEvent const& e) noexcept;
-
-        // make user mouse events affect camera state
-        bool onEvent(SDL_MouseMotionEvent const&) noexcept;
-
-        // make continuous updates (camera motion, etc.) at the update rate
-        // (i.e. GP_DMS_PER_UPDATE) affect the camera state
-        void onUpdate();
+        // assumes app is running in relative mode (cursor hidden) and that the
+        // camera should warp the app's (hidden) cursor accordingly to ensure
+        // it does not hit the edges of the window and stop
+        void onUpdateAsGrabbedCamera(float movementSpeed, float mouseSensitivity);
     };
 }

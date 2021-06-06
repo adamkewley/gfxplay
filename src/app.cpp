@@ -171,16 +171,97 @@ static SdlGLContext initWindowOpenGLContext(SdlWindow& window) {
     return rv;
 }
 
+// `App` also maintains these
+//
+// they're needed because purely asking for the mouse state (via SDL_GetMouseState)
+// does provide the latest (lowest-latency) state, but might miss rapid clicks that
+// toggle the state on+off before update is called
+static bool g_MousePressedInEvent[3] = {false, false, false};
+
+static void updateMousePosAndButtons(gp::Io& io, SDL_Window* window) {
+    // update `MousePosPrevious`
+    io.MousePosPrevious = io.MousePos;
+
+    // update `MousePressed[3]`
+    glm::ivec2 mouseLocal;
+    Uint32 mouseState = SDL_GetMouseState(&mouseLocal.x, &mouseLocal.y);
+    io.MousePressed[0] = g_MousePressedInEvent[0] || mouseState & SDL_BUTTON(SDL_BUTTON_LEFT);
+    g_MousePressedInEvent[0] = false;
+    io.MousePressed[1] = g_MousePressedInEvent[1] || mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT);
+    g_MousePressedInEvent[1] = false;
+    io.MousePressed[2] = g_MousePressedInEvent[2] || mouseState & SDL_BUTTON(SDL_BUTTON_MIDDLE);
+    g_MousePressedInEvent[2] = false;
+
+    // compute `MousePos`
+    //
+    // this is a little uglier than just querying it from GetMouseState because
+    // the mouse *heavily* affects how laggy the UI feels and other behavior
+    // like whether the mouse should work when another window is focused is
+    // important
+    static bool mouseCanUseGlobalState = strncmp(SDL_GetCurrentVideoDriver(), "wayland", 7) != 0;
+    bool curWindowHasFocus = SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS;
+    if (curWindowHasFocus) {
+        // SDL_GetMouseGlobalState typically gives better mouse positions than
+        // the other methods because it uses a direct OS query for the mouse
+        // position (whereas the other method rely on the event queue, which can
+        // lag a little on Windows)
+        if (mouseCanUseGlobalState) {
+            glm::ivec2 mouseGlobal;
+            SDL_GetGlobalMouseState(&mouseGlobal.x, &mouseGlobal.y);
+            glm::ivec2 mouseWindow;
+            SDL_GetWindowPosition(window, &mouseWindow.x, &mouseWindow.y);
+
+            io.MousePos = mouseGlobal - mouseWindow;
+        } else {
+            io.MousePos = mouseLocal;
+        }
+    }
+
+    io.MousePosDelta = io.MousePos - io.MousePosPrevious;
+}
+
+static void updateIOPoller(gp::Io& io, SDL_Window* window) {
+    GP_ASSERT(window != nullptr && "application is not initialized correctly: not showing a window?");
+
+    // update DisplaySize
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    io.DisplaySize = {w, h};
+
+    // update Ticks and DeltaTime (ctor initializes TickFrequency, which should not change)
+    uint64_t currentTicks = SDL_GetPerformanceCounter();
+    double dTicks = static_cast<double>(currentTicks - io.Ticks);
+    io.DeltaTime = static_cast<float>(dTicks/static_cast<double>(io.TickFrequency));
+    io.Ticks = currentTicks;
+
+    // update mouse
+    updateMousePosAndButtons(io, window);
+}
+
+static gp::Io initIOPoller(SDL_Window* window) {
+    gp::Io rv;
+    rv.Ticks = SDL_GetPerformanceCounter();
+    rv.TickFrequency = SDL_GetPerformanceFrequency();
+
+    updateIOPoller(rv, window);
+
+    return rv;
+}
+
 struct gp::App::Impl final {
     SdlCtx sdlctx{SDL_INIT_VIDEO};
     SdlWindow window = initMainWindow();
     SdlGLContext sdlglctx = initWindowOpenGLContext(window);
+    Io io = initIOPoller(window);
+    bool quit = false;
 };
 
 gp::App* gp::App::g_Current = nullptr;
+gp::Io* gp::App::g_CurrentIO = nullptr;
 
 gp::App::App() : impl{new Impl{}} {
     App::g_Current = this;
+    App::g_CurrentIO = &this->impl->io;
 }
 
 gp::App::~App() noexcept {
@@ -193,51 +274,86 @@ void gp::App::show(std::unique_ptr<Screen> screenptr) {
     screen.onMount();
     GP_SCOPEGUARD({ screen.onUnmount(); });
 
-    auto prev = std::chrono::high_resolution_clock::now();
-    dms lag;
-
-    while (true) {
-        // handle clocks
-        auto cur = std::chrono::high_resolution_clock::now();
-        dms elapsed = std::chrono::duration_cast<dms>(cur - prev);
-        prev = cur;
-        lag += elapsed;
+    while (!impl->quit) {
 
         // pump events
         for (SDL_Event e; SDL_PollEvent(&e);) {
-            if (e.type == SDL_QUIT) {
+
+            // top-level (pre-Screen) event handling
+            //
+            // this maintains some app-level state (Io polling, OpenGL)
+            switch (e.type) {
+            case SDL_QUIT:
+                // quit application
                 return;
+            case SDL_MOUSEBUTTONDOWN:
+            {
+                // set flags that help the IO poller figure out whether the
+                // user clicked a mouse button during a step
+
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    g_MousePressedInEvent[0] = true;
+                }
+
+                if (e.button.button == SDL_BUTTON_RIGHT) {
+                    g_MousePressedInEvent[1] = true;
+                }
+
+                if (e.button.button == SDL_BUTTON_MIDDLE) {
+                    g_MousePressedInEvent[2] = true;
+                }
+                break;
             }
-            if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) {
-                return;
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+            {
+                // update IO poller keyboard state
+
+                int scanCode = e.key.keysym.scancode;
+                impl->io.KeysDown[scanCode] = e.type == SDL_KEYDOWN;
+                impl->io.ShiftDown = SDL_GetModState() & KMOD_SHIFT;
+                impl->io.CtrlDown = SDL_GetModState() & KMOD_CTRL;
+                impl->io.AltDown = SDL_GetModState() & KMOD_ALT;
+                break;
             }
-            if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                int w, h;
-                SDL_GetWindowSize(impl->window, &w, &h);
-                glViewport(0, 0, w, h);
+            case SDL_WINDOWEVENT:
+            {
+                // update OpenGL viewport if window was resized
+
+                if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                    int w, h;
+                    SDL_GetWindowSize(impl->window, &w, &h);
+                    glViewport(0, 0, w, h);
+                }
+                break;
+            }
             }
 
             screen.onEvent(e);
         }
 
-        // update (fixed step)
-        while (lag >= GP_DMS_PER_UPDATE) {
-            screen.onUpdate();
-            lag -= GP_DMS_PER_UPDATE;
-        }
+        // update IO state
+        //
+        // this assumes all events are processed and that the current screen will
+        // expect the IO poller to be in the correct state (deltas, etc.)
+        updateIOPoller(impl->io, impl->window);
 
-        // render
-        screen.onDraw(lag / GP_DMS_PER_UPDATE);
+        // update screen
+        //
+        // the screen's onUpdate may indirectly access App/IO (e.g. to check if the
+        // user is clicking anything, moving mouse, etc.)
+        screen.onUpdate();
 
-        // present
+        // render screen
+        //
+        // draws the screen onto the currently-bound (assumed, window) framebuffer
+        screen.onDraw();
+
+        // present screen
+        //
+        // effectively, flips the rendered image onto the displayed window
         SDL_GL_SwapWindow(impl->window);
     }
-}
-
-gp::WindowDimensions gp::App::windowDimensions() const noexcept {
-    int w, h;
-    SDL_GetWindowSize(impl->window, &w, &h);
-    return {w, h};
 }
 
 void* gp::App::windowRAW() noexcept {
@@ -248,8 +364,16 @@ void* gp::App::glRAW() noexcept {
     return impl->sdlglctx.handle;
 }
 
-void gp::App::hideCursor() noexcept {
+void gp::App::enableRelativeMouseMode() noexcept {
     SDL_SetRelativeMouseMode(SDL_TRUE);
+}
+
+void gp::App::setMousePos(glm::ivec2 pos) noexcept {
+    SDL_WarpMouseInWindow(impl->window, pos.x, pos.y);
+}
+
+void gp::App::requestQuit() noexcept {
+    impl->quit = true;
 }
 
 void gp::ImGuiInit() {
@@ -269,6 +393,23 @@ void gp::ImGuiShutdown() {
     ImGui::DestroyContext();
 }
 
+bool gp::ImGuiOnEvent(SDL_Event const& e) noexcept {
+    ImGui_ImplSDL2_ProcessEvent(&e);
+
+    auto const& io = ImGui::GetIO();
+
+    if (io.WantCaptureKeyboard && (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)) {
+        return true;
+    }
+
+    if (io.WantCaptureMouse && (e.type == SDL_MOUSEWHEEL || e.type == SDL_MOUSEMOTION ||
+                                e.type == SDL_MOUSEBUTTONUP || e.type == SDL_MOUSEBUTTONDOWN)) {
+        return true;
+    }
+
+    return false;
+}
+
 void gp::ImGuiNewFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(static_cast<SDL_Window*>(App::cur().windowRAW()));
@@ -280,100 +421,49 @@ void gp::ImGuiRender() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-glm::vec3 gp::Euler_perspective_camera::front() const noexcept {
-    return glm::normalize(glm::vec3{
-        cos(yaw) * cos(pitch),
-        sin(pitch),
-        sin(yaw) * cos(pitch),
-    });
-}
-
-[[nodiscard]] glm::vec3 gp::Euler_perspective_camera::up() const noexcept {
-    return glm::vec3(0.0f, 1.0f, 0.0f);
-}
-
-[[nodiscard]] glm::vec3 gp::Euler_perspective_camera::right() const noexcept {
-    return glm::normalize(glm::cross(front(), up()));
-}
-
-[[nodiscard]] glm::mat4 gp::Euler_perspective_camera::viewMatrix() const noexcept {
+glm::mat4 gp::Euler_perspective_camera::viewMatrix() const noexcept {
     return glm::lookAt(pos, pos + front(), up());
 }
 
-[[nodiscard]] glm::mat4 gp::Euler_perspective_camera::projectionMatrix(float aspectRatio) const noexcept {
-    return glm::perspective(glm::radians(fov), aspectRatio, znear, zfar);
+glm::mat4 gp::Euler_perspective_camera::projectionMatrix(float aspectRatio) const noexcept {
+    return glm::perspective(fov, aspectRatio, znear, zfar);
 }
 
-bool gp::Euler_perspective_camera::onEvent(SDL_KeyboardEvent const& e) noexcept {
-    bool is_pressed = e.state == SDL_PRESSED;
+void gp::Euler_perspective_camera::onUpdateAsGrabbedCamera(float speed, float sensitivity) {
+    auto& io = gp::App::IO();
 
-    switch (e.keysym.sym) {
-    case SDLK_w:
-        moving_forward = is_pressed;
-        return true;
-    case SDLK_s:
-        moving_backward = is_pressed;
-        return true;
-    case SDLK_d:
-        moving_left = is_pressed;
-        return true;
-    case SDLK_a:
-        moving_right = is_pressed;
-        return true;
-    case SDLK_SPACE:
-        moving_up = is_pressed;
-        return true;
-    case SDLK_LCTRL:
-        moving_down = is_pressed;
-        return true;
+    if (io.KeysDown[SDL_SCANCODE_ESCAPE]) {
+        gp::App::cur().requestQuit();
     }
 
-    return false;
-}
-
-// world space per millisecond
-static constexpr float movement_speed = 0.03f;
-static constexpr float mouse_sensitivity = 0.001f;
-
-bool gp::Euler_perspective_camera::onEvent(SDL_MouseMotionEvent const& e) noexcept {
-    yaw += mouse_sensitivity * e.xrel;
-    pitch -= mouse_sensitivity * e.yrel;
-
-    if (pitch > pi_f/2.0f - 0.5f) {
-        pitch = pi_f/2.0f - 0.5f;
+    if (io.KeysDown[SDL_SCANCODE_W]) {
+        this->pos += speed * this->front() * io.DeltaTime;
     }
 
-    if (pitch < -pi_f/2.0f + 0.5f) {
-        pitch = -pi_f/2.0f + 0.5f;
+    if (io.KeysDown[SDL_SCANCODE_S]) {
+        this->pos -= speed * this->front() * io.DeltaTime;
     }
 
-    return true;
-}
-
-void gp::Euler_perspective_camera::onUpdate() {
-    float amt = GP_MS_PER_UPDATE * movement_speed;
-
-    if (moving_forward) {
-        pos += amt * front();
+    if (io.KeysDown[SDL_SCANCODE_A]) {
+        this->pos -= speed * this->right() * io.DeltaTime;
     }
 
-    if (moving_backward) {
-        pos -= amt * front();
+    if (io.KeysDown[SDL_SCANCODE_D]) {
+        this->pos += speed * this->right() * io.DeltaTime;
     }
 
-    if (moving_left) {
-        pos += amt * right();
+    if (io.KeysDown[SDL_SCANCODE_SPACE]) {
+        this->pos += speed * this->up() * io.DeltaTime;
     }
 
-    if (moving_right) {
-        pos -= amt * right();
+    if (io.CtrlDown) {
+        this->pos -= speed * this->up() * io.DeltaTime;
     }
 
-    if (moving_up) {
-        pos += amt * up();
-    }
+    this->yaw += sensitivity * io.MousePosDelta.x;
+    this->pitch -= sensitivity * io.MousePosDelta.y;
+    this->pitch = std::clamp(this->pitch, -gp::pi_f/2.0f + 0.5f, gp::pi_f/2.0f - 0.5f);
 
-    if (moving_down) {
-        pos -= amt * up();
-    }
+    gp::App::cur().setMousePos(glm::ivec2{io.DisplaySize.x/2, io.DisplaySize.y/2});
+    io.MousePos = {io.DisplaySize.x/2.0f, io.DisplaySize.y/2.0f};
 }

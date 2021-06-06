@@ -21,7 +21,7 @@ static constexpr std::array<glm::vec3, 10> cubePositions = {{
     {-1.3f,  1.0f, -1.5f },
 }};
 
-static char const vs[] = R"(
+static char const vertexShader[] = R"(
     #version 330 core
 
     uniform mat4 uModel;
@@ -41,7 +41,7 @@ static char const vs[] = R"(
     }
 )";
 
-static char const fs[] = R"(
+static char const fragmentShader[] = R"(
     #version 330 core
 
     uniform sampler2D uSampler0;
@@ -108,8 +108,8 @@ static constexpr Vert cubeVerts[] = {
 
 struct Shader final {
     gl::Program prog = gl::CreateProgramFrom(
-        gl::Vertex_shader::from_source(vs),
-        gl::Fragment_shader::from_source(fs));
+        gl::Vertex_shader::from_source(vertexShader),
+        gl::Fragment_shader::from_source(fragmentShader));
     gl::Attribute_vec3 aPos{0};
     gl::Attribute_vec2 aTexCoord{1};
     gl::Uniform_mat4 uModel{prog, "uModel"};
@@ -136,33 +136,22 @@ struct MainScreen : public gp::Screen {
     gl::Texture_2d wall = gl::load_tex(gfxplay::resource_path("wall.jpg"));
     gl::Texture_2d face = gl::load_tex(gfxplay::resource_path("awesomeface.png"));
 
+    // main FPS camera
     gp::Euler_perspective_camera camera;
 
-    bool onEvent(SDL_Event const& e) override {
-        switch (e.type) {
-        case SDL_MOUSEMOTION:
-            return camera.onEvent(e.motion);
-        case SDL_KEYDOWN:
-        case SDL_KEYUP:
-            return camera.onEvent(e.key);
-        default:
-            return false;
-        }
-    }
-
     void onUpdate() override {
-        camera.onUpdate();
+        camera.onUpdateAsGrabbedCamera(10.0f, 0.001f);
     }
 
-    void onDraw(double) override {
+    void onDraw() override {
         gl::ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         gl::UseProgram(shader.prog);
 
-        // uModel: handled for each cube below
+        // `uModel` is handled for each cube below
         gl::Uniform(shader.uView, camera.viewMatrix());
-        gl::Uniform(shader.uProjection, camera.projectionMatrix(gp::App::aspectRatio()));
+        gl::Uniform(shader.uProjection, camera.projectionMatrix(gp::App::IO().aspectRatio()));
 
         gl::ActiveTexture(GL_TEXTURE0);
         gl::BindTexture(wall);
@@ -174,24 +163,22 @@ struct MainScreen : public gp::Screen {
 
         gl::BindVertexArray(cubeVao);
         float angle = 0.0f;
-        const glm::vec3 rotationAxis{1.0f, 0.3f, 0.5f};
         for (glm::vec3 const& cubePos : cubePositions) {
             glm::mat4 modelMtx = glm::identity<glm::mat4>();
             modelMtx = glm::translate(modelMtx, cubePos);
-            modelMtx = glm::rotate(modelMtx, glm::radians(angle), rotationAxis);
+            modelMtx = glm::rotate(modelMtx, glm::radians(angle), {1.0f, 0.3f, 0.5f});
 
             gl::Uniform(shader.uModel, modelMtx);
             gl::DrawArrays(GL_TRIANGLES, 0, cubeVbo.sizei());
             angle += 20.0f;
         }
         gl::BindVertexArray();
-
     }
 };
 
 int main(int, char*[]) {
     gp::App app;
-    app.hideCursor();
+    app.enableRelativeMouseMode();
     app.show(std::make_unique<MainScreen>());
     return 0;
 }

@@ -281,7 +281,7 @@ int main(int, char**) {
     constexpr float mouse_sensitivity = 0.001f;
 
     auto s = ui::Window_state{};
-    SDL_SetWindowGrab(s.window, SDL_TRUE);
+    SDL_SetWindowGrab(s.window, SDL_FALSE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
     auto gls = Gl_State{};
     auto as = App_State{};

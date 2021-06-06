@@ -26,7 +26,7 @@ static constexpr char fs[] = R"(
     }
 )";
 
-struct MainScreen : public gp::Screen {
+struct MainScreen : public gp::ImGuiScreen {
     gl::Program prog = gl::CreateProgramFrom(
         gl::Vertex_shader::from_source(vs),
         gl::Fragment_shader::from_source(fs));
@@ -55,19 +55,9 @@ struct MainScreen : public gp::Screen {
 
     float color[4] = {1.0f, 0.5f, 0.2f, 1.0f};
 
-    void onMount() override {
-        gp::ImGuiInit();
-    }
-
-    void onUnmount() override {
-        gp::ImGuiShutdown();
-    }
-
-    void onDraw(double) override {
+    void implOnDraw(float) override {
         gl::ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        gp::ImGuiNewFrame();
 
         if (ImGui::Begin("editor")) {
             ImGui::ColorEdit4("color", color);
@@ -86,6 +76,7 @@ struct MainScreen : public gp::Screen {
 
 int main(int, char*[]) {
     gp::App app;
+    app.enableRelativeMouseMode();
     app.show(std::make_unique<MainScreen>());
     return 0;
 }
