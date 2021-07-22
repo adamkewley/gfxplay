@@ -249,6 +249,12 @@ if(GFXPLAY_USE_ASSIMP)
     unset(BINARY_DIR)
 endif()
 
+# TARGET: gfxplay-entt
+if(TRUE)
+    add_library(gfxplay-entt INTERFACE)
+    target_include_directories(gfxplay-entt INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/entt)
+endif()
+
 # TARGET: gfxplay-all-dependencies
 if(TRUE)
     add_library(gfxplay-all-dependencies INTERFACE)
@@ -258,6 +264,7 @@ if(TRUE)
         gfxplay-glm
         gfxplay-imgui
         gfxplay-stb
+        gfxplay-entt
         ${OPENGL_LIBRARIES}
     )
 endif()

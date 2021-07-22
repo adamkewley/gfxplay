@@ -517,15 +517,6 @@ namespace gl {
         Vertex_array() {
             glGenVertexArrays(1, &handle);
         }
-
-        template<typename SetupFunction>
-        Vertex_array(SetupFunction f) {
-            glGenVertexArrays(1, &handle);
-            glBindVertexArray(handle);
-            f();
-            glBindVertexArray(static_cast<GLuint>(0));
-        }
-
         Vertex_array(Vertex_array const&) = delete;
         Vertex_array(Vertex_array&& tmp) : handle{tmp.handle} {
             tmp.handle = static_cast<GLuint>(-1);

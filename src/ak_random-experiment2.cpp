@@ -8,20 +8,22 @@
 
 #include <array>
 
-static constexpr std::array<glm::vec3, 10> cubePositions = {{
+using namespace gp;
+
+static constexpr std::array<glm::vec3, 10> g_CubePositions = {{
     { 0.0f,  0.0f,  0.0f },
-    { 2.0f,  5.0f, -15.0f},
-    {-1.5f, -2.2f, -2.5f },
-    {-3.8f, -2.0f, -12.3f},
-    { 2.4f, -0.4f, -3.5f },
-    {-1.7f,  3.0f, -7.5f },
-    { 1.3f, -2.0f, -2.5f },
-    { 1.5f,  2.0f, -2.5f },
-    { 1.5f,  0.2f, -1.5f },
-    {-1.3f,  1.0f, -1.5f },
+    { 4.0f,  10.0f, -30.0f},
+    {-3.0f, -4.4f, -5.0f },
+    {-7.6f, -4.0f, -24.6f},
+    { 4.8f, -0.8f, -7.0f },
+    {-3.4f,  6.0f, -15.0f },
+    { 2.6f, -4.0f, -5.0f },
+    { 3.0f,  4.0f, -5.0f },
+    { 3.0f,  0.4f, -3.0f },
+    {-2.6f,  2.0f, -3.0f },
 }};
 
-static char const vertexShader[] = R"(
+static char const g_VertexShader[] = R"(
     #version 330 core
 
     uniform mat4 uModel;
@@ -41,7 +43,7 @@ static char const vertexShader[] = R"(
     }
 )";
 
-static char const fragmentShader[] = R"(
+static char const g_FragmentShader[] = R"(
     #version 330 core
 
     uniform sampler2D uSampler0;
@@ -56,62 +58,13 @@ static char const fragmentShader[] = R"(
     }
 )";
 
-struct Vert final {
-    glm::vec3 pos;
-    glm::vec2 uv;
-};
-
-static constexpr Vert cubeVerts[] = {
-    // pos                  // uv
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-
-    {{-0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-    {{-0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}},
-
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}},
-    {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-};
-
 struct Shader final {
     gl::Program prog = gl::CreateProgramFrom(
-        gl::Vertex_shader::from_source(vertexShader),
-        gl::Fragment_shader::from_source(fragmentShader));
-    gl::Attribute_vec3 aPos{0};
-    gl::Attribute_vec2 aTexCoord{1};
+        gl::Vertex_shader::from_source(g_VertexShader),
+        gl::Fragment_shader::from_source(g_FragmentShader));
+
+    static constexpr gl::Attribute_vec3 aPos{0};
+    static constexpr gl::Attribute_vec2 aTexCoord{1};
     gl::Uniform_mat4 uModel{prog, "uModel"};
     gl::Uniform_mat4 uView{prog, "uView"};
     gl::Uniform_mat4 uProjection{prog, "uProjection"};
@@ -119,28 +72,32 @@ struct Shader final {
     gl::Uniform_sampler2d uSampler1{prog, "uSampler1"};
 };
 
-struct MainScreen : public gp::Screen {
+struct MainScreen final : public Layer {
     Shader shader;
 
     // cube data
-    gl::Array_buffer<Vert> cubeVbo{cubeVerts};
+    gl::Array_buffer<TexturedVert> cubeVbo = generateTexturedCubeVerts();
     gl::Vertex_array cubeVao = [this]() {
+        gl::Vertex_array vao;
+        gl::BindVertexArray(vao);
         gl::BindBuffer(cubeVbo);
-        gl::VertexAttribPointer(shader.aPos, false, sizeof(Vert), offsetof(Vert, pos));
+        gl::VertexAttribPointer(shader.aPos, false, sizeof(TexturedVert), offsetof(TexturedVert, pos));
         gl::EnableVertexAttribArray(shader.aPos);
-        gl::VertexAttribPointer(shader.aTexCoord, false, sizeof(Vert), offsetof(Vert, uv));
+        gl::VertexAttribPointer(shader.aTexCoord, false, sizeof(TexturedVert), offsetof(TexturedVert, uv));
         gl::EnableVertexAttribArray(shader.aTexCoord);
-    };
+        gl::BindVertexArray();
+        return vao;
+    }();
 
     // textures
     gl::Texture_2d wall = gl::load_tex(gfxplay::resource_path("wall.jpg"));
     gl::Texture_2d face = gl::load_tex(gfxplay::resource_path("awesomeface.png"));
 
     // main FPS camera
-    gp::Euler_perspective_camera camera;
+    Euler_perspective_camera camera;
 
     void onUpdate() override {
-        camera.onUpdateAsGrabbedCamera(10.0f, 0.001f);
+        camera.onUpdate(10.0f, 0.001f);
     }
 
     void onDraw() override {
@@ -151,7 +108,7 @@ struct MainScreen : public gp::Screen {
 
         // `uModel` is handled for each cube below
         gl::Uniform(shader.uView, camera.viewMatrix());
-        gl::Uniform(shader.uProjection, camera.projectionMatrix(gp::App::IO().aspectRatio()));
+        gl::Uniform(shader.uProjection, camera.projectionMatrix(App::cur().aspectRatio()));
 
         gl::ActiveTexture(GL_TEXTURE0);
         gl::BindTexture(wall);
@@ -163,7 +120,7 @@ struct MainScreen : public gp::Screen {
 
         gl::BindVertexArray(cubeVao);
         float angle = 0.0f;
-        for (glm::vec3 const& cubePos : cubePositions) {
+        for (glm::vec3 const& cubePos : g_CubePositions) {
             glm::mat4 modelMtx = glm::identity<glm::mat4>();
             modelMtx = glm::translate(modelMtx, cubePos);
             modelMtx = glm::rotate(modelMtx, glm::radians(angle), {1.0f, 0.3f, 0.5f});
@@ -177,7 +134,7 @@ struct MainScreen : public gp::Screen {
 };
 
 int main(int, char*[]) {
-    gp::App app;
+    App app;
     app.enableRelativeMouseMode();
     app.show(std::make_unique<MainScreen>());
     return 0;

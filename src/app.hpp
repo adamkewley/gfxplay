@@ -7,12 +7,11 @@
 
 #include <iostream>
 #include <utility>
-#include <sstream>
 #include <memory>
 #include <string_view>
 #include <chrono>
 #include <vector>
-#include <mutex>
+#include <array>
 
 // logging support
 //
@@ -109,6 +108,7 @@ namespace gp::log {
         Logger(std::string name, std::shared_ptr<Sink> sink) : name_{std::move(name)}, sinks_{sink} {
         }
 
+        // sink a printf-style log message
         template<typename... Args>
         void log(level::LevelEnum msgLevel, char const* fmt, ...) {
             if (msgLevel < level_) {
@@ -238,23 +238,11 @@ namespace gp {
 #define GP_ASSERT(expr)
 #endif
 
-// screen support
+// layer support
 //
-// separates screen-level concerns (handle events, update, draw) from the
-// rest of the application's concerns (app init, gameloop maintenance, etc.)
-//
-// lifecycle:
-//
-// 1. (app receives screen)
-// 2. app calls onMount
-// 3. (screen is now part of app's gameloop)
-// 4. app calls onEvent until all events pumped
-// 5. app calls onUpdate with timedelta since last call to onUpdate
-// 6. app calls onDraw
-// 7a1. if no new screen, GOTO 4
-// 7b1. if new screen received, call onUnmount
-// 7b2. destroy old screen
-// 7b3. GOTO 2 with new screen
+// separates layer-level concerns (handle events, update, draw) from the
+// rest of the application's concerns (app init, gameloop maintenance, polling,
+// etc.)
 namespace gp {
     class Screen {
     public:
@@ -264,8 +252,10 @@ namespace gp {
         virtual void onMount() {
         }
 
-        virtual bool onEvent(SDL_Event const&) {
-            return false;
+        virtual void onUnmount() {
+        }
+
+        virtual void onEvent(SDL_Event const&) {
         }
 
         // callers should use their own recording system (e.g. poller)
@@ -274,21 +264,19 @@ namespace gp {
         }
 
         virtual void onDraw() = 0;
-
-        virtual void onUnmount() {
-        }
     };
 }
 
 // input polling support
 //
-// App automatically maintains these in the top-level gameloop so
+// gp::App automatically maintains these in the top-level gameloop so
 // that the rest of the system can just ask for these values whenever
-// they need them
+// they need them, rather than having to maintain their own state
+// machines
 namespace gp {
     struct Io final {
         // drawable size of display
-        glm::ivec2 DisplaySize;
+        glm::vec2 DisplaySize;
 
         // number of ticks since the last call to update
         uint64_t Ticks;
@@ -305,21 +293,47 @@ namespace gp {
         // previous mouse position
         glm::vec2 MousePosPrevious;
 
-        // mouse position delta from previous update
+        // mouse position delta from previous update (== MousePos - MousePosPrevious)
         glm::vec2 MousePosDelta;
 
+        // indicates that the backend should set the OS mouse pos
+        //
+        // the backend will warp to the MousePosWarpTo location, but will
+        // ensure that MousePosDelta behaves "as if" the user moved their
+        // mouse from MousePosPrevious to MousePosWarpTo
+        //
+        // the backend will reset WantMousePosWarpTo to `false` after
+        // performing the warp
+        bool WantMousePosWarpTo;
+        glm::vec2 MousePosWarpTo;
+
         // mouse button states (0: left, 1: right, 2: middle)
-        bool MousePressed[3];
+        std::array<bool, 3> MousePressed;
 
         // keyboard keys that are currently pressed
-        bool KeysDown[512];
+        std::array<bool, 512> KeysDown;
         bool ShiftDown;
         bool CtrlDown;
         bool AltDown;
 
-        [[nodiscard]] constexpr float aspectRatio() const noexcept {
-            return static_cast<float>(DisplaySize.x) / static_cast<float>(DisplaySize.y);
-        }
+        // duration, in seconds, that each key has been pressed for
+        //
+        // == -1.0f if key is not down this frame
+        // ==  0.0f if the key was pressed this frame
+        // >   0.0f if the key was pressed in a previous frame
+        std::array<float, 512> KeysDownDuration;
+
+        // as above, but the *previous* frame's values
+        //
+        // the utility of this is for detecting when a key was released.
+        // e.g. if a value in here is >= 0.0f && !KeysDown[key] then the
+        // key must have been released this frame
+        std::array<float, 512> KeysDownDurationPrev;
+
+        // initialize this struct
+        //
+        // must be initialized after (or during) app initialization
+        Io(SDL_Window*);
     };
 }
 
@@ -360,6 +374,16 @@ namespace gp {
         // enters gameloop with supplied screen
         void show(std::unique_ptr<Screen>);
 
+        template<typename TScreen, typename std::enable_if_t<std::is_base_of_v<Screen, TScreen>, TScreen>>
+        void show(std::unique_ptr<TScreen> p) {
+            show(static_cast<std::unique_ptr<Screen>&&>(std::move(p)));
+        }
+
+        template<typename TScreen, typename... Args>
+        void show(Args&&... args) {
+            this->show(std::make_unique<TScreen>(std::forward(args)...));
+        }
+
         // raw handle to underlying window implementation
         void* windowRAW() noexcept;
 
@@ -373,13 +397,19 @@ namespace gp {
         // stuck in (e.g.) the corner
         void enableRelativeMouseMode() noexcept;
 
-        // sets mouse position somewhere in current window
-        void setMousePos(glm::ivec2) noexcept;
-
         // requst the app quits
         //
         // the app will only check for this at the *start* of a frame
         void requestQuit() noexcept;
+
+        // returns true if OpenGL debugging is enabled
+        bool isOpenGLDebugModeEnabled() noexcept;
+        void enableOpenGLDebugMode();
+        void disableOpenGLDebugMode();
+
+        float aspectRatio() const noexcept {
+            return IO().DisplaySize.x / IO().DisplaySize.y;
+        }
     };
 }
 
@@ -403,7 +433,6 @@ namespace gp {
     // should be called at the end of `draw()`
     void ImGuiRender();
 }
-
 
 // scope guard support
 //
@@ -429,18 +458,17 @@ namespace gp {
             dtor();
         }
     };
-
-    // example usage: `GP_SCOPEGUARD({ SomeDtor(); });`
-    #define GP_TOKENPASTE(x, y) x##y
-    #define GP_TOKENPASTE2(x, y) GP_TOKENPASTE(x, y)
-    #define GP_SCOPEGUARD(action) gp::ScopeGuard GP_TOKENPASTE2(guard_, __LINE__){[&]() action};
-    #define GP_SCOPEGUARD_IF(cond, action)                                                                              \
-        GP_SCOPEGUARD({                                                                                                 \
-            if (cond) {                                                                                                    \
-                action                                                                                                     \
-            }                                                                                                              \
-        }) \
-    }
+}
+// example usage: `GP_SCOPEGUARD({ SomeDtor(); });`
+#define GP_TOKENPASTE(x, y) x##y
+#define GP_TOKENPASTE2(x, y) GP_TOKENPASTE(x, y)
+#define GP_SCOPEGUARD(action) gp::ScopeGuard GP_TOKENPASTE2(guard_, __LINE__){[&]() action};
+#define GP_SCOPEGUARD_IF(cond, action)                                                                              \
+    GP_SCOPEGUARD({                                                                                                 \
+        if (cond) {                                                                                                    \
+            action                                                                                                     \
+        }                                                                                                              \
+    }) \
 }
 
 // constants support
@@ -501,9 +529,362 @@ namespace gp {
 
         [[nodiscard]] glm::mat4 projectionMatrix(float aspectRatio) const noexcept;
 
-        // assumes app is running in relative mode (cursor hidden) and that the
-        // camera should warp the app's (hidden) cursor accordingly to ensure
-        // it does not hit the edges of the window and stop
-        void onUpdateAsGrabbedCamera(float movementSpeed, float mouseSensitivity);
+        void onUpdate(float movementSpeed, float mouseSensitivity);
     };
+}
+
+// basic 3d datatype/primitives support
+//
+// just some safe, commonly-used datastructures + data
+namespace gp {
+
+    // print a glm::vec3 to an output stream
+    std::ostream& operator<<(std::ostream&, glm::vec3 const&);
+
+    // returns a string representation of a glm::vec3
+    std::string str(glm::vec3 const&);
+
+    struct ShadedTexturedVert final {
+        glm::vec3 pos;
+        glm::vec3 norm;
+        glm::vec2 uv;
+    };
+
+    struct ShadedVert final {
+        glm::vec3 pos;
+        glm::vec3 norm;
+
+        ShadedVert() = default;
+
+        constexpr ShadedVert(glm::vec3 const& pos_, glm::vec3 const& norm_) noexcept :
+            pos{pos_},
+            norm{norm_} {
+        }
+
+        explicit constexpr ShadedVert(ShadedTexturedVert const& v) noexcept :
+            pos{v.pos},
+            norm{v.norm} {
+        }
+    };
+
+    struct TexturedVert final {
+        glm::vec3 pos;
+        glm::vec2 uv;
+
+        TexturedVert() = default;
+
+        constexpr TexturedVert(glm::vec3 const& pos_, glm::vec2 const& uv_) noexcept :
+            pos{pos_},
+            uv{uv_} {
+        }
+
+        explicit constexpr TexturedVert(ShadedTexturedVert const& v) noexcept :
+            pos{v.pos},
+            uv{v.uv} {
+        }
+    };
+
+    struct PlainVert final {
+        glm::vec3 pos;
+
+        PlainVert() = default;
+
+        constexpr PlainVert(float x, float y, float z) noexcept :
+            pos{x, y, z} {
+        }
+
+        constexpr PlainVert(glm::vec3 const& pos_) noexcept :
+            pos{pos_} {
+        }
+
+        explicit constexpr PlainVert(ShadedTexturedVert const& v) noexcept :
+            pos{v.pos} {
+        }
+
+        explicit constexpr PlainVert(ShadedVert const& v) noexcept :
+            pos{v.pos} {
+        }
+
+        explicit constexpr PlainVert(TexturedVert const& v) noexcept :
+            pos{v.pos} {
+        }
+    };
+
+    template<typename TVert>
+    [[nodiscard]] std::array<TVert, 36> generateCube() noexcept;
+
+    template<>
+    [[nodiscard]] std::array<ShadedTexturedVert, 36> generateCube() noexcept;
+
+    template<>
+    [[nodiscard]] std::array<TexturedVert, 36> generateCube() noexcept;
+
+    template<>
+    [[nodiscard]] std::array<PlainVert, 36> generateCube() noexcept;
+
+    template<typename TVert>
+    void generateUVSphere(std::vector<TVert>&);
+
+    template<>
+    void generateUVSphere(std::vector<PlainVert>&);
+
+    template<typename TVert>
+    [[nodiscard]] std::vector<TVert> generateUVSphere() {
+        std::vector<TVert> rv;
+        generateUVSphere(rv);
+        return rv;
+    }
+
+    [[nodiscard]] std::vector<PlainVert> generateCubeWireMesh();
+
+    // generate quad verts (i.e. two triangles forming a rectangle)
+    //
+    // - [-1, +1] in XY
+    // - [0, 0] in Z
+    // - normal == (0, 0, 1)
+    template<typename TVert>
+    [[nodiscard]] std::array<TVert, 6> generateQuad() noexcept;
+
+    template<>
+    [[nodiscard]] std::array<PlainVert, 6> generateQuad() noexcept;
+
+    // generate 2D circle verts for a circle with a specified number of
+    // triangle segments
+    //
+    // - [-1, +1] in XY (r = 1.0)
+    // - [0, 0] in Z
+    // - normal == (0, 0, 1)
+    template<typename TVert>
+    void generateCircle(size_t, std::vector<TVert>&);
+
+    template<>
+    void generateCircle(size_t, std::vector<PlainVert>&);
+
+    template<typename TVert>
+    [[nodiscard]] std::vector<TVert> generateCircle(size_t segments) {
+        std::vector<TVert> rv;
+        generateCircle(segments, rv);
+        return rv;
+    }
+
+    // axis-aligned bounding box (AABB)
+    struct AABB final {
+        glm::vec3 min;
+        glm::vec3 max;
+    };
+
+    // print an AABB to an output stream
+    std::ostream& operator<<(std::ostream&, AABB const&);
+
+    // returns the center point of an AABB
+    [[nodiscard]] inline constexpr glm::vec3 aabbCenter(AABB const& a) noexcept {
+        return (a.min+a.max)/2.0f;
+    }
+
+    // returns the dimensions of an AABB
+    [[nodiscard]] inline constexpr glm::vec3 aabbDimensions(AABB const& a) noexcept {
+        return a.max - a.min;
+    }
+
+    // returns a vec that has the smallest X, Y, and Z found in the provided vecs
+    [[nodiscard]] inline constexpr glm::vec3 vecMin(glm::vec3 const& a, glm::vec3 const& b) noexcept {
+        glm::vec3 rv{};
+        rv.x = std::min(a.x, b.x);
+        rv.y = std::min(a.y, b.y);
+        rv.z = std::min(a.z, b.z);
+        return rv;
+    }
+
+    // returns a vec that has the largest X, Y, and Z found in the provided vecs
+    [[nodiscard]] inline constexpr glm::vec3 vecMax(glm::vec3 const& a, glm::vec3 const& b) noexcept {
+        glm::vec3 rv{};
+        rv.x = std::max(a.x, b.x);
+        rv.y = std::max(a.y, b.y);
+        rv.z = std::max(a.z, b.z);
+        return rv;
+    }
+
+    // returns the smallest AABB that spans the provided verts
+    template<typename Vert>
+    [[nodiscard]] inline constexpr AABB aabbFromVerts(Vert const* vs, size_t n) noexcept {
+        AABB rv;
+
+        if (n == 0) {
+            rv.min = {0.0f, 0.0f, 0.0f};
+            rv.max = {0.0f, 0.0f, 0.0f};
+            return rv;
+        }
+
+        rv.min = {FLT_MAX, FLT_MAX, FLT_MAX};
+        rv.max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+        for (size_t i = 0; i < n; ++i) {
+            glm::vec3 const& pos = vs[i].pos;
+            rv.min = vecMin(rv.min, pos);
+            rv.max = vecMax(rv.max, pos);
+        }
+
+        return rv;
+    }
+
+    template<typename Container>
+    [[nodiscard]] inline AABB aabbFromVerts(Container const& c) noexcept {
+        return aabbFromVerts(c.data(), c.size());
+    }
+
+    // returns an AABB that spans the provided AABB and the provided point
+    [[nodiscard]] inline constexpr AABB aabbUnion(AABB const& a, glm::vec3 const& p) noexcept {
+        AABB rv{};
+        rv.min = vecMin(a.min, p);
+        rv.max = vecMax(a.max, p);
+        return rv;
+    }
+
+    // returns the smallest AABB that fully spans the provided AABBs
+    [[nodiscard]] inline constexpr AABB aabbUnion(AABB const& a, AABB const& b) noexcept {
+        AABB rv{};
+        rv.min = vecMin(a.min, b.min);
+        rv.max = vecMax(a.max, b.max);
+        return rv;
+    }
+
+    // returns true if the provided AABB is empty (i.e. a point with a volume of zero)
+    [[nodiscard]] inline constexpr bool aabbIsEmpty(AABB const& a) noexcept {
+        return a.min == a.max;
+    }
+
+    // returns the *index* of the longest dimension of an AABB
+    [[nodiscard]] inline constexpr glm::vec3::length_type aabbLongestDimension(AABB const& a) noexcept {
+        glm::vec3 dims = aabbDimensions(a);
+
+        if (dims.x > dims.y && dims.x > dims.z) {
+            return 0;  // X is longest
+        } else if (dims.y > dims.z) {
+            return 1;  // Y is longest
+        } else {
+            return 2;  // Z is longest
+        }
+    }
+
+    // parametric line
+    struct Line final {
+        glm::vec3 o;  // origin
+        glm::vec3 d;  // direction - should be normalized
+    };
+
+    // print a line to an output stream
+    std::ostream& operator<<(std::ostream&, Line const&);
+
+    // parametric sphere
+    struct Sphere final {
+        glm::vec3 origin;
+        float radius;
+    };
+
+    // print a sphere to an output stream
+    std::ostream& operator<<(std::ostream&, Sphere const&);
+
+    // compute a sphere that spans the supplied vertices
+    template<typename Vert>
+    [[nodiscard]] inline Sphere boundingSphereFromVerts(Vert const* vs, size_t n) noexcept {
+        AABB aabb = aabbFromVerts(vs, n);
+
+        Sphere rv;
+        rv.origin = aabbCenter(aabb);
+        rv.radius = 0.0f;
+
+        float biggest_r2 = 0.0f;
+        for (size_t i = 0; i < n; ++i) {
+            glm::vec3 const& pos = vs[i].pos;
+            float r2 = glm::dot(pos, pos);
+            biggest_r2 = std::max(r2, biggest_r2);
+        }
+
+        rv.radius = glm::sqrt(biggest_r2);
+        return rv;
+    }
+
+    // compute a sphere that spans the supplied vertices
+    template<typename Container>
+    [[nodiscard]] inline Sphere boundingSphereFromVerts(Container const& c) noexcept {
+        return boundingSphereFromVerts(c.data(), c.size());
+    }
+
+    // compute an AABB that spans the sphere
+    [[nodiscard]] inline AABB sphereAABB(Sphere const& s) noexcept {
+        AABB rv;
+        rv.min = s.origin - s.radius;
+        rv.max = s.origin + s.radius;
+        return rv;
+    }
+
+    struct LineSphereHittestResult final {
+        bool intersected;
+
+        // direction factors in equation P = O + tD
+        float t0;
+        float t1;
+    };
+
+    [[nodiscard]] LineSphereHittestResult lineIntersectsSphere(Sphere const&, Line const&) noexcept;
+
+    struct LineAABBHittestResult final {
+        bool intersected;
+
+        // direction factors in equation P = O + tD
+        float t0;
+        float t1;
+    };
+
+    [[nodiscard]] LineAABBHittestResult lineIntersectsAABB(AABB const&, Line const&) noexcept;
+
+    struct Plane final {
+        glm::vec3 origin;
+        glm::vec3 normal;
+    };
+
+    struct LinePlaneHittestResult final {
+        bool intersected;
+        float t;
+    };
+
+    [[nodiscard]] LinePlaneHittestResult lineIntersectsPlane(Plane const&, Line const&) noexcept;
+
+    struct Disc final {
+        glm::vec3 origin;
+        glm::vec3 normal;
+        float radius;
+    };
+
+    struct LineDiscHittestResult final {
+        bool intersected;
+        float t;
+    };
+
+    [[nodiscard]] LineDiscHittestResult lineIntersectsDisc(Disc const&, Line const&) noexcept;
+
+    struct LineTriangleHittestResult final {
+        bool intersected;
+        float t;
+    };
+
+    // assumes vec argument points to three vectors
+    [[nodiscard]] LineTriangleHittestResult lineIntersectsTriangle(glm::vec3 const*, Line const&) noexcept;
+
+    // generate a model matrix that transforms a generated quad (above) to
+    // match the position and orientation of an analytic plane
+    [[nodiscard]] glm::mat4 quadToPlaneXform(Plane const&) noexcept;
+
+    // generate a model matrix that transforms the generated circle verts to
+    // match the position and orientation of an analytic disc
+    [[nodiscard]] glm::mat4 circleToDiscXform(Disc const&) noexcept;
+
+    // generate a model matrix that transforms the generate cube (wireframe)
+    // verts to match the position and orientation of an AABB
+    [[nodiscard]] glm::mat4 cubeToAABBXform(AABB const&) noexcept;
+
+    // compute a normal from the points of a triangle
+    //
+    // effectively, (B-A) x (C-A)
+    [[nodiscard]] glm::vec3 triangleNormal(glm::vec3 const&, glm::vec3 const&, glm::vec3 const&) noexcept;
 }

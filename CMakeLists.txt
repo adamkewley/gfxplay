@@ -95,10 +95,15 @@ target_compile_options(gfxplaycore PUBLIC
         # -Wcast-qual : broken by STB headers
         # -Wpacked : broken by ASSIMP
         # -Wconversion : hits shitloads of lines
+
+        # libASAN
+        #-fsanitize=address
+
+        -Wno-missing-declarations
     >
 )
 target_compile_features(gfxplaycore PUBLIC
-    cxx_std_20
+    cxx_std_17
 )
 target_link_options(gfxplaycore PUBLIC
     $<$<CXX_COMPILER_ID:MSVC>:
@@ -106,6 +111,9 @@ target_link_options(gfxplaycore PUBLIC
         /SUBSYSTEM:windows
         /ENTRY:mainCRTStartup
     >
+
+    #libASAN
+    #-fsanitize=address
 )
 set_target_properties(gfxplaycore PROPERTIES
     CXX_EXTENSIONS OFF
@@ -272,6 +280,15 @@ target_link_libraries(ak_random-experiment gfxplaycore)
 
 add_executable(ak_random-experiment2 src/ak_random-experiment2.cpp)
 target_link_libraries(ak_random-experiment2 gfxplaycore)
+
+add_executable(learnimgui src/learnimgui.cpp)
+target_link_libraries(learnimgui gfxplaycore)
+
+add_executable(entt_attempt src/entt_attempt.cpp)
+target_link_libraries(entt_attempt gfxplaycore)
+
+add_executable(ak_fps src/ak_fps.cpp)
+target_link_libraries(ak_fps gfxplaycore)
 
 if (GFXPLAY_USE_ASSIMP)
 

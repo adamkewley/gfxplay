@@ -1,80 +1,71 @@
-#include "logl_common.hpp"
+#include "app.hpp"
 
-namespace {
-    struct Gl_State final {
-        gl::Program prog = gl::CreateProgramFrom(
-            gl::Vertex_shader::from_source(R"(
-#version 330 core
+#include "gl.hpp"
+#include "gl_extensions.hpp"
 
-in vec3 aPos;
+static constexpr char vertShader[] = R"(
+    #version 330 core
 
-void main() {
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-}
-)"),
-            gl::Fragment_shader::from_source(R"(
-#version 330 core
+    in vec3 aPos;
 
-out vec4 FragColor;
+    void main() {
+        gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    }
+)";
 
-void main() {
-    FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
-}
-)"
-        ));
+static constexpr char fragShader[] = R"(
+    #version 330 core
 
-        gl::Attribute_vec3 aPos{prog, "aPos"};
+    out vec4 FragColor;
 
-        gl::Array_buffer<glm::vec3> vbo = {
-            { 0.5f,  0.5f, 0.0f},  // top right
-            { 0.5f, -0.5f, 0.0f},  // bottom right
-            {-0.5f, -0.5f, 0.0f},  // bottom left
-            {-0.5f,  0.5f, 0.0f},  // top left
-        };
+    void main() {
+        FragColor = vec4(1.0, 0.5f, 0.2f, 1.0f);
+    }
+)";
 
-        gl::Element_array_buffer<unsigned> ebo = {
-            0, 1, 3,
-            1, 2, 3
-        };
+struct HelloTriangleScreen : public gp::Layer {
+    gl::Program prog = gl::CreateProgramFrom(
+        gl::Vertex_shader::from_source(vertShader),
+        gl::Fragment_shader::from_source(fragShader));
 
-        gl::Vertex_array vao = [this]() {
-            gl::BindBuffer(vbo);
-            gl::BindBuffer(ebo);
-            gl::VertexAttribPointer(aPos, false, sizeof(decltype(vbo)::value_type), 0);
-            gl::EnableVertexAttribArray(aPos);
-        };
+    gl::Attribute_vec3 aPos{prog, "aPos"};
 
-        void draw() {
-            gl::BindVertexArray(vao);
-            gl::DrawElements(GL_TRIANGLES, ebo.sizei(), GL_UNSIGNED_INT, nullptr);
-            gl::BindVertexArray();
-        }
+    gl::Array_buffer<glm::vec3> quadVbo = {
+        { 0.5f,  0.5f, 0.0f},  // top right
+        { 0.5f, -0.5f, 0.0f},  // bottom right
+        {-0.5f, -0.5f, 0.0f},  // bottom left
+        {-0.5f,  0.5f, 0.0f},  // top left
     };
-}
+
+    gl::Element_array_buffer<GLuint> quadTrianglesEbo = {
+        0, 1, 3,
+        1, 2, 3
+    };
+
+    gl::Vertex_array vao = [this]() {
+        gl::Vertex_array rv;
+        gl::BindVertexArray(rv);
+        gl::BindBuffer(quadVbo);
+        gl::BindBuffer(quadTrianglesEbo);
+        gl::VertexAttribPointer(aPos, false, sizeof(decltype(quadVbo)::value_type), 0);
+        gl::EnableVertexAttribArray(aPos);
+        gl::BindVertexArray();
+        return rv;
+    }();
+
+    void onDraw() override {
+        gl::ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gl::UseProgram(prog);
+        gl::BindVertexArray(vao);
+        gl::DrawElements(GL_TRIANGLES, quadTrianglesEbo.sizei(), gl::index_type(quadTrianglesEbo), nullptr);
+        gl::BindVertexArray();
+    }
+};
 
 int main(int, char**) {
-    auto s = ui::Window_state{};
-    auto gls = Gl_State{};
-
-    gl::ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    gl::UseProgram(gls.prog);
-
-    auto throttle = util::Software_throttle{8ms};
-
-    while (true) {
-        for (SDL_Event e; SDL_PollEvent(&e);) {
-            if (e.type == SDL_QUIT) {
-                return 0;
-            }
-        }
-
-        gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        gls.draw();
-
-        throttle.wait();
-
-        // draw
-        SDL_GL_SwapWindow(s.window);
-    }
+    gp::App app;
+    app.enableOpenGLDebugMode();
+    app.show(std::make_unique<HelloTriangleScreen>());
+    return 0;
 }
